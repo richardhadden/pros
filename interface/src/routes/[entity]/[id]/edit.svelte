@@ -10,8 +10,6 @@
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 
-	const get_form_data = async () => {};
-
 	$: entity = $page.params.entity;
 	$: id = $page.params.id;
 
@@ -20,7 +18,7 @@
 	async function set_form_data_from_endpoint() {
 		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${id}`);
 		const response_json = await resp.json();
-		console.log(response_json);
+		console.log('response_data', response_json);
 		form_data = Object.assign(
 			{},
 			...Object.entries($schema[entity].fields).map(([k, v]) => ({

@@ -27,6 +27,7 @@
     "@fontsource/fira-mono": "^4.5.0",
     "@lukeed/uuid": "^2.0.0",
     "cookie": "^0.4.1",
-    "ramda": "^0.28.0"
+    "ramda": "^0.28.0",
+    "svelte-multiselect": "^5.0.1"
   }
 }

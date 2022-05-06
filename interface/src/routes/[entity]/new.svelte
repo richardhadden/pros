@@ -48,7 +48,7 @@
 		const json = await resp.json();
 		console.log('response', json);
 		status = json.saved ? 'saved' : 'save error';
-		goto(`/stuff/${json.id}/edit`);
+		goto(`/${entity}/${json.id}/edit`);
 	};
 </script>
 

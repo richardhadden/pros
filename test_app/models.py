@@ -4,6 +4,7 @@ from neomodel import (
     DateProperty,
     IntegerProperty,
     UniqueIdProperty,
+    RelationshipTo,
 )
 from django_neomodel import DjangoNode
 
@@ -12,6 +13,7 @@ class Book(StructuredNode):
     uid = UniqueIdProperty()
     title = StringProperty(unique_index=True)
     published = DateProperty()
+    author = RelationshipTo("Person", "HAS_AUTHOR")
 
 
 class Person(StructuredNode):

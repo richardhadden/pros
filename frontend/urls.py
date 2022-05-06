@@ -32,8 +32,11 @@ def create_retrieve(model_class):
 
 def create_create(model_class):
     def create(self, request):
-        print(request.data)
-        object = model_class(**request.data)
+
+        object_data = request.data
+
+        object = model_class()
+
         object.save()
 
         return Response({"id": object.uid, "saved": True})
