@@ -4,7 +4,7 @@ import inspect
 from unicodedata import name
 
 from neomodel import StructuredNode
-from neomodel.properties import Property
+from neomodel.properties import Property, UniqueIdProperty
 
 from django.apps import apps
 
@@ -24,9 +24,13 @@ for app_name in PROS_APPS:
             model=getattr(app.models, m[0]),
             model_name=getattr(app.models, m[0]).__name__,
             properties={
-                n: {"type": p.__class__.__name__, "default_value": p.default}
+                n: {
+                    "type": p.__class__.__name__,
+                    "default_value": p.default,
+                    "required": p.required,
+                }
                 for n, p in getattr(app.models, m[0]).__dict__.items()
-                if isinstance(p, Property)
+                if isinstance(p, Property) and not isinstance(p, UniqueIdProperty)
             },
         )
         for m in inspect.getmembers(app.models, inspect.isclass)

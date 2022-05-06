@@ -4,24 +4,15 @@
 
 <script>
 	const BASE_URI = 'http://127.0.0.1:8000/api';
-
-	const get_page = async (path) => {
-		const res = await fetch(BASE_URI + path);
-		return res;
-	};
-
+	import { blur } from 'svelte/transition';
 	import { onMount } from 'svelte';
-	import { schema } from '$lib/stores';
+	import { schema, get_schema } from '$lib/stores';
 
-	onMount(async () => {
-		const res = await get_page('/schema');
-		const schema_file = await res.json();
-		schema.set(schema_file);
-	});
+	let schema_loaded = get_schema();
 </script>
 
 <svelte:head>
-	<title>Home</title>
+	<title>PROSO</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
@@ -36,4 +27,8 @@
 	</nav>
 </header>
 
-<slot />
+{#await schema_loaded}
+	Loading schema...
+{:then}
+	<slot />
+{/await}
