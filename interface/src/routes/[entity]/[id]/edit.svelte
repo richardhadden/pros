@@ -14,6 +14,7 @@
 	$: id = $page.params.id;
 
 	$: form_data = {};
+	$: console.log('FORM DATA', form_data);
 
 	async function set_form_data_from_endpoint() {
 		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${id}`);
@@ -22,7 +23,10 @@
 		form_data = Object.assign(
 			{},
 			...Object.entries($schema[entity].fields).map(([k, v]) => ({
-				[k]: response_json[k]
+				[k]:
+					$schema[entity].fields[k].type === 'relation'
+						? response_json[k].map((a) => ({ id: a.uid, label: a.label }))
+						: response_json[k]
 			}))
 		);
 	}
@@ -33,7 +37,7 @@
 	afterNavigate(set_form_data_from_endpoint);
 
 	$: console.log('form_data_new', form_data);
-	let status = 'EDIT';
+	let status = 'editing (unsaved)';
 
 	const submit_form = async () => {
 		console.log('submut', form_data);
@@ -56,6 +60,9 @@
 	};
 </script>
 
+<h1 class="text-lg mb-5">Edit: <b>{form_data['label']}</b></h1>
 <h6>{status}</h6>
 
-<Form {submit_form} bind:form_data {entity} />
+{#await set_form_data_from_endpoint then}
+	<Form {submit_form} bind:form_data {entity} />
+{/await}

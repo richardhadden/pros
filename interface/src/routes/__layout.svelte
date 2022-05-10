@@ -7,6 +7,7 @@
 	import { blur } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import { schema, get_schema } from '$lib/stores';
+	import '../app.css';
 
 	let schema_loaded = get_schema();
 </script>
@@ -16,12 +17,14 @@
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
-<header>
-	<h1>Proso</h1>
+<header class="bg-slate-100 top-10">
+	<h1 class="font-light text-7xl">neo4me</h1>
 	<nav>
-		<ul>
+		<ul class="flex">
 			{#each Object.entries($schema) as [model, value]}
-				<li><a href="/{model.toLowerCase()}/new">{model}</a></li>
+				<li class="ml-2">
+					<a class="hover:text-blue-600" href="/{model.toLowerCase()}/">{model}</a>
+				</li>
 			{/each}
 		</ul>
 	</nav>
@@ -30,5 +33,7 @@
 {#await schema_loaded}
 	Loading schema...
 {:then}
-	<slot />
+	<div class="mt-5 ml-10 mr-10">
+		<slot />
+	</div>
 {/await}

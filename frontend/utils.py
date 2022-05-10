@@ -14,12 +14,14 @@ PROS_APPS = [
     app for app, conf in apps.app_configs.items() if getattr(conf, "pros_app", False)
 ]
 
-PROS_MODELS = []
+PROS_MODELS = {}
 
-AppModel = namedtuple("AppModels", ["app", "model", "model_name", "properties"])
+AppModel = namedtuple(
+    "AppModels", ["app", "model", "model_name", "properties", "relations", "fields"]
+)
 
 
-def build_property(p):
+def build_field(p):
     if isinstance(p, Property):
         return {
             "type": "property",
@@ -40,13 +42,23 @@ def build_property(p):
 
 for app_name in PROS_APPS:
     app = __import__(app_name)
-    app_model_classes = [
-        AppModel(
+    app_model_classes = {
+        getattr(app.models, m[0]).__name__: AppModel(
             app=app_name,
             model=getattr(app.models, m[0]),
             model_name=getattr(app.models, m[0]).__name__,
             properties={
-                n: build_property(p)
+                n
+                for n, p in getattr(app.models, m[0]).__dict__.items()
+                if (isinstance(p, Property)) and not isinstance(p, UniqueIdProperty)
+            },
+            relations={
+                n
+                for n, p in getattr(app.models, m[0]).__dict__.items()
+                if isinstance(p, RelationshipDefinition)
+            },
+            fields={
+                n: build_field(p)
                 for n, p in getattr(app.models, m[0]).__dict__.items()
                 if (isinstance(p, Property) or isinstance(p, RelationshipDefinition))
                 and not isinstance(p, UniqueIdProperty)
@@ -55,5 +67,5 @@ for app_name in PROS_APPS:
         for m in inspect.getmembers(app.models, inspect.isclass)
         if m[1].__module__ == "test_app.models"
         and issubclass(getattr(app.models, m[0]), StructuredNode)
-    ]
-    PROS_MODELS += app_model_classes
+    }
+    PROS_MODELS = {**PROS_MODELS, **app_model_classes}

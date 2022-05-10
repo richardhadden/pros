@@ -9,25 +9,21 @@ from neomodel import (
 from django_neomodel import DjangoNode
 
 
-class Book(StructuredNode):
+class Factoid(StructuredNode):
     uid = UniqueIdProperty()
-    title = StringProperty(unique_index=True)
-    published = DateProperty()
-    author = RelationshipTo("Person", "HAS_AUTHOR")
+    label = StringProperty()
+    has_source = RelationshipTo("Source", "HAS_SOURCE")
+    is_about_person = RelationshipTo("Person", "IS_ABOUT_PERSON")
+    text = StringProperty()
 
 
 class Person(StructuredNode):
+
     uid = UniqueIdProperty()
-    name = StringProperty(unique_index=True, default="John")
-    age = IntegerProperty(default=0)
+    label = StringProperty()
 
 
-class Stuff(StructuredNode):
+class Source(StructuredNode):
     uid = UniqueIdProperty()
-    stuff_type = StringProperty(required=True)
-
-
-class Thing(StructuredNode):
-    uid = UniqueIdProperty()
-    name = StringProperty(required=True)
-    other_fact = StringProperty(required=True)
+    label = StringProperty()
+    stuff_type = StringProperty()
