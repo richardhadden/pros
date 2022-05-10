@@ -1,4 +1,4 @@
-/*import { v4 as uuid } from '@lukeed/uuid';
+import { v4 as uuid } from '@lukeed/uuid';
 
 import * as cookie from 'cookie';
 
@@ -22,4 +22,3 @@ export const handle = async ({ event, resolve }) => {
 
 	return response;
 };
-*/
