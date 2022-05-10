@@ -11,11 +11,13 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from neomodel.relationship_manager import ZeroOrMore
+from pros_core.models import ProsNode
 
 
 def create_list(model_class):
     def list(self, request):
         def get_rel_data(data):
+            data["type"] = model_class.__name__
             for k, v in model_class.nodes.get(uid=data["uid"]).__dict__.items():
                 if isinstance(v, ZeroOrMore):
                     data[k] = [x.__dict__ for x in v.all()]
@@ -155,15 +157,35 @@ for _, model in PROS_MODELS.items():
     ]
 
 
+def construct_subclass_hierarchy(model):
+    if model.subclasses:
+        return {
+            "subclasses": {
+                name.lower(): construct_subclass_hierarchy(subclasses)
+                for name, subclasses in model.subclasses.items()
+            }
+        }
+    return {}
+
+
+def build_schema_from_pros_model(models, schema):
+
+    for _, model in models.items():
+        schema[model.model_name.lower()] = {
+            "top_level": True if model.model.__bases__ == (ProsNode,) else False,
+            "fields": model.fields,
+            "app": model.app,
+            **construct_subclass_hierarchy(model),
+        }
+    return schema
+
+
 @api_view(["GET"])
 def schema(request):
     import time
 
     # time.sleep(1)
-    resp_data = {
-        model.model_name.lower(): {"fields": model.fields, "app": model.app}
-        for _, model in PROS_MODELS.items()
-    }
+    resp_data = build_schema_from_pros_model(PROS_MODELS, {})
     return Response(resp_data)
 
 

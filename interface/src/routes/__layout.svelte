@@ -7,6 +7,7 @@
 	import { blur } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import { schema, get_schema } from '$lib/stores';
+	import TopMenu from '$lib/components/top_menu.svelte';
 	import '../app.css';
 
 	let schema_loaded = get_schema();
@@ -18,15 +19,11 @@
 </svelte:head>
 
 <header class="bg-slate-100 top-10">
-	<h1 class="font-light text-7xl">neo4me</h1>
+	<h1 class="font-light text-2xl">neo4me</h1>
 	<nav>
-		<ul class="flex">
-			{#each Object.entries($schema) as [model, value]}
-				<li class="ml-2">
-					<a class="hover:text-blue-600" href="/{model.toLowerCase()}/">{model}</a>
-				</li>
-			{/each}
-		</ul>
+		{#await schema_loaded then}
+			<TopMenu schema_data={$schema} top={true} />
+		{/await}
 	</nav>
 </header>
 

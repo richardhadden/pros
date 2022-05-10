@@ -9,12 +9,15 @@
 	import Form from '$lib/components/form.svelte';
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
+	import { blur, fade } from 'svelte/transition';
 
 	$: entity = $page.params.entity;
 	$: id = $page.params.id;
 
 	$: form_data = {};
 	$: console.log('FORM DATA', form_data);
+
+	let data_loaded = false;
 
 	async function set_form_data_from_endpoint() {
 		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${id}`);
@@ -29,6 +32,7 @@
 						: response_json[k]
 			}))
 		);
+		data_loaded = true;
 	}
 
 	// Need to set form data to the defaults from the schema
@@ -63,6 +67,10 @@
 <h1 class="text-lg mb-5">Edit: <b>{form_data['label']}</b></h1>
 <h6>{status}</h6>
 
-{#await set_form_data_from_endpoint then}
-	<Form {submit_form} bind:form_data {entity} />
-{/await}
+{#if data_loaded}
+	<div transition:fade={{ amount: 0.2 }}>
+		<Form {submit_form} bind:form_data {entity} />
+	</div>
+{:else}
+	loading...
+{/if}
