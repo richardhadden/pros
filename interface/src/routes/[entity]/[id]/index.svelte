@@ -1,12 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 
 	import { page } from '$app/stores';
 	import { schema } from '$lib/stores.js';
 	import { prevent_default } from 'svelte/internal';
 
 	import Form from '$lib/components/form.svelte';
+	import { Button } from 'svelte-materialify';
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 
@@ -37,9 +38,11 @@
 	afterNavigate(load_data);
 </script>
 
-<h1 class="text-lg mb-5">
-	View: <b>{page_data['label']}</b> <a href="/{entity}/{id}/edit">EDIT</a>
-</h1>
+<h4>
+	{entity}
+</h4>
+<h5>{page_data['label']}</h5>
+<Button on:click={() => goto(`/${entity}/${id}/edit`)}>Edit</Button>
 <h6>{status}</h6>
 
 {#await load_data then}

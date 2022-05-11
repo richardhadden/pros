@@ -33,7 +33,7 @@
 	};
 </script>
 
-<h1 class="text-xl mb-5 capitalize">{entity}s</h1>
+<h3 class="text-uppercase">{entity}s</h3>
 
 <div>
 	<a

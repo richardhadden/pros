@@ -1,3 +1,4 @@
+from platform import node
 from statistics import mode
 from rest_framework import routers
 
@@ -16,16 +17,32 @@ from pros_core.models import ProsNode
 
 def create_list(model_class):
     def list(self, request):
+        print("-----------")
+        print(model_class)
+
         def get_rel_data(data):
             data["type"] = model_class.__name__
             for k, v in model_class.nodes.get(uid=data["uid"]).__dict__.items():
-                if isinstance(v, ZeroOrMore):
-                    data[k] = [x.__dict__ for x in v.all()]
+                if k in dict(model_class.__all_relationships__):
+                    data[k] = [{"label": x.label, "uid": x.uid} for x in v.all()]
                 else:
                     data[k] = v
             return data
 
-        node_data = [get_rel_data(b.__dict__) for b in model_class.nodes.all()]
+        # Don't need to do full traversal to just list names, ids and types
+        node_data = [
+            {"real_type": b.real_type, "uid": b.uid, "label": b.label}
+            for b in model_class.nodes.all()
+        ]
+        print(node_data)
+        return Response(node_data)
+
+    return list
+
+
+def create_autocomplete(model_class):
+    def list(self, request):
+        node_data = [{"uid": b.uid, "label": b.label} for b in model_class.nodes.all()]
         return Response(node_data)
 
     return list
@@ -34,11 +51,17 @@ def create_list(model_class):
 def create_retrieve(model_class):
     def retrieve(self, request, pk=None):
         data = {}
+        print(">>>", model_class.nodes.get(uid=pk).__dict__.items())
         for k, v in model_class.nodes.get(uid=pk).__dict__.items():
-            if isinstance(v, ZeroOrMore):
-                data[k] = [x.__dict__ for x in v.all()]
+            if k in dict(model_class.__all_relationships__):
+                print("is rel", k)
+                data[k] = [{"label": x.label, "uid": x.uid} for x in v.all()]
+                print(data[k])
             else:
+                print("is not rel", k)
                 data[k] = v
+                print(data[k])
+        print(">>>>>>", data)
         return Response(data)
 
     return retrieve
@@ -137,11 +160,16 @@ for _, model in PROS_MODELS.items():
             "retrieve": create_retrieve(model.model),
             "create": create_create(model.model),
             "put": create_update(model.model),
+            "autocomplete": create_autocomplete(model.model),
         },
     )
 
     urlpatterns += [
         path(f"{model.app}/{model.model_name.lower()}/", vs.as_view({"get": "list"})),
+        path(
+            f"{model.app}/autocomplete/{model.model_name.lower()}/",
+            vs.as_view({"get": "autocomplete"}),
+        ),
         path(
             f"{model.app}/{model.model_name.lower()}/<str:pk>",
             vs.as_view({"get": "retrieve"}),

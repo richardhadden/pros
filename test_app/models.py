@@ -17,6 +17,13 @@ class Factoid(ProsNode):
     text = StringProperty()
 
 
+class Naming(Factoid):
+    text = None
+    title = StringProperty()
+    first_name = StringProperty()
+    last_name = StringProperty()
+
+
 class Event(Factoid):
     pass
 
@@ -25,13 +32,26 @@ class Dance(Event):
     dance_partner = RelationshipTo("Person", "HAS_PRIMARY_DANCE_PARTNER")
 
 
-class Person(ProsNode):
+class InterpersonalRelation(Factoid):
+    related_to = RelationshipTo("Person", "IS_RELATED_TO")
 
-    uid = UniqueIdProperty()
-    label = StringProperty()
+
+class ParentalRelation(InterpersonalRelation):
+    related_to = RelationshipTo("Person", "HAS_PARENT")
+
+
+class Entity(ProsNode):
+    pass
+
+
+class Person(Entity):
+    pass
 
 
 class Source(ProsNode):
-    uid = UniqueIdProperty()
-    label = StringProperty()
-    stuff_type = StringProperty()
+    pass
+
+
+class Letter(Source):
+    sender = RelationshipTo("Entity", "HAS_SENDER")
+    recipient = RelationshipTo("Entity", "HAS_RECIPIENT")

@@ -3,12 +3,12 @@
 </script>
 
 <script>
-	const BASE_URI = 'http://127.0.0.1:8000/api';
-	import { blur } from 'svelte/transition';
-	import { onMount } from 'svelte';
-	import { schema, get_schema } from '$lib/stores';
-	import TopMenu from '$lib/components/top_menu.svelte';
-	import '../app.css';
+	const BASE_URI = "http://127.0.0.1:8000/api";
+	import { blur } from "svelte/transition";
+	import { onMount } from "svelte";
+	import { schema, get_schema } from "$lib/stores";
+	import TopMenu from "$lib/components/top_menu.svelte";
+	import "../app.css";
 
 	let schema_loaded = get_schema();
 </script>

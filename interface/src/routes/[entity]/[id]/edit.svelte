@@ -64,8 +64,7 @@
 	};
 </script>
 
-<h1 class="text-lg mb-5">Edit: <b>{form_data['label']}</b></h1>
-<h6>{status}</h6>
+<h4>Edit: <b>{form_data['label']}</b></h4>
 
 {#if data_loaded}
 	<div transition:fade={{ amount: 0.2 }}>
