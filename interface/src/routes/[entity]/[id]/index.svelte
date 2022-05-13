@@ -7,7 +7,20 @@
 	import { prevent_default } from 'svelte/internal';
 
 	import Form from '$lib/components/form.svelte';
-	import { Button } from 'svelte-materialify';
+	import {
+		AppBar,
+		Button,
+		Card,
+		Container,
+		Row,
+		Col,
+		Chip,
+		Divider,
+		Icon,
+		ListItem,
+		Menu
+	} from 'svelte-materialify';
+	import { mdiFileDocumentEdit } from '@mdi/js';
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 
@@ -26,7 +39,7 @@
 			...Object.entries($schema[entity].fields).map(([k, v]) => ({
 				[k]:
 					$schema[entity].fields[k].type === 'relation'
-						? response_json[k].map((a) => ({ id: a.uid, label: a.label }))
+						? response_json[k].map((a) => ({ uid: a.uid, label: a.label, real_type: a.real_type }))
 						: response_json[k]
 			}))
 		);
@@ -38,21 +51,54 @@
 	afterNavigate(load_data);
 </script>
 
-<h4>
-	{entity}
-</h4>
-<h5>{page_data['label']}</h5>
-<Button on:click={() => goto(`/${entity}/${id}/edit`)}>Edit</Button>
 <h6>{status}</h6>
 
 {#await load_data then}
-	{#each Object.entries(page_data) as [key, value]}
-		<div>
-			{key}: {#if typeof value === 'object'}
-				{#each value as v} {v.label} {/each}
-			{:else}
-				{value}
-			{/if}
-		</div>
-	{/each}
+	<AppBar class="pl-2 pr-2 elevation-1">
+		<span slot="icon"
+			><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em">{entity}</span
+			></span
+		>
+		<span slot="title">{page_data['label']}</span>
+		<div style="flex-grow:1" />
+		<Button
+			icon
+			size="small"
+			outline
+			type="submit"
+			value="submit"
+			on:click={() => goto(`/${entity}/${id}/edit/`)}
+			class="green-text text-darken-2 ml-2"><Icon path={mdiFileDocumentEdit} /></Button
+		>
+	</AppBar>
+	<div class="mt-3">
+		<Container style="width: 40em;">
+			{#each Object.entries(page_data) as [key, value]}
+				<Row style="border-bottom: thin solid #eee">
+					<Col cols={3} class="text-overline d-flex flex-col align-center">{key}</Col>
+
+					{#if typeof value === 'object'}
+						<Col cols={9} class="d-flex flex-col flex-wrap align-center pt-5">
+							{#each value as v}
+								<Button
+									rounded
+									size="small"
+									on:click={() => goto(`/${v.real_type}/${v.uid}/`)}
+									class="mr-2 mb-2 chip primary-color"
+									><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em"
+										>{v.real_type}</span
+									>
+									{v.label}</Button
+								>
+							{/each}
+						</Col>
+					{:else}
+						<Col cols={9} class="d-flex flex-col flex-wrap align-center">
+							{value}
+						</Col>
+					{/if}
+				</Row>
+			{/each}
+		</Container>
+	</div>
 {/await}

@@ -55,7 +55,10 @@ def create_retrieve(model_class):
         for k, v in model_class.nodes.get(uid=pk).__dict__.items():
             if k in dict(model_class.__all_relationships__):
                 print("is rel", k)
-                data[k] = [{"label": x.label, "uid": x.uid} for x in v.all()]
+                data[k] = [
+                    {"label": x.label, "uid": x.uid, "real_type": x.real_type}
+                    for x in v.all()
+                ]
                 print(data[k])
             else:
                 print("is not rel", k)
@@ -65,14 +68,6 @@ def create_retrieve(model_class):
         return Response(data)
 
     return retrieve
-
-
-"""
-    {'Book': AppModels(app='test_app', model=<class 'test_app.models.Book'>, model_name='Book', fields={'title': {'type': 'property', 'property_type': 'StringProperty', 'default_value': None, 'required': False}, 'published': {'type': 'property', 'property_type': 'DateProperty', 'default_value': None, 'required': False}, 'author': {'type': 'relation', 'relation_type': 'HAS_AUTHOR', 'relation_to': 'Person', 'cardinality': 'ZeroOrMore', 'default_value': []}}),
- 'Person': AppModels(app='test_app', model=<class 'test_app.models.Person'>, model_name='Person', fields={'name': {'type': 'property', 'property_type': 'StringProperty', 'default_value': 'John', 'required': False}, 'age': {'type': 'property', 'property_type': 'IntegerProperty', 'default_value': 0, 'required': False}}),
- 'Stuff': AppModels(app='test_app', model=<class 'test_app.models.Stuff'>, model_name='Stuff', fields={'stuff_type': {'type': 'property', 'property_type': 'StringProperty', 'default_value': None, 'required': True}}),
- 'Thing': AppModels(app='test_app', model=<class 'test_app.models.Thing'>, model_name='Thing', fields={'name': {'type': 'property', 'property_type': 'StringProperty', 'default_value': None, 'required': True}, 'other_fact': {'type': 'property', 'property_type': 'StringProperty', 'default_value': None, 'required': True}})}
-"""
 
 
 def get_property_and_relation_data(request, model_class):

@@ -7,6 +7,20 @@
 	import { prevent_default } from 'svelte/internal';
 
 	import Form from '$lib/components/form.svelte';
+	import {
+		AppBar,
+		Button,
+		Card,
+		Container,
+		Row,
+		Col,
+		Chip,
+		Divider,
+		Icon,
+		ListItem,
+		Menu
+	} from 'svelte-materialify';
+	import { mdiContentSave } from '@mdi/js';
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 
@@ -48,11 +62,27 @@
 		const json = await resp.json();
 		console.log('response', json);
 		status = json.saved ? 'saved' : 'save error';
-		goto(`/${entity}/${json.id}/edit`);
+		goto(`/${entity}/${json.id}/`);
 	};
 </script>
 
-<h6>{status}</h6>
-<h1>{entity}</h1>
-
-<Form {submit_form} bind:form_data {entity} />
+<AppBar class="pl-2 pr-2 elevation-1">
+	<span slot="icon"
+		><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em">{entity}</span
+		></span
+	>
+	<span slot="title" class="text-capitalize">{form_data['label'] || `[new ${entity}]`}</span>
+	<div style="flex-grow:1" />
+	<Button
+		icon
+		size="small"
+		outline
+		type="submit"
+		value="submit"
+		on:click={submit_form}
+		class="green-text text-darken-2"><Icon path={mdiContentSave} /></Button
+	>
+</AppBar>
+<div class="mt-3">
+	<Form {submit_form} bind:form_data {entity} />
+</div>

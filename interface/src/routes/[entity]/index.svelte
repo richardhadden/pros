@@ -1,11 +1,24 @@
 <script>
 	import { onMount } from 'svelte';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 
 	import { page } from '$app/stores';
 	import { schema } from '$lib/stores.js';
 	import { prevent_default } from 'svelte/internal';
-
+	import {
+		AppBar,
+		Button,
+		Card,
+		Container,
+		Row,
+		Col,
+		Chip,
+		Divider,
+		Icon,
+		ListItem,
+		Menu
+	} from 'svelte-materialify';
+	import { mdiPlusBox } from '@mdi/js';
 	import Form from '$lib/components/form.svelte';
 
 	import NewEntityMenu from '$lib/components/new_entity_menu.svelte';
@@ -33,24 +46,43 @@
 	};
 </script>
 
-<h3 class="text-uppercase">{entity}s</h3>
-
-<div>
-	<a
-		href="/{entity}/new"
-		class="text-xs uppercase inline-block border border-green-700 bg-green-200 hover:bg-green-300 rounded-md p-2"
-		>➕ {entity}</a
-	>
-
-	{#if $schema[entity].subclasses}
-		<NewEntityMenu schema_data={$schema[entity].subclasses} />
-	{/if}
-</div>
-
 {#await set_page_data_from_endpoint then}
-	{#each page_data as item}
-		<div>
-			<a href="/{item.real_type}/{item.uid}/">{item.label}</a>
-		</div>
-	{/each}
+	<AppBar class="pl-2 pr-2 elevation-1">
+		<span slot="icon"
+			><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em">{entity}</span
+			></span
+		>
+		<span slot="title">All {entity}s</span>
+		<div style="flex-grow:1" />
+
+		<Button
+			icon
+			size="small"
+			outline
+			type="submit"
+			value="submit"
+			on:click={() => goto(`/${entity}/new//`)}
+			class="green-text text-darken-2 ml-2"><Icon path={mdiPlusBox} /></Button
+		>
+	</AppBar>
+	<div class="mt-3">
+		<Container style="width: 40em;">
+			{#each page_data as item}
+				<Row style="border-bottom: thin solid #eee">
+					<Col>
+						<Button
+							rounded
+							size="small"
+							on:click={() => goto(`/${item.real_type}/${item.uid}/`)}
+							class="mr-2 mb-2 chip primary-color"
+							><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em"
+								>{item.real_type}</span
+							>
+							{item.label}</Button
+						>
+					</Col>
+				</Row>
+			{/each}
+		</Container>
+	</div>
 {/await}

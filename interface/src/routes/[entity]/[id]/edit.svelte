@@ -1,12 +1,26 @@
 <script>
 	import { onMount } from 'svelte';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 
 	import { page } from '$app/stores';
 	import { schema } from '$lib/stores.js';
 	import { prevent_default } from 'svelte/internal';
 
 	import Form from '$lib/components/form.svelte';
+	import {
+		AppBar,
+		Button,
+		Card,
+		Container,
+		Row,
+		Col,
+		Chip,
+		Divider,
+		Icon,
+		ListItem,
+		Menu
+	} from 'svelte-materialify';
+	import { mdiContentSaveEdit, mdiEyeArrowLeft } from '@mdi/js';
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 	import { blur, fade } from 'svelte/transition';
@@ -64,10 +78,34 @@
 	};
 </script>
 
-<h4>Edit: <b>{form_data['label']}</b></h4>
-
 {#if data_loaded}
-	<div transition:fade={{ amount: 0.2 }}>
+	<AppBar class="pl-2 pr-2 elevation-1">
+		<span slot="icon"
+			><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em">{entity}</span
+			></span
+		>
+		<span slot="title">{form_data['label']}</span>
+		<div style="flex-grow:1" />
+		<Button
+			icon
+			size="small"
+			outline
+			type="submit"
+			value="submit"
+			on:click={() => goto(`/${entity}/${id}/`)}
+			class="green-text text-darken-2 ml-2"><Icon path={mdiEyeArrowLeft} /></Button
+		>
+		<Button
+			icon
+			size="small"
+			outline
+			type="submit"
+			value="submit"
+			on:click={submit_form}
+			class="red-text text-darken-2 ml-2"><Icon path={mdiContentSaveEdit} /></Button
+		>
+	</AppBar>
+	<div class="mt-3">
 		<Form {submit_form} bind:form_data {entity} />
 	</div>
 {:else}
