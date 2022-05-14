@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { schema } from '$lib/stores.js';
 	import { prevent_default } from 'svelte/internal';
-
+	import { _get_display_name } from '$lib/helpers.js';
 	import PageLayout from '$lib/components/page_layout.svelte';
 
 	import Form from '$lib/components/form.svelte';
@@ -53,7 +53,7 @@
 </script>
 
 {#await load_data then}
-	<PageLayout {entity}>
+	<PageLayout entity={_get_display_name($schema, entity)}>
 		<span slot="header_title">{page_data['label']}</span>
 		<span slot="buttons"
 			><Button
@@ -79,7 +79,7 @@
 								on:click={() => goto(`/${v.real_type}/${v.uid}/`)}
 								class="mr-2 mb-2 chip primary-color"
 								><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em"
-									>{v.real_type}</span
+									>{_get_display_name($schema, v.real_type)}</span
 								>
 								{v.label}</Button
 							>

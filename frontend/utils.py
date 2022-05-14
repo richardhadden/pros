@@ -18,7 +18,16 @@ PROS_MODELS = {}
 
 AppModel = namedtuple(
     "AppModels",
-    ["app", "model", "model_name", "properties", "relations", "fields", "subclasses"],
+    [
+        "app",
+        "model",
+        "model_name",
+        "meta",
+        "properties",
+        "relations",
+        "fields",
+        "subclasses",
+    ],
 )
 
 
@@ -41,11 +50,36 @@ def build_field(p):
         }
 
 
+import re
+
+
+def camel_case_split(str):
+
+    return " ".join(re.findall(r"[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))", str))
+
+
+def build_meta(model):
+    meta = (
+        {
+            k: v
+            for k, v in model.__dict__["Meta"].__dict__.items()
+            if not k.startswith("__")
+        }
+        if "Meta" in model.__dict__
+        else {}
+    )
+    meta["display_name"] = meta.get("display_name", None) or camel_case_split(
+        model.__name__
+    )
+    return meta
+
+
 def build_app_model(app_name, model, model_name):
     return AppModel(
         app=app_name,
         model=model,
         model_name=model_name,
+        meta=build_meta(model),
         properties={
             n
             for n, p in model.__all_properties__

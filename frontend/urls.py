@@ -197,6 +197,7 @@ def build_schema_from_pros_model(models, schema):
             "top_level": True if model.model.__bases__ == (ProsNode,) else False,
             "fields": model.fields,
             "app": model.app,
+            "meta": model.meta,
             **construct_subclass_hierarchy(model),
         }
     return schema

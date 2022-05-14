@@ -15,6 +15,9 @@ class Factoid(ProsNode):
     is_about_person = RelationshipTo("Person", "IS_ABOUT_PERSON")
     text = StringProperty()
 
+    class Meta:
+        abstract = True
+
 
 class Naming(Factoid):
     text = None
@@ -34,13 +37,17 @@ class Dance(Event):
 class InterpersonalRelation(Factoid):
     related_to = RelationshipTo("Person", "IS_RELATED_TO")
 
+    class Meta:
+        abstract = True
+
 
 class ParentalRelation(InterpersonalRelation):
     related_to = RelationshipTo("Person", "HAS_PARENT")
 
 
 class Entity(ProsNode):
-    pass
+    class Meta:
+        display_name_plural = "Entities"
 
 
 class Person(Entity):

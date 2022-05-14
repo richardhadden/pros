@@ -1,7 +1,8 @@
 <script>
 	export let schema_data;
 	export let top;
-
+	import { schema } from '$lib/stores';
+	import { _get_plural_display_name, _is_abstract } from '$lib/helpers.js';
 	import { goto } from '$app/navigation';
 	import { List, ListItem, ListGroup, Divider, Button, Icon } from 'svelte-materialify';
 	import { mdiPlusCircle } from '@mdi/js';
@@ -22,16 +23,20 @@
 		<Button
 			text
 			style="font-size: 0.75em;"
-			on:click={() => goto(`/${model.model_name.toLowerCase()}/`)}>{model.model_name}s</Button
+			on:click={() => goto(`/${model.model_name.toLowerCase()}/`)}
+			>{_get_plural_display_name($schema, model.model_name)}</Button
 		>
-		<span slot="append"
-			><Button
-				icon
-				on:click={() => goto(`/${model.model_name.toLowerCase()}/new/`)}
-				size="x-small"
-				class=""
-				><Icon path={mdiPlusCircle} />
-			</Button>
+
+		<span slot="append">
+			{#if !_is_abstract($schema, model.model_name)}
+				<Button
+					icon
+					on:click={() => goto(`/${model.model_name.toLowerCase()}/new/`)}
+					size="x-small"
+					class=""
+					><Icon path={mdiPlusCircle} />
+				</Button>
+			{/if}
 		</span>
 	</ListItem>
 
