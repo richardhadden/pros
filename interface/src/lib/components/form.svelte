@@ -6,6 +6,7 @@
 	import { prevent_default } from 'svelte/internal';
 	import { isEmpty, isNil } from 'ramda';
 	import { Avatar, Chip, Icon } from 'svelte-materialify';
+	import { mdiContentSaveEdit } from '@mdi/js';
 	import { mdiArrowRightThin } from '@mdi/js';
 	export let form_data;
 	export let submit_form;
@@ -82,7 +83,13 @@
 	{/each}
 	<Row>
 		<Col cols={12} class="d-flex justify-center">
-			<Button class="mt-3" outline type="submit" value="submit">Save</Button></Col
+			<!--<Button
+				fab
+				type="submit"
+				value="submit"
+				class="mt-3 red darken-2 white-text text-darken-2 ml-2"
+				><Icon path={mdiContentSaveEdit} class="ml-1" /></Button
+			>--></Col
 		>
 	</Row>
 

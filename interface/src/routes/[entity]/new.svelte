@@ -75,7 +75,7 @@
 </script>
 
 <PageLayout {entity}>
-	<span slot="header_title">{form_data['label'] || `[new ${entity}]`}</span>
+	<span slot="header_title">{form_data['label'] || `New ${entity}`}</span>
 	<span slot="buttons">
 		<Button
 			icon

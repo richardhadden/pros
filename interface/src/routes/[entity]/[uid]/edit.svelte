@@ -11,6 +11,8 @@
 	import { mdiContentSaveEdit, mdiEyeArrowLeft } from '@mdi/js';
 	import PageLayout from '$lib/components/page_layout.svelte';
 
+	import { _get_display_name } from '$lib/helpers.js';
+
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 	import { blur, fade } from 'svelte/transition';
 
@@ -74,11 +76,12 @@
 </script>
 
 {#if data_loaded}
-	<PageLayout {entity} action="edit">
+	<PageLayout entity={_get_display_name($schema, entity)} action="edit">
 		<span slot="header_title">{form_data['label']}</span>
 		<span slot="buttons">
 			<Button
 				icon
+				fab
 				size="small"
 				outline
 				type="submit"

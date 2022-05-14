@@ -667,16 +667,18 @@
 			/>
 		</div>
 
-		<div slot="append-outer" class="d-flex flex-column justify-center">
-			<Button
-				icon
-				size="small"
-				outline
-				type="submit"
-				value="submit"
-				on:click={open_dialog}
-				class="red-text text-darken-2 ml-2"><Icon path={mdiPlusBox} /></Button
-			>
+		<div slot="append-outer">
+			<div class="pt-3">
+				<Button
+					icon
+					size="small"
+					outline
+					type="submit"
+					value="submit"
+					on:click={open_dialog}
+					class="red-text text-darken-2 ml-2"><Icon path={mdiPlusBox} /></Button
+				>
+			</div>
 		</div>
 	</TextField>
 

@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import Select from '$lib/components/custom_svelte_select/Select.svelte';
 	import { schema } from '$lib/stores.js';
-	import { Chip, Dialog, AppBar } from 'svelte-materialify';
+	import { Chip, Dialog, AppBar, Button, Icon } from 'svelte-materialify';
+	import { mdiCloseCircle, mdiContentSaveEdit } from '@mdi/js';
 	export let selected = [];
 	export let on_change;
 	export let relation_to;
@@ -90,8 +91,6 @@
 			await get_field_options();
 		}
 	};
-
-	$: console.log('SELECTED', selected);
 </script>
 
 <Select
@@ -103,21 +102,35 @@
 />
 
 <Dialog bind:active={dialog_open} persistent>
-	<div class="pa-4">
-		<AppBar class="pl-2 pr-2 elevation-1">
+	<div class="">
+		<AppBar class="pl-2 pr-2 mb-5 elevation-2">
 			<span slot="icon"
 				><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em"
 					>{relation_to.toLowerCase()}</span
 				></span
 			>
-			<span slot="title">New {relation_to}</span>
+			<span slot="title">{modal_form_data?.label ?? `New ${relation_to}`}</span>
 			<div style="flex-grow:1" />
+
+			<Button
+				icon
+				size="small"
+				outline
+				type="submit"
+				value="submit"
+				on:click={submit_modal_form}
+				class="red-text text-darken-2 ml-2"><Icon path={mdiContentSaveEdit} /></Button
+			>
+			<Button icon size="small" on:click={close_dialog} class="ml-2">
+				<Icon path={mdiCloseCircle} />
+			</Button>
 		</AppBar>
-		<Form
-			submit_form={submit_modal_form}
-			bind:form_data={modal_form_data}
-			entity={relation_to.toLowerCase()}
-		/>
-		<span on:click={close_dialog}>close</span>
-	</div>
-</Dialog>
+		<div class="pa-4">
+			<Form
+				submit_form={submit_modal_form}
+				bind:form_data={modal_form_data}
+				entity={relation_to.toLowerCase()}
+			/>
+		</div>
+	</div></Dialog
+>
