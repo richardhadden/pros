@@ -74,7 +74,7 @@
 </script>
 
 {#if data_loaded}
-	<PageLayout {entity}>
+	<PageLayout {entity} action="edit">
 		<span slot="header_title">{form_data['label']}</span>
 		<span slot="buttons">
 			<Button
