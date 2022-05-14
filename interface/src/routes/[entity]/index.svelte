@@ -26,7 +26,6 @@
 	const BASE_URI = `http://127.0.0.1:8000/api`;
 
 	$: entity = $page.params.entity;
-	$: id = $page.params.id;
 
 	let page_data = [];
 	async function set_page_data_from_endpoint() {
@@ -66,7 +65,7 @@
 		>
 	</AppBar>
 	<div class="mt-3">
-		<Container style="width: 40em;">
+		<Container style="width: 60em;">
 			{#each page_data as item}
 				<Row style="border-bottom: thin solid #eee">
 					<Col>

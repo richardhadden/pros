@@ -21,7 +21,9 @@
 		<NavigationDrawer class="primary-color theme--dark align-self-stretch" style="width:25em">
 			<ListItem>
 				<span slot="prepend" class="ml-n2" />
-				<span class="text-h3">P</span><span class="text-h4">ROS</span><span class="text-h3">T</span>
+				<span class="text-h3">P</span><span class="text-h4"><i>r</i>os</span><span class="text-h3"
+					>T</span
+				>
 			</ListItem>
 			<Divider />
 			<List>

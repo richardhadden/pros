@@ -25,13 +25,13 @@
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 
 	$: entity = $page.params.entity;
-	$: id = $page.params.id;
+	$: uid = $page.params.uid;
 
 	let page_data = {};
 	$: console.log('PAGE_DATA', page_data);
 
 	async function load_data() {
-		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${id}`);
+		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${uid}`);
 		const response_json = await resp.json();
 		console.log('response_data', response_json);
 		page_data = Object.assign(
@@ -51,8 +51,6 @@
 	afterNavigate(load_data);
 </script>
 
-<h6>{status}</h6>
-
 {#await load_data then}
 	<AppBar class="pl-2 pr-2 elevation-1">
 		<span slot="icon"
@@ -67,17 +65,17 @@
 			outline
 			type="submit"
 			value="submit"
-			on:click={() => goto(`/${entity}/${id}/edit/`)}
+			on:click={() => goto(`/${entity}/${uid}/edit/`)}
 			class="green-text text-darken-2 ml-2"><Icon path={mdiFileDocumentEdit} /></Button
 		>
 	</AppBar>
 	<div class="mt-3">
-		<Container style="width: 40em;">
+		<Container style="width: 60em;">
 			{#each Object.entries(page_data) as [key, value]}
 				<Row style="border-bottom: thin solid #eee">
 					<Col cols={3} class="text-overline d-flex flex-col align-center">{key}</Col>
 
-					{#if typeof value === 'object'}
+					{#if $schema[entity]?.fields[key]?.type === 'relation'}
 						<Col cols={9} class="d-flex flex-col flex-wrap align-center pt-5">
 							{#each value as v}
 								<Button
@@ -94,7 +92,7 @@
 						</Col>
 					{:else}
 						<Col cols={9} class="d-flex flex-col flex-wrap align-center">
-							{value}
+							{value ? value : ''}
 						</Col>
 					{/if}
 				</Row>

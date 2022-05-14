@@ -26,7 +26,7 @@
 	import { blur, fade } from 'svelte/transition';
 
 	$: entity = $page.params.entity;
-	$: id = $page.params.id;
+	$: uid = $page.params.uid;
 
 	$: form_data = {};
 	$: console.log('FORM DATA', form_data);
@@ -34,18 +34,19 @@
 	let data_loaded = false;
 
 	async function set_form_data_from_endpoint() {
-		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${id}`);
+		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${uid}`);
 		const response_json = await resp.json();
-		console.log('response_data', response_json);
+
 		form_data = Object.assign(
 			{},
 			...Object.entries($schema[entity].fields).map(([k, v]) => ({
 				[k]:
 					$schema[entity].fields[k].type === 'relation'
-						? response_json[k].map((a) => ({ id: a.uid, label: a.label }))
+						? response_json[k].map((i) => ({ value: i.uid, label: i.label }))
 						: response_json[k]
 			}))
 		);
+		console.log('Form data on loading', form_data);
 		data_loaded = true;
 	}
 
@@ -54,13 +55,18 @@
 	onMount(set_form_data_from_endpoint);
 	afterNavigate(set_form_data_from_endpoint);
 
-	$: console.log('form_data_new', form_data);
 	let status = 'editing (unsaved)';
 
 	const submit_form = async () => {
-		console.log('submut', form_data);
+		const submission_data = Object.entries(form_data).reduce((obj, [k, v]) => {
+			obj[k] =
+				$schema[entity].fields[k].type === 'relation'
+					? v.map((r) => ({ uid: r.value, label: r.label }))
+					: v;
+			return obj;
+		}, {});
 
-		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${id}`, {
+		const resp = await fetch(`${BASE_URI}/${$schema[entity].app}/${entity}/${uid}`, {
 			method: 'PUT', // *GET, POST, PUT, DELETE, etc.
 			mode: 'cors', // no-cors, *cors, same-origin
 			cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
@@ -70,10 +76,10 @@
 				// 'Content-Type': 'application/x-www-form-urlencoded',
 			},
 
-			body: JSON.stringify(form_data)
+			body: JSON.stringify(submission_data)
 		});
 		const json = await resp.json();
-		console.log(json);
+
 		status = json.saved ? 'saved' : 'save error';
 	};
 </script>
@@ -92,7 +98,7 @@
 			outline
 			type="submit"
 			value="submit"
-			on:click={() => goto(`/${entity}/${id}/`)}
+			on:click={() => goto(`/${entity}/${uid}/`)}
 			class="green-text text-darken-2 ml-2"><Icon path={mdiEyeArrowLeft} /></Button
 		>
 		<Button

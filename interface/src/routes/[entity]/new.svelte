@@ -46,7 +46,13 @@
 	let status = 'new';
 
 	const submit_form = async () => {
-		console.log('submut', form_data);
+		const submission_data = Object.entries(form_data).reduce((obj, [k, v]) => {
+			obj[k] =
+				$schema[entity].fields[k].type === 'relation'
+					? v.map((r) => ({ uid: r.value, label: r.label }))
+					: v;
+			return obj;
+		}, {});
 		const resp = await fetch(BASE_URI + '/' + $schema[entity].app + '/' + entity + '/new/', {
 			method: 'POST', // *GET, POST, PUT, DELETE, etc.
 			mode: 'cors', // no-cors, *cors, same-origin
@@ -57,12 +63,12 @@
 				// 'Content-Type': 'application/x-www-form-urlencoded',
 			},
 
-			body: JSON.stringify(form_data)
+			body: JSON.stringify(submission_data)
 		});
 		const json = await resp.json();
-		console.log('response', json);
+
 		status = json.saved ? 'saved' : 'save error';
-		goto(`/${entity}/${json.id}/`);
+		goto(`/${entity}/${json.uid}/`);
 	};
 </script>
 

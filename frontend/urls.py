@@ -51,7 +51,6 @@ def create_autocomplete(model_class):
 def create_retrieve(model_class):
     def retrieve(self, request, pk=None):
         data = {}
-        print(">>>", model_class.nodes.get(uid=pk).__dict__.items())
         for k, v in model_class.nodes.get(uid=pk).__dict__.items():
             if k in dict(model_class.__all_relationships__):
                 print("is rel", k)
@@ -64,7 +63,7 @@ def create_retrieve(model_class):
                 print("is not rel", k)
                 data[k] = v
                 print(data[k])
-        print(">>>>>>", data)
+
         return Response(data)
 
     return retrieve
@@ -98,7 +97,7 @@ def create_create(model_class):
         object.save()
 
         for related_name, related in relation_data.items():
-            related_ids = [r["id"] for r in related]
+            related_ids = [r["uid"] for r in related]
             rel_manager = getattr(object, related_name)
             related_model = PROS_MODELS[
                 PROS_MODELS[model_class.__name__].fields[related_name]["relation_to"]
@@ -106,7 +105,7 @@ def create_create(model_class):
             for related_id in related_ids:
                 rel_manager.connect(related_model.nodes.get(uid=related_id))
 
-        return Response({"id": object.uid, "saved": True})
+        return Response({"uid": object.uid, "saved": True})
 
     return create
 
@@ -125,7 +124,7 @@ def create_update(model_class):
         object = model_class.nodes.get(uid=pk)
 
         for related_name, related in relation_data.items():
-            related_ids = [r["id"] for r in related]
+            related_ids = [r["uid"] for r in related]
             rel_manager = getattr(object, related_name)
             related_model = PROS_MODELS[
                 PROS_MODELS[model_class.__name__].fields[related_name]["relation_to"]
@@ -139,7 +138,7 @@ def create_update(model_class):
             for related_id in related_ids:
                 rel_manager.connect(related_model.nodes.get(uid=related_id))
 
-        return Response({"id": pk, "saved": True})
+        return Response({"uid": pk, "saved": True})
 
     return update
 

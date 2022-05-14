@@ -6,7 +6,6 @@ from neomodel import (
     UniqueIdProperty,
     RelationshipTo,
 )
-from django_neomodel import DjangoNode
 from pros_core.models import ProsNode
 
 
