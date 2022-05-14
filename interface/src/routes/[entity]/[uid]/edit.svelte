@@ -7,20 +7,9 @@
 	import { prevent_default } from 'svelte/internal';
 
 	import Form from '$lib/components/form.svelte';
-	import {
-		AppBar,
-		Button,
-		Card,
-		Container,
-		Row,
-		Col,
-		Chip,
-		Divider,
-		Icon,
-		ListItem,
-		Menu
-	} from 'svelte-materialify';
+	import { ProgressCircular, Button, Icon } from 'svelte-materialify';
 	import { mdiContentSaveEdit, mdiEyeArrowLeft } from '@mdi/js';
+	import PageLayout from '$lib/components/page_layout.svelte';
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 	import { blur, fade } from 'svelte/transition';
@@ -85,35 +74,30 @@
 </script>
 
 {#if data_loaded}
-	<AppBar class="pl-2 pr-2 elevation-1">
-		<span slot="icon"
-			><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em">{entity}</span
-			></span
-		>
-		<span slot="title">{form_data['label']}</span>
-		<div style="flex-grow:1" />
-		<Button
-			icon
-			size="small"
-			outline
-			type="submit"
-			value="submit"
-			on:click={() => goto(`/${entity}/${uid}/`)}
-			class="green-text text-darken-2 ml-2"><Icon path={mdiEyeArrowLeft} /></Button
-		>
-		<Button
-			icon
-			size="small"
-			outline
-			type="submit"
-			value="submit"
-			on:click={submit_form}
-			class="red-text text-darken-2 ml-2"><Icon path={mdiContentSaveEdit} /></Button
-		>
-	</AppBar>
-	<div class="mt-3">
+	<PageLayout {entity}>
+		<span slot="header_title">{form_data['label']}</span>
+		<span slot="buttons">
+			<Button
+				icon
+				size="small"
+				outline
+				type="submit"
+				value="submit"
+				on:click={() => goto(`/${entity}/${uid}/`)}
+				class="green-text text-darken-2 ml-2"><Icon path={mdiEyeArrowLeft} /></Button
+			>
+			<Button
+				icon
+				size="small"
+				outline
+				type="submit"
+				value="submit"
+				on:click={submit_form}
+				class="red-text text-darken-2 ml-2"><Icon path={mdiContentSaveEdit} /></Button
+			>
+		</span>
 		<Form {submit_form} bind:form_data {entity} />
-	</div>
+	</PageLayout>
 {:else}
-	loading...
+	<ProgressCircular />
 {/if}

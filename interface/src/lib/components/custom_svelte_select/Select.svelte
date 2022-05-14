@@ -16,7 +16,7 @@
 	export let id = null;
 	export let container = undefined;
 	export let input = undefined;
-	export let isMulti = true;
+	export let isMulti = false;
 	export let multiFullItemClearable = false;
 	export let isDisabled = false;
 	export let isCreatable = false;

@@ -40,4 +40,4 @@
 	}
 </script>
 
-<Select value={selected} items={options} on:select={updated_selected} />
+<Select value={selected} items={options} on:select={updated_selected} isMulti={true} />

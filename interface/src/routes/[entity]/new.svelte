@@ -22,6 +22,8 @@
 	} from 'svelte-materialify';
 	import { mdiContentSave } from '@mdi/js';
 
+	import PageLayout from '$lib/components/page_layout.svelte';
+
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 
 	$: entity = $page.params.entity;
@@ -72,23 +74,18 @@
 	};
 </script>
 
-<AppBar class="pl-2 pr-2 elevation-1">
-	<span slot="icon"
-		><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em">{entity}</span
-		></span
-	>
-	<span slot="title" class="text-capitalize">{form_data['label'] || `[new ${entity}]`}</span>
-	<div style="flex-grow:1" />
-	<Button
-		icon
-		size="small"
-		outline
-		type="submit"
-		value="submit"
-		on:click={submit_form}
-		class="green-text text-darken-2"><Icon path={mdiContentSave} /></Button
-	>
-</AppBar>
-<div class="mt-3">
+<PageLayout {entity}>
+	<span slot="header_title">{form_data['label'] || `[new ${entity}]`}</span>
+	<span slot="buttons">
+		<Button
+			icon
+			size="small"
+			outline
+			type="submit"
+			value="submit"
+			on:click={submit_form}
+			class="green-text text-darken-2"><Icon path={mdiContentSave} /></Button
+		>
+	</span>
 	<Form {submit_form} bind:form_data {entity} />
-</div>
+</PageLayout>
