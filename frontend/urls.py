@@ -105,7 +105,7 @@ def create_create(model_class):
             for related_id in related_ids:
                 rel_manager.connect(related_model.nodes.get(uid=related_id))
 
-        return Response({"uid": object.uid, "saved": True})
+        return Response({"uid": object.uid, "label": object.label, "saved": True})
 
     return create
 

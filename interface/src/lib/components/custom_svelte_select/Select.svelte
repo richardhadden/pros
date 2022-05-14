@@ -8,7 +8,8 @@
 	import _VirtualList from './VirtualList.svelte';
 	import _ClearIcon from './ClearIcon.svelte';
 	import debounce from './utils/debounce';
-	import { TextField } from 'svelte-materialify';
+	import { TextField, Button, Icon } from 'svelte-materialify';
+	import { mdiPlusBox } from '@mdi/js';
 	import MultiSelection from './MultiSelection.svelte';
 
 	const dispatch = createEventDispatcher();
@@ -79,7 +80,7 @@
 	export let inputAttributes = {};
 	export let listAutoWidth = true;
 	export let itemHeight = 40;
-	export let Icon = undefined;
+	//export let Icon = undefined;
 	export let iconProps = {};
 	export let showChevron = false;
 	export let showIndicator = false;
@@ -93,6 +94,8 @@
 	export let Selection = _Selection;
 
 	export let VirtualList = _VirtualList;
+
+	export let open_dialog;
 
 	function filterMethod(args) {
 		if (args.loadOptions && args.filterText.length > 0) return;
@@ -662,6 +665,18 @@
 				on:multiItemClear={handleMultiItemClear}
 				on:focus={handleFocus}
 			/>
+		</div>
+
+		<div slot="append-outer" class="d-flex flex-column justify-center">
+			<Button
+				icon
+				size="small"
+				outline
+				type="submit"
+				value="submit"
+				on:click={open_dialog}
+				class="red-text text-darken-2 ml-2"><Icon path={mdiPlusBox} /></Button
+			>
 		</div>
 	</TextField>
 
