@@ -87,6 +87,7 @@
 
 		if (json.saved) {
 			selected = [...selected, { value: json.uid, label: json.label }];
+			on_change(selected);
 			close_dialog();
 			await get_field_options();
 		}

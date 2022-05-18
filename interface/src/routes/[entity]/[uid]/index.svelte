@@ -68,7 +68,9 @@
 		>
 		{#each Object.entries(page_data) as [key, value]}
 			<Row style="border-bottom: thin solid #eee">
-				<Col cols={3} class="text-overline d-flex flex-col align-center">{key}</Col>
+				<Col cols={3} class="text-overline d-flex flex-col align-center"
+					>{key.replaceAll('_', ' ')}</Col
+				>
 
 				{#if $schema[entity]?.fields[key]?.type === 'relation'}
 					<Col cols={9} class="d-flex flex-col flex-wrap align-center pt-5">

@@ -1,27 +1,22 @@
 <script>
-	import Select from '$lib/components/custom_svelte_select/Select.svelte';
+	import { Textarea } from 'svelte-materialify';
 
-	const complexItems = [
-		{ value: 'chocolate', label: 'Chocolate', group: 'Sweet' },
-		{ value: 'pizza', label: 'Pizza', group: 'Savory' },
-		{ value: 'cake', label: 'Cake', group: 'Sweet', selectable: false },
-		{ value: 'chips', label: 'Chips', group: 'Savory' },
-		{ value: 'ice-cream', label: 'Ice Cream', group: 'Sweet' }
-	];
-
-	let value = [];
-	$: console.log('>>V', value);
-	function update_value(e) {
-		value = e.detail;
-	}
+	$: text = '';
 </script>
 
 <h1>Testbed</h1>
 
-<Select
-	items={complexItems}
-	isMulti={true}
-	showClearItem={false}
-	{value}
-	on:select={update_value}
-/>
+<div style="position: relative; border: thin solid black; height: 200px; width: 200px;">
+	<div
+		class="bottom"
+		contenteditable="true"
+		bind:innerHTML={text}
+		style="position: absolute; height: 200px; border: thin solid red; width: 200px;"
+	/>
+	<div
+		class="top"
+		contenteditable="true"
+		bind:innerHTML={text}
+		style="color: rgba(0,0,0,0); position: absolute; height:200px width: 200px;"
+	/>
+</div>

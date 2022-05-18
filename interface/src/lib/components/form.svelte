@@ -28,7 +28,7 @@
 		<Row style="border-bottom: thin solid #eee">
 			{#if field.type === 'relation'}
 				<Col cols={4} class="text-overline ">
-					<div>{field_name}</div>
+					<div>{field_name.replaceAll('_', ' ')}</div>
 					<div>
 						<Chip size="x-small" class="pl-0"
 							><Avatar style="position: relative; left: 0.8em;">⇨</Avatar><span

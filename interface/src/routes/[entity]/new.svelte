@@ -23,6 +23,7 @@
 	import { mdiContentSave } from '@mdi/js';
 
 	import PageLayout from '$lib/components/page_layout.svelte';
+	import { _get_display_name } from '$lib/helpers.js';
 
 	const BASE_URI = 'http://127.0.0.1:8000/api';
 
@@ -74,8 +75,10 @@
 	};
 </script>
 
-<PageLayout {entity}>
-	<span slot="header_title">{form_data['label'] || `New ${entity}`}</span>
+<PageLayout entity={_get_display_name($schema, entity)}>
+	<span slot="header_title"
+		>{form_data['label'] || `New ${_get_display_name($schema, entity)}`}</span
+	>
 	<span slot="buttons">
 		<Button
 			icon
@@ -84,7 +87,7 @@
 			type="submit"
 			value="submit"
 			on:click={submit_form}
-			class="green-text text-darken-2"><Icon path={mdiContentSave} /></Button
+			class="red-text text-darken-2"><Icon path={mdiContentSave} /></Button
 		>
 	</span>
 	<Form {submit_form} bind:form_data {entity} />
