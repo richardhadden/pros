@@ -29,6 +29,7 @@
     "type": "module",
     "dependencies": {
         "@mdi/js": "^6.6.96",
+        "diff": "^5.1.0",
         "ramda": "^0.28.0",
         "svelte-multiselect": "^5.0.1"
     }

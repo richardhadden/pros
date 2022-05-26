@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { Textarea } from 'svelte-materialify';
-
+	import * as Diff from 'diff/dist/diff';
 	$: text = '';
 
 	let selection = ``;
@@ -14,6 +14,8 @@
 		});
 	});*/
 
+	console.log(Diff.diffChars('abcde', 'abde'));
+
 	let top_container;
 	let bottom_container = null;
 	let mounted = false;
@@ -22,17 +24,17 @@
 
 	let annotations = [
 		{ start: 0, end: 2, color: 'blue' },
-		{ start: 5, end: 14, color: 'red' },
+		//{ start: 5, end: 14, color: 'red' },
 		{ start: 11, end: 20, color: 'blue' }
 	];
 
 	function node_content_to_frag(nodeList, char_count) {
 		const frag = document.createDocumentFragment();
 		for (const node of nodeList) {
-			console.log(node);
+			//console.log(node);
 			if (node.nodeName === '#text') {
-				const node_text = node.textContent.replaceAll('\n', '').replaceAll('\t', '');
-				console.log(`|${node_text}|`);
+				const node_text = node.textContent; //.replaceAll('\n', '').replaceAll('\t', '');
+				//console.log(`|${node_text}|`);
 				for (const [i, char] of Array.from(node_text).entries()) {
 					//console.log(char_count, char);
 
@@ -122,34 +124,49 @@
 		return offset + getSelectionOffsetRelativeTo(parentElement, currentNode.parentNode);
 	}
 
+	let previous_text_content = '';
+
 	function render_annotations(nodeList, e) {
 		if (e) {
-			console.log(e);
-			const insert_index = getCaretCharacterOffsetWithin(top_container);
+			//console.log(Diff.diffChars(previous_text_content, top_container.textContent));
 
-			for (const ann of annotations) {
-				console.debug(insert_index, ann.start, ann.end);
-				if (e.inputType === 'insertParagraph') {
-					continue;
-				}
-
-				if (insert_index < ann.start && e.inputType === 'deleteContentBackward') {
-					ann.start -= 1;
-				} else if ((insert_index - 1 < ann.start) & (e.inputType !== 'deleteContentBackward')) {
-					ann.start += 1;
-				}
-
-				if ((insert_index < ann.end) & (e.inputType === 'deleteContentBackward')) {
-					ann.end -= 1;
-				} else if ((insert_index <= ann.end) & (e.inputType !== 'deleteContentBackward')) {
-					ann.end += 1;
+			const edit_spans = Diff.diffChars(previous_text_content, top_container.textContent);
+			let current_index = 0;
+			for (const edit_span of edit_spans) {
+				//console.log(current_index);
+				if (edit_span.added) {
+					for (const ann of annotations) {
+						if (current_index <= ann.start) {
+							ann.start += edit_span.count;
+						}
+						if (current_index + 1 <= ann.end) {
+							ann.end += edit_span.count;
+						}
+					}
+					current_index += edit_span.count;
+				} else if (edit_span.removed) {
+					for (const ann of annotations) {
+						if (current_index < ann.start) {
+							ann.start -= edit_span.count;
+						}
+						if (current_index + 1 <= ann.end) {
+							//console.log('remove', current_index);
+							ann.end -= edit_span.count;
+						}
+					}
+				} else {
+					current_index += edit_span.count;
 				}
 			}
 		}
+
+		annotations = annotations.filter((ann) => ann.end > ann.start);
 		bottom_container.innerHTML = '';
 
 		const [frag, cc] = node_content_to_frag(nodeList, 0);
 		bottom_container.append(frag);
+		previous_text_content = top_container.textContent;
+		console.log(annotations);
 	}
 
 	let current_selection = null;
@@ -169,8 +186,9 @@
 					top_container.contains(selection.anchorNode)
 				) {
 					const start = getSelectionOffsetRelativeTo(top_container, null, selection);
-					//console.log(start, start + selection.toString().length);
-					current_selection = { start: start, end: start + selection.toString().replace.length };
+
+					console.log(start, start + selection.toString().length, selection.toString());
+					current_selection = { start: start, end: start + selection.toString().length };
 				}
 			} catch (TypeError) {}
 		});
