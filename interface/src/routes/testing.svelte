@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { Textarea } from 'svelte-materialify';
+	import { Container, Textarea, Row, Col } from 'svelte-materialify';
 	import * as Diff from 'diff/dist/diff';
 	$: text = '';
 
@@ -14,19 +14,40 @@
 		});
 	});*/
 
-	console.log(Diff.diffChars('abcde', 'abde'));
-
 	let top_container;
 	let bottom_container = null;
 	let mounted = false;
 
 	let rendered_html = '';
 
-	let annotations = [
+	$: annotations = [
 		//{ start: 0, end: 2, color: 'blue' },
 		//{ start: 5, end: 14, color: 'red' },
 		//{ start: 11, end: 20, color: 'blue' }
 	];
+
+	// NO, USE AN ARRAY NOT AN OBJECT, y'eejit.
+	let underline_slots = [];
+
+	function get_underline_slot(id) {
+		const index = underline_slots.indexOf(id);
+		if (index >= 0) {
+			return index;
+		}
+		for (let si = 0; si < underline_slots.length; si++) {
+			if (underline_slots[si] === null) {
+				underline_slots[si] = id;
+				return si;
+			}
+		}
+		const new_slot_index = underline_slots.length;
+		underline_slots[new_slot_index] = id;
+		return new_slot_index;
+	}
+
+	function remove_from_underline_slots(id) {
+		underline_slots[underline_slots.indexOf(id)] = null;
+	}
 
 	function node_content_to_frag(nodeList, char_count) {
 		const frag = document.createDocumentFragment();
@@ -43,13 +64,30 @@
 					span.style = 'position: relative';
 
 					for (const ann of annotations) {
+						// Clean up annotations that have already ended
+						if (char_count == ann.end) {
+							//console.log('removing', ann.end, char_count);
+							remove_from_underline_slots(ann.id);
+						}
 						//console.log(char, char_count, ann.start);
 						if ((char_count >= ann.start) & (char_count + 1 <= ann.end)) {
+							const underline_slot = get_underline_slot(ann.id);
+							//console.log('underline_slot', underline_slot, ann.id);
+							const underline_offset = 1 - underline_slot * 3;
+							//console.log(ann.color, underline_slot, underline_offset);
 							//console.log(char, char_count);
 							const inner_span = document.createElement('span');
-							inner_span.style = `position: absolute; display: inline; height:100%; width: 100%; left: 0; border-bottom: 2px solid ${ann.color};  bottom: 0; opacity: 0.3;`;
+
+							inner_span.style = `border-sizing: border-box; position: absolute; display: inline; height:100%; width: 100%; left: 0; border-bottom: 2px solid ${
+								ann.color
+							};  bottom: ${underline_offset}px; opacity: 0.3; background-color: ${
+								ann.id === hovered_annotation_id ? ann.color : 'none'
+							};`;
 
 							span.appendChild(inner_span);
+							//if (char_count + 1 == ann.end) {
+							//	remove_from_underline_slots(ann.id);
+							//}
 						}
 					}
 					frag.appendChild(span);
@@ -109,9 +147,7 @@
 				.replaceAll('\t', '')
 				.replaceAll('\n', '').length;
 
-			console.log(currentNode.textContent.substring(0, currentRange.startOffset));
-
-			console.log('o', offset);
+			//console.log(currentNode.textContent.substring(0, currentRange.startOffset));
 		}
 
 		if (currentNode === parentElement) {
@@ -128,7 +164,7 @@
 		while ((prevSibling = (prevSibling || currentNode).previousSibling)) {
 			nodeContent = prevSibling.innerText || prevSibling.nodeValue || '';
 			offset += nodeContent.replaceAll('\n', '').replace('\t', '').length;
-			console.log('offset', offset);
+			//console.log('offset', offset);
 		}
 
 		return offset + getSelectionOffsetRelativeTo(parentElement, currentNode.parentNode);
@@ -215,13 +251,19 @@
 		const [frag, cc] = node_content_to_frag(nodeList, 0);
 		bottom_container.append(frag);
 		previous_text_content = top_container.textContent;
-		console.log(annotations);
+		//console.log(annotations);
 	}
 
 	let current_selection = null;
+	$: selected_annotations = [];
 
-	function add_annotation() {
-		annotations = [...annotations, { ...current_selection, color: 'green' }];
+	function add_annotation(color) {
+		annotations = [...annotations, { ...current_selection, id: crypto.randomUUID(), color: color }];
+		render_annotations(top_container.childNodes, 0);
+	}
+
+	function delete_annotation(id) {
+		annotations = annotations.filter((ann) => ann.id !== id);
 		render_annotations(top_container.childNodes, 0);
 	}
 
@@ -237,6 +279,12 @@
 					const start = getSelectionOffsetRelativeTo(top_container, null, selection);
 					const end = getSelectionFocusOffsetRelativeTo(top_container, null, selection);
 
+					if (start) {
+						selected_annotations = annotations
+							.filter((ann) => start >= ann.start && end + 1 <= ann.end)
+							.map((ann) => ann.id);
+					}
+
 					//console.log(start, start + selection.toString().length, selection.toString());
 					current_selection = { start: start, end: end, text: selection.toString() };
 				}
@@ -245,25 +293,53 @@
 
 		render_annotations(top_container.childNodes, 0);
 	});
+
+	$: hovered_annotation_id = null;
+
+	function set_hovered_annotation_id(id) {
+		console.log('hovered', id);
+		hovered_annotation_id = id;
+		render_annotations(top_container.childNodes, 0);
+	}
 </script>
 
 <h1>Testbed ff</h1>
 <div style="position: relative">
-	<button on:click={add_annotation} value="add ann">Add Annotation</button>
+	<button on:click={() => add_annotation('green')} value="add ann">Green</button>
+	<button on:click={() => add_annotation('red')} value="add ann">Red</button>
+	<button on:click={() => add_annotation('blue')} value="add ann">Blue</button>
+	<button on:click={() => document.execCommand('bold')}>BOLD</button>
 </div>
-<div style="position: relative">
-	<div
-		class="top"
-		contenteditable="true"
-		bind:this={top_container}
-		on:input={(e) => render_annotations(top_container.childNodes, e)}
-	>
-		<h1>hello</h1>
-		One two three four five six
-	</div>
+<Container>
+	<Row style="position: relative;">
+		<Col>
+			<div
+				class="top"
+				contenteditable="true"
+				bind:this={top_container}
+				on:input={(e) => render_annotations(top_container.childNodes, e)}
+			>
+				<h1>hello</h1>
+				<p>One two three four five six</p>
+				<h2>one two three</h2>
+			</div>
 
-	<div id="bottom" class="bottom" bind:this={bottom_container} />
-</div>
+			<div id="bottom" class="bottom" bind:this={bottom_container} />
+		</Col>
+		<Col style="position: absolute; left: 810px;">
+			Annotations
+			{#each annotations as ann}
+				<p
+					on:mouseenter={() => set_hovered_annotation_id(ann.id)}
+					on:mouseleave={() => set_hovered_annotation_id(null)}
+					style="color: {selected_annotations.includes(ann.id) ? 'blue' : 'black'}"
+				>
+					{ann.text} <button on:click={() => delete_annotation(ann.id)}>X</button>
+				</p>
+			{/each}
+		</Col>
+	</Row>
+</Container>
 
 <style>
 	.top,
@@ -271,6 +347,7 @@
 		height: 600px;
 		width: 800px;
 		position: absolute;
+		line-height: 3em;
 	}
 
 	.top {
