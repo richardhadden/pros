@@ -667,7 +667,6 @@
 				{getSelectionLabel}
 				{activeValue}
 				{isDisabled}
-				{multiFullItemClearable}
 				on:multiItemClear={handleMultiItemClear}
 				on:focus={handleFocus}
 			/>
