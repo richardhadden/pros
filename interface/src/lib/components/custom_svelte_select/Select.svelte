@@ -870,7 +870,7 @@
 		left: 0;
 		right: 0;
 		margin: auto;
-		-webkit-transform: none;
+		/*-webkit-transform: none;*/
 	}
 
 	.spinner_path {
