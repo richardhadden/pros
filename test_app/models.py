@@ -47,6 +47,8 @@ class ParentalRelation(InterpersonalRelation):
 
 
 class Entity(ProsNode):
+    has_factoid_about = RelationshipFrom("Factoid", "IS_ABOUT_PERSON")
+
     class Meta:
         display_name_plural = "Entities"
 
