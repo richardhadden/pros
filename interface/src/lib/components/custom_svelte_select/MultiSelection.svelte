@@ -13,10 +13,13 @@
 		event.stopPropagation();
 		dispatch('multiItemClear', { i });
 	}
+
+	$: console.log('MS value', value);
 </script>
 
 <div>
 	{#each value as item, i}
+		<div>{i}</div>
 		<Chip size="small" close on:close={(event) => handleClear(i, event)} class="mr-1 mb-1">
 			<div class="multiSelectItem_label">
 				{@html getSelectionLabel(item)}

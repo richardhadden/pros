@@ -19,11 +19,12 @@
 <MaterialApp>
 	<div class="d-flex justify-left" style="height: 100vh">
 		<NavigationDrawer class="primary-color theme--dark align-self-stretch" style="width:25em">
-			<ListItem>
+			<ListItem
+				><!--
 				<span slot="prepend" class="ml-n2" />
 				<span class="text-h3">P</span><span class="text-h4"><i>r</i>os</span><span class="text-h3"
 					>T</span
-				>
+				>-->experiment
 			</ListItem>
 			<Divider />
 			<List>

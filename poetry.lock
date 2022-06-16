@@ -282,6 +282,14 @@ Shapely = "1.7.1"
 six = "1.16.0"
 
 [[package]]
+name = "nuitka"
+version = "0.8.3"
+description = "Python compiler with full language support and CPython compatibility"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "packaging"
 version = "21.3"
 description = "Core utilities for Python packages"
@@ -524,7 +532,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "8d0ee9d56d305e63b26a54f4f4a0aa6b9d08ed45f77c0dce09ff5f423b3632ac"
+content-hash = "db9ee87826db5a8f13c22c0a3c0c62b57b8ef4e46d829f5a15644427f93b6ce9"
 
 [metadata.files]
 appnope = [
@@ -637,6 +645,9 @@ neobolt = [
 neomodel = [
     {file = "neomodel-4.0.8-py3-none-any.whl", hash = "sha256:c065e5f8e62388d54486e3c6d08834d3dd574893d5c81b56638f917def681dde"},
     {file = "neomodel-4.0.8.tar.gz", hash = "sha256:9049fa006149de741abc0c2b78725f07b90a6a630f3fb43df64efeb9a3a0071b"},
+]
+nuitka = [
+    {file = "Nuitka-0.8.3.tar.gz", hash = "sha256:461ed06a73414c4ad93d89e7af02e08b9ec7f65850a559db230c83cfe726f509"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},

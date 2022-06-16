@@ -24,6 +24,8 @@
 	export let isFocused = false;
 	export let value = [];
 
+	$: console.log('select value', value);
+
 	export let filterText = '';
 	export let placeholder = 'Select...';
 	export let placeholderAlwaysShow = false;
@@ -426,16 +428,19 @@
 	}
 
 	function handleMultiItemClear(event) {
+		console.log('multi item clear clicked', event);
 		const { detail } = event;
 		const itemToRemove = value[detail ? detail.i : value.length - 1];
-
+		console.log('item to remove', itemToRemove);
 		if (value.length === 1) {
 			value = [];
 		} else {
+			console.log('else remove item');
 			value = value.filter((item) => {
 				return item !== itemToRemove;
 			});
 		}
+		console.log('post-value-removed', value);
 
 		dispatch('clear', itemToRemove);
 	}
@@ -508,7 +513,8 @@
 	}
 
 	export function handleClear() {
-		value = undefined;
+		console.log('handle clear called');
+		//value = undefined;
 		listOpen = false;
 		dispatch('clear', value);
 		handleFocus();

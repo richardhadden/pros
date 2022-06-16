@@ -2,23 +2,11 @@
 	import { onMount } from 'svelte';
 	import { Container, Textarea, Row, Col } from 'svelte-materialify';
 	import * as Diff from 'diff/dist/diff';
+	import { xlink_attr } from 'svelte/internal';
 	$: text = '';
-
-	let selection = ``;
-	/*
-	onMount(() => {
-		// Once the component is mounted, we can access the document:
-		document.addEventListener(`selectionchange`, () => {
-			selection = document.getSelection();
-			console.log(selection);
-		});
-	});*/
 
 	let top_container;
 	let bottom_container = null;
-	let mounted = false;
-
-	let rendered_html = '';
 
 	$: annotations = [
 		//{ start: 0, end: 2, color: 'blue' },
@@ -52,13 +40,10 @@
 	function node_content_to_frag(nodeList, char_count) {
 		const frag = document.createDocumentFragment();
 		for (const node of nodeList) {
-			//console.log(node);
 			if (node.nodeName === '#text') {
-				const node_text = node.textContent; //.replaceAll('\n', '').replaceAll('\t', '');
-				//console.log(`|${node_text}|`);
-				for (const [i, char] of Array.from(node_text).entries()) {
-					//console.log(char_count, char);
+				const node_text = node.textContent;
 
+				for (const [i, char] of Array.from(node_text).entries()) {
 					const span = document.createElement('span');
 					span.textContent = char;
 					span.style = 'position: relative';
@@ -66,16 +51,14 @@
 					for (const ann of annotations) {
 						// Clean up annotations that have already ended
 						if (char_count == ann.end) {
-							//console.log('removing', ann.end, char_count);
 							remove_from_underline_slots(ann.id);
 						}
-						//console.log(char, char_count, ann.start);
+
 						if ((char_count >= ann.start) & (char_count + 1 <= ann.end)) {
 							const underline_slot = get_underline_slot(ann.id);
-							//console.log('underline_slot', underline_slot, ann.id);
+
 							const underline_offset = 1 - underline_slot * 3;
-							//console.log(ann.color, underline_slot, underline_offset);
-							//console.log(char, char_count);
+
 							const inner_span = document.createElement('span');
 
 							inner_span.style = `border-sizing: border-box; position: absolute; display: inline; height:100%; width: 100%; left: 0; border-bottom: 2px solid ${
@@ -85,16 +68,12 @@
 							};`;
 
 							span.appendChild(inner_span);
-							//if (char_count + 1 == ann.end) {
-							//	remove_from_underline_slots(ann.id);
-							//}
 						}
 					}
 					frag.appendChild(span);
 					if (char !== '\t' && char !== '\n') {
 						char_count += 1;
 					}
-					//char_count += 1;
 				}
 			} else {
 				const elem = document.createElement(node.nodeName);
@@ -146,8 +125,6 @@
 				.substring(0, currentRange.startOffset)
 				.replaceAll('\t', '')
 				.replaceAll('\n', '').length;
-
-			//console.log(currentNode.textContent.substring(0, currentRange.startOffset));
 		}
 
 		if (currentNode === parentElement) {
@@ -164,7 +141,6 @@
 		while ((prevSibling = (prevSibling || currentNode).previousSibling)) {
 			nodeContent = prevSibling.innerText || prevSibling.nodeValue || '';
 			offset += nodeContent.replaceAll('\n', '').replace('\t', '').length;
-			//console.log('offset', offset);
 		}
 
 		return offset + getSelectionOffsetRelativeTo(parentElement, currentNode.parentNode);
@@ -212,7 +188,6 @@
 		const edit_spans = Diff.diffChars(previous_text_content, top_container.textContent);
 		let current_index = 0;
 		for (const edit_span of edit_spans) {
-			//console.log(current_index);
 			if (edit_span.added) {
 				for (const ann of annotations) {
 					if (current_index <= ann.start) {
@@ -229,7 +204,6 @@
 						ann.start -= edit_span.count;
 					}
 					if (current_index + 1 <= ann.end) {
-						//console.log('remove', current_index);
 						ann.end -= edit_span.count;
 					}
 				}
@@ -241,7 +215,6 @@
 
 	function render_annotations(nodeList, e) {
 		if (e) {
-			//console.log(Diff.diffChars(previous_text_content, top_container.textContent));
 			update_annotation_indexes();
 		}
 
@@ -251,14 +224,17 @@
 		const [frag, cc] = node_content_to_frag(nodeList, 0);
 		bottom_container.append(frag);
 		previous_text_content = top_container.textContent;
-		//console.log(annotations);
 	}
 
 	let current_selection = null;
 	$: selected_annotations = [];
 
 	function add_annotation(color) {
-		annotations = [...annotations, { ...current_selection, id: crypto.randomUUID(), color: color }];
+		annotations = [...annotations, { ...current_selection, id: crypto.randomUUID(), color: color }]
+			.slice()
+			.sort((a, b) => {
+				return a.start < b.start ? -1 : a.start > b.start ? 1 : 0;
+			});
 		render_annotations(top_container.childNodes, 0);
 	}
 
@@ -267,10 +243,12 @@
 		render_annotations(top_container.childNodes, 0);
 	}
 
+	$: console.log(annotations);
+
 	onMount(() => {
 		document.addEventListener('selectionchange', () => {
 			const selection = document.getSelection();
-			//console.log(selection);
+
 			try {
 				if (
 					selection.anchorNode === top_container ||
@@ -285,7 +263,6 @@
 							.map((ann) => ann.id);
 					}
 
-					//console.log(start, start + selection.toString().length, selection.toString());
 					current_selection = { start: start, end: end, text: selection.toString() };
 				}
 			} catch (TypeError) {}
@@ -348,16 +325,22 @@
 		width: 800px;
 		position: absolute;
 		line-height: 3em;
+		border-radius: 10px;
+		padding: 1em;
+	}
+
+	.top:focus,
+	.bottom:focus {
+		outline: none;
 	}
 
 	.top {
-		border: thin solid red;
+		border: thin solid gray;
 		z-index: 10;
-		color: rgba(200, 0, 0, 0);
+		color: rgba(200, 0, 0, 0.2);
 		caret-color: black;
 	}
 	.bottom {
-		border: thin solid blue;
 		z-index: 0;
 	}
 </style>
