@@ -5,6 +5,7 @@ from neomodel import (
     IntegerProperty,
     UniqueIdProperty,
     RelationshipTo,
+    RelationshipFrom,
 )
 from pros_core.models import ProsNode
 
@@ -55,7 +56,7 @@ class Person(Entity):
 
 
 class Source(ProsNode):
-    pass
+    is_source_of = RelationshipFrom("Factoid", "HAS_SOURCE")
 
 
 class Letter(Source):

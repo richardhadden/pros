@@ -25,6 +25,7 @@ AppModel = namedtuple(
         "meta",
         "properties",
         "relations",
+        "reverse_relations",
         "fields",
         "subclasses",
     ],
@@ -39,7 +40,7 @@ def build_field(p):
             "default_value": p.default,
             "required": p.required,
         }
-    if isinstance(p, RelationshipDefinition):
+    if isinstance(p, RelationshipDefinition) and p.definition["direction"] == 1:
         print(p.__dict__)
         return {
             "type": "relation",
@@ -85,7 +86,9 @@ def build_app_model(app_name, model, model_name):
             for n, p in model.__all_properties__
             if not isinstance(p, UniqueIdProperty)
         },
-        relations={n for n, p in model.__all_relationships__},
+        relations={
+            n for n, p in model.__all_relationships__ if p.definition["direction"] == 1
+        },  # This check for direction is so we can only set on the TO side
         fields={
             n: build_field(p)
             for n, p in (
@@ -93,6 +96,18 @@ def build_app_model(app_name, model, model_name):
                 *model.__all_relationships__,
             )
             if not isinstance(p, UniqueIdProperty) and n != "real_type"
+            if build_field(p)
+        },
+        reverse_relations={
+            n: {
+                "type": "relation",
+                "relation_type": p.__dict__["definition"]["relation_type"],
+                "relation_to": p.__dict__["_raw_class"],
+                "cardinality": p.__dict__["manager"].__name__,
+                "default_value": [],
+            }
+            for n, p in model.__all_relationships__
+            if p.definition["direction"] == -1
         },
         subclasses={
             m.__name__: build_app_model(app_name, m, m.__name__)
