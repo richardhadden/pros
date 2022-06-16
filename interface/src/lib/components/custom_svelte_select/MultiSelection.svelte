@@ -5,9 +5,9 @@
 	const dispatch = createEventDispatcher();
 
 	export let value = [];
-	export let activeValue = undefined;
-	export let isDisabled = false;
-	export let multiFullItemClearable = false;
+	//export let activeValue = undefined;
+	//export let isDisabled = false;
+	//	export let multiFullItemClearable = false;
 	export let getSelectionLabel = undefined;
 
 	function handleClear(i, event) {
