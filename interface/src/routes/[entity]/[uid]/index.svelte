@@ -7,7 +7,7 @@
 	import { object_without_properties, prevent_default } from 'svelte/internal';
 	import { _get_display_name, _get_plural_display_name } from '$lib/helpers.js';
 	import PageLayout from '$lib/components/page_layout.svelte';
-	import { groupBy } from 'ramda';
+	import { groupBy, keys } from 'ramda';
 
 	import Form from '$lib/components/form.svelte';
 	import {
@@ -109,39 +109,41 @@
 		{/each}
 		<Row class="mt-10">
 			{#each Object.entries(reverse_relations) as [rel_type, rel_group]}
-				<Col cols={3} class="text-overline d-flex flex-col align-center"
-					>{rel_type.replaceAll('_', ' ')}</Col
-				>
-				<Col cols={9}>
-					{#each Object.entries(rel_group) as [related_type, related_list]}
-						<Row style="border-bottom: thin solid #eee" class="pt-2">
-							<Col cols={3}>
-								<div>
-									<Chip size="x-small" class="pl-0 mt-1" style="padding-right: 4px;"
-										><Avatar style="position: relative; left: 0.8em;">⇨</Avatar><span
-											style="position: relative; top: 0.1em"
-											>{_get_plural_display_name($schema, related_type)}</span
-										></Chip
-									>
-								</div>
-							</Col>
-							<Col>
-								{#each related_list as item}
-									<Button
-										rounded
-										size="small"
-										on:click={() => goto(`/${item.real_type}/${item.uid}/`)}
-										class="mr-2 mb-2 chip indigo white-text"
-										><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em"
-											>{_get_display_name($schema, item.real_type)}</span
+				{#if Object.keys(rel_group).length > 0}
+					<Col cols={3} class="text-overline d-flex flex-col align-center">
+						{rel_type.replaceAll('_', ' ')}
+					</Col>
+					<Col cols={9}>
+						{#each Object.entries(rel_group) as [related_type, related_list]}
+							<Row style="border-bottom: thin solid #eee" class="pt-2">
+								<Col cols={3}>
+									<div>
+										<Chip size="x-small" class="pl-0 mt-1 text-overline" style="padding-right: 4px;"
+											><Avatar style="position: relative; left: 0.8em;">⇨</Avatar><span
+												style="position: relative; top: 0.1em"
+												>{_get_plural_display_name($schema, related_type)}</span
+											>
+										</Chip>
+									</div>
+								</Col>
+								<Col>
+									{#each related_list as item}
+										<Button
+											rounded
+											size="small"
+											on:click={() => goto(`/${item.real_type}/${item.uid}/`)}
+											class="mr-2 mb-2 chip indigo white-text"
+											><span class="text-overline mr-2" style="font-size: 0.5em; padding-top: 0.3em"
+												>{_get_display_name($schema, item.real_type)}</span
+											>
+											{item.label}</Button
 										>
-										{item.label}</Button
-									>
-								{/each}
-							</Col>
-						</Row>
-					{/each}
-				</Col>
+									{/each}
+								</Col>
+							</Row>
+						{/each}
+					</Col>
+				{/if}
 			{/each}
 		</Row>
 	</PageLayout>

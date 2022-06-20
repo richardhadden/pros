@@ -6,7 +6,8 @@
 		Button,
 		Icon,
 		MaterialApp,
-		Divider
+		Divider,
+		Footer
 	} from 'svelte-materialify';
 	import { mdiViewDashboard, mdiAccountBox, mdiGavel } from '@mdi/js';
 	import SideBarEntityMenu from '$lib/components/side_bar_entity_menu.svelte';
@@ -16,9 +17,12 @@
 	let schema_loaded = get_schema();
 </script>
 
-<MaterialApp>
-	<div class="d-flex justify-left" style="height: 100vh">
-		<NavigationDrawer class="primary-color theme--dark align-self-stretch" style="width:25em">
+<MaterialApp style="">
+	<div class="d-flex justify-left;">
+		<NavigationDrawer
+			class="primary-color theme--dark align-self-stretch"
+			style="width:25em; min-height: 100vh;"
+		>
 			<ListItem
 				><!--
 				<span slot="prepend" class="ml-n2" />
@@ -48,4 +52,5 @@
 			{/await}
 		</main>
 	</div>
+	<Footer>Footer</Footer>
 </MaterialApp>

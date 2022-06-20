@@ -7,7 +7,7 @@
 	import { prevent_default } from 'svelte/internal';
 
 	import Form from '$lib/components/form.svelte';
-	import { ProgressCircular, Button, Icon } from 'svelte-materialify';
+	import { ProgressCircular, Button, Icon, Snackbar } from 'svelte-materialify';
 	import { mdiContentSaveEdit, mdiEyeArrowLeft } from '@mdi/js';
 	import PageLayout from '$lib/components/page_layout.svelte';
 
@@ -71,8 +71,12 @@
 		});
 		const json = await resp.json();
 
-		status = json.saved ? 'saved' : 'save error';
+		snackbar_text = json.saved ? 'Saved successfully' : 'save error';
+		snackbar = true;
 	};
+
+	let snackbar = false;
+	let snackbar_text = 'Save successfully';
 </script>
 
 {#if data_loaded}
@@ -100,6 +104,10 @@
 			>
 		</span>
 		<Form {submit_form} bind:form_data {entity} />
+		<Snackbar class="flex-column" bind:active={snackbar} bottom center timeout={1000}>
+			{snackbar_text}
+			<div class="mt-1" />
+		</Snackbar>
 	</PageLayout>
 {:else}
 	<ProgressCircular />
