@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
+	import Keydown from 'svelte-keydown';
 
 	import { page } from '$app/stores';
 	import { schema } from '$lib/stores.js';
@@ -78,6 +79,18 @@
 	let snackbar = false;
 	let snackbar_text = 'Save successfully';
 </script>
+
+<Keydown
+	on:combo={(e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (e.detail == 'Meta-s') {
+			console.log('YESS');
+			console.log(e.detail);
+			return false;
+		}
+	}}
+/>
 
 {#if data_loaded}
 	<PageLayout entity={_get_display_name($schema, entity)} action="edit">

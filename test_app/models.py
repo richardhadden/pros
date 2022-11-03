@@ -21,10 +21,12 @@ class Factoid(ProsNode):
 
 
 class Naming(Factoid):
-    text = None
     title = StringProperty()
     first_name = StringProperty()
     last_name = StringProperty()
+
+    class Meta:
+        text_filter_fields = ["title", "first_name", "last_name", "text"]
 
 
 class Event(Factoid):
@@ -33,6 +35,9 @@ class Event(Factoid):
 
 class Dance(Event):
     dance_partner = RelationshipTo("Person", "HAS_PRIMARY_DANCE_PARTNER")
+
+    class Meta:
+        text_filter_fields = ["text"]
 
 
 class InterpersonalRelation(Factoid):

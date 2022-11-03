@@ -1,4 +1,4 @@
-from neomodel import StructuredNode, UniqueIdProperty, StringProperty
+from neomodel import StringProperty, StructuredNode, UniqueIdProperty
 
 
 class ProsNode(StructuredNode):
@@ -9,3 +9,6 @@ class ProsNode(StructuredNode):
     def save(self):
         self.real_type = type(self).__name__.lower()
         super().save()
+
+    def __hash__(self):
+        return hash(self.uid)

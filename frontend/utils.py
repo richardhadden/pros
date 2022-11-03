@@ -28,6 +28,7 @@ AppModel = namedtuple(
         "reverse_relations",
         "fields",
         "subclasses",
+        "subclasses_as_list",
     ],
 )
 
@@ -41,7 +42,7 @@ def build_field(p):
             "required": p.required,
         }
     if isinstance(p, RelationshipDefinition) and p.definition["direction"] == 1:
-        print(p.__dict__)
+
         return {
             "type": "relation",
             "relation_type": p.__dict__["definition"]["relation_type"],
@@ -73,6 +74,20 @@ def build_meta(model):
         model.__name__
     )
     return meta
+
+
+def build_subclasses_as_list(
+    model,
+):
+    subclasses = []
+
+    if not model.__subclasses__():
+        return subclasses
+
+    for subclass in model.__subclasses__():
+        subclasses.append(subclass)
+        subclasses += build_subclasses_as_list(subclass)
+    return subclasses
 
 
 def build_app_model(app_name, model, model_name):
@@ -113,6 +128,10 @@ def build_app_model(app_name, model, model_name):
             m.__name__: build_app_model(app_name, m, m.__name__)
             for m in model.__subclasses__()
         },
+        subclasses_as_list=[
+            build_app_model(app_name, m, m.__name__)
+            for m in build_subclasses_as_list(model)
+        ],
     )
 
 

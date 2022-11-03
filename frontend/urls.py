@@ -1,10 +1,8 @@
-from platform import node
-from statistics import mode
 from rest_framework import routers
 
 from django.urls import path
 
-from neomodel import db
+from neomodel import db, Q
 from .utils import PROS_APPS, PROS_MODELS
 
 from rest_framework import viewsets
@@ -17,9 +15,6 @@ from pros_core.models import ProsNode
 
 def create_list(model_class):
     def list(self, request):
-        print("-----------")
-        print(model_class)
-
         def get_rel_data(data):
             data["type"] = model_class.__name__
             for k, v in model_class.nodes.get(uid=data["uid"]).__dict__.items():
@@ -29,12 +24,43 @@ def create_list(model_class):
                     data[k] = v
             return data
 
-        # Don't need to do full traversal to just list names, ids and types
-        node_data = [
-            {"real_type": b.real_type, "uid": b.uid, "label": b.label}
-            for b in model_class.nodes.all()
-        ]
-        print(node_data)
+        # If a text filter is set...
+        filter = request.query_params.get("filter")
+        if filter:
+            # Add `label`` by default
+            q = Q(label__icontains=filter)
+            if filter_fields := PROS_MODELS[model_class.__name__].meta.get(
+                "text_filter_fields"
+            ):
+                for filter_field in filter_fields:
+                    q |= Q(**{f"{filter_field}__icontains": filter})
+
+            nodes = set(model_class.nodes.filter(q))
+
+            # Iterate all the subclasses of the viewed model
+            for model in PROS_MODELS[model_class.__name__].subclasses_as_list:
+
+                # If any text_filter_fields are set...
+                if filter_fields := model.meta.get("text_filter_fields"):
+                    # Bung them together in a Q object with OR
+                    sub_q = Q(label__icontains=filter)
+                    for filter_field in filter_fields:
+                        sub_q |= Q(**{f"{filter_field}__icontains": filter})
+
+                    # Look them up, and add to matched nodes
+                    for match in model.model.nodes.filter(sub_q):
+                        nodes.add(match)
+            # Then get the right fields to return
+            node_data = [
+                {"real_type": b.real_type, "uid": b.uid, "label": b.label}
+                for b in nodes
+            ]
+        else:
+            node_data = [
+                {"real_type": b.real_type, "uid": b.uid, "label": b.label}
+                for b in model_class.nodes.all()
+            ]
+        # print(node_data)
         return Response(node_data)
 
     return list
@@ -42,7 +68,10 @@ def create_list(model_class):
 
 def create_autocomplete(model_class):
     def list(self, request):
-        node_data = [{"uid": b.uid, "label": b.label} for b in model_class.nodes.all()]
+        node_data = [
+            {"uid": b.uid, "label": b.label, "real_type": b.real_type}
+            for b in model_class.nodes.all()
+        ]
         return Response(node_data)
 
     return list
@@ -200,6 +229,7 @@ def build_schema_from_pros_model(models, schema):
             "app": model.app,
             "meta": model.meta,
             **construct_subclass_hierarchy(model),
+            "subclasses_list": [m.model_name for m in model.subclasses_as_list],
         }
     return schema
 
@@ -208,7 +238,7 @@ def build_schema_from_pros_model(models, schema):
 def schema(request):
     import time
 
-    # time.sleep(1)
+    # time.sleep(20)
     resp_data = build_schema_from_pros_model(PROS_MODELS, {})
     return Response(resp_data)
 
