@@ -10,12 +10,17 @@ Django = "^4.0.4"
 django-neomodel = "^0.0.7"
 djangorestframework = "^3.13.1"
 django-cors-headers = "^3.11.0"
+python-cypher = "^0.20.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 black = {version = "^22.3.0", allow-prereleases = true}
 ipython = "^8.2.0"
 
+
+[tool.poetry.group.dev.dependencies]
+django-extensions = "^3.2.1"
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

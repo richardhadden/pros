@@ -41,7 +41,8 @@ class Dance(Event):
 
 
 class InterpersonalRelation(Factoid):
-    related_to = RelationshipTo("Person", "IS_RELATED_TO")
+    # FIX THIS SHIT... clear db probably
+    related_to = RelationshipTo("Person", "RELATES_TO_PERSON")
 
     class Meta:
         abstract = True

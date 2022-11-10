@@ -42,7 +42,7 @@ const TextEditField: Component<{
 const EmbeddedNewEntity: Component<{
   data: object;
   setData: Setter<object>;
-  entityType: Accessor<string>;
+  entityType: Accessor<any>;
   setEntityType: Setter<string>;
   initialType: string;
   fieldName?: string;
