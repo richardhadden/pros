@@ -77,21 +77,27 @@ def create_autocomplete(model_class):
     return list
 
 
-def create_retrieve(model_class):
+def create_retrieve(model_class: ProsNode):
     def retrieve(self, request, pk=None):
         data = {}
         for k, v in model_class.nodes.get(uid=pk).__dict__.items():
             if k in dict(model_class.__all_relationships__):
-                print("is rel", k)
+                # print("is rel", k)
                 data[k] = [
                     {"label": x.label, "uid": x.uid, "real_type": x.real_type}
                     for x in v.all()
                 ]
-                print(data[k])
+                # print(data[k])
             else:
-                print("is not rel", k)
+                # print("is not rel", k)
                 data[k] = v
-                print(data[k])
+                # print(data[k])
+
+        this = model_class.nodes.get(uid=pk)
+        data["properties"] = this.properties
+        data["all_related"] = this.all_related()
+
+        data = {**this.properties, **this.all_related()}
 
         return Response(data)
 
