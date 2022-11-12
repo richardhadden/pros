@@ -5,14 +5,32 @@ from neomodel import (
     UniqueIdProperty,
     db,
     RelationshipTo,
+    StructuredRel,
+    ZeroOrMore,
 )
+from neomodel.relationship_manager import RelationshipDefinition
 from pypher import Pypher, __
+
+
+REVERSE_RELATIONS = defaultdict(lambda: defaultdict(dict))
 
 
 class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
     real_type = StringProperty()
     label = StringProperty()
+
+    def __init_subclass__(cls) -> None:
+        print(cls)
+        for k, v in cls.__dict__.items():
+            if isinstance(v, RelationshipDefinition):
+                v.definition["relation_type"] = k.upper()
+                # print(v._raw_class)
+                # print(v.definition["model"].__dict__["reverse_name"].default.lower())
+
+                REVERSE_RELATIONS[v._raw_class][
+                    v.definition["model"].__dict__["reverse_name"].default.lower()
+                ]["relation_to"] = cls.__name__
 
     def save(self):
         self.real_type = type(self).__name__.lower()
@@ -33,13 +51,45 @@ class ProsNode(StructuredNode):
         q = Pypher()
         q.Match.node("s").rel("p").node("o")
         q.WHERE.s.property("uid") == self.uid
-        q.RETURN(__.p, __.o)
+        q.RETURN(__.s, __.p, __.o)
 
         db_results, meta = db.cypher_query(str(q), q.bound_params)
 
         results = defaultdict(list)
+
         for r in db_results:
-            rel, obj = r
-            results[rel.type.lower()].append({**dict(obj), "relData": {}})
+            subj, rel, obj = r
+
+            if (
+                rel.start_node.__dict__["_properties"]["real_type"]
+                == self.__class__.__name__.lower()
+            ):
+
+                results[rel.type.lower()].append({**dict(obj), "relData": rel})
+            else:
+                results[rel["reverse_name"].lower()].append(
+                    {**dict(obj), "relData": rel}
+                )
 
         return results
+
+
+class ProsRelationBase(StructuredRel):
+    reverse_name = StringProperty(required=True)
+
+
+def ProsRelationTo(
+    cls_name, reverse_name: str | None = None, cardinality=None, model=None
+):
+    m: ProsRelationBase = type(
+        "ProsRelation",
+        (model if model else ProsRelationBase,),
+        {"reverse_name": StringProperty(default=reverse_name.upper())},
+    )
+    REVERSE_RELATIONS[cls_name][reverse_name.lower()]
+    return RelationshipTo(
+        cls_name,
+        f"{cls_name}{reverse_name}",
+        cardinality=cardinality or ZeroOrMore,
+        model=m,
+    )

@@ -56,6 +56,7 @@ def create_list(model_class):
                 for b in nodes
             ]
         else:
+            print(model_class)
             node_data = [
                 {"real_type": b.real_type, "uid": b.uid, "label": b.label}
                 for b in model_class.nodes.all()
@@ -148,7 +149,7 @@ def create_create(model_class):
 def create_update(model_class):
     @db.write_transaction
     def update(self, request, pk=None):
-        print("REQ", request.data)
+        # #print("REQ", request.data)
 
         property_data, relation_data = get_property_and_relation_data(
             request, model_class
@@ -166,7 +167,7 @@ def create_update(model_class):
             ].model
 
             for related in rel_manager.all():
-                print("RELATEDID", related, related_ids, related.uid not in related_ids)
+                # ("RELATEDID", related, related_ids, related.uid not in related_ids)
                 if related.uid not in related_ids:
                     rel_manager.disconnect(related_model.nodes.get(uid=related.uid))
 
@@ -226,7 +227,7 @@ def construct_subclass_hierarchy(model):
 
 
 def build_schema_from_pros_model(models, schema):
-
+    # (models.items())
     for _, model in models.items():
         schema[model.model_name.lower()] = {
             "top_level": True if model.model.__bases__ == (ProsNode,) else False,

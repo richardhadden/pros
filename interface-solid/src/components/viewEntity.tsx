@@ -27,13 +27,13 @@ const TextFieldView: Component<{ fieldName: string; value: string }> = (
 
 const ZeroOrMoreRelationFieldView: Component<{
   fieldName: string;
-  reverseRelation: "primary" | "secondary";
+  reverseRelation: boolean;
   field: { relation_to: string };
   value: { label: string; real_type: string; uid: string }[];
 }> = (props) => {
   return (
     <>
-      <div class="col-span-2 mb-4 mt-4 select-none font-semibold uppercase">
+      <div class={`col-span-2 mb-4 mt-4 select-none font-semibold uppercase`}>
         {props.fieldName.replaceAll("_", " ")}
         <div class="mt-1 ml-1 select-none">
           <BsArrowReturnRight class="inline-block" />{" "}
@@ -69,7 +69,7 @@ const ViewEntity: Component = () => {
         newButton={false}
         editButton={true}
         barTitle={
-          <div class="prose-sm ml-3 inline-block rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+          <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
             {getEntityDisplayName(params.entity_type)}
           </div>
         }

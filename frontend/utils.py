@@ -7,7 +7,7 @@ from unicodedata import name
 from neomodel import StructuredNode
 from neomodel.properties import Property, UniqueIdProperty
 from neomodel.relationship_manager import RelationshipDefinition
-from pros_core.models import ProsNode
+from pros_core.models import ProsNode, REVERSE_RELATIONS
 from django.apps import apps
 
 PROS_APPS = [
@@ -42,7 +42,6 @@ def build_field(p):
             "required": p.required,
         }
     if isinstance(p, RelationshipDefinition) and p.definition["direction"] == 1:
-
         return {
             "type": "relation",
             "relation_type": p.__dict__["definition"]["relation_type"],
@@ -113,17 +112,7 @@ def build_app_model(app_name, model, model_name):
             if not isinstance(p, UniqueIdProperty) and n != "real_type"
             if build_field(p)
         },
-        reverse_relations={
-            n: {
-                "type": "relation",
-                "relation_type": p.__dict__["definition"]["relation_type"],
-                "relation_to": p.__dict__["_raw_class"],
-                "cardinality": p.__dict__["manager"].__name__,
-                "default_value": [],
-            }
-            for n, p in model.__all_relationships__
-            if p.definition["direction"] == -1
-        },
+        reverse_relations=REVERSE_RELATIONS[model_name],
         subclasses={
             m.__name__: build_app_model(app_name, m, m.__name__)
             for m in model.__subclasses__()
