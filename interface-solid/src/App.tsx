@@ -61,8 +61,13 @@ const EntityViewAllData: (p: DataResourceArgs) => object = ({
 const fetchEntityData = async (uri_end: string) => {
   console.log("fetch_entity_data called");
   const response = await fetch(`${BASE_URI}/${uri_end}`);
+
+  if (response.status !== 200) {
+    const response_json = await response.json();
+    return { status: "error", data: response_json };
+  }
+
   const response_json = await response.json();
-  console.log(response_json);
   return response_json;
 };
 
@@ -72,7 +77,6 @@ const EntityData: (p: DataResourceArgs) => object = ({
   navigate,
   data,
 }) => {
-  console.log();
   const [entity_data] = createResource(
     () =>
       `${schema[params.entity_type].app}/${params.entity_type}/${params.uid}`,

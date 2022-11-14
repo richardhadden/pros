@@ -21,13 +21,13 @@ class ProsNode(StructuredNode):
     label = StringProperty()
 
     def __init_subclass__(cls) -> None:
-        print(cls)
+        """On subclassing ProsNode, search through all RelationshipDefinitions attached
+        and update the key of the relation as the relation_type.
+
+        Also, add reverse relation to REVERSE_RELATIONS dict for lookup elsewhere."""
         for k, v in cls.__dict__.items():
             if isinstance(v, RelationshipDefinition):
                 v.definition["relation_type"] = k.upper()
-                # print(v._raw_class)
-                # print(v.definition["model"].__dict__["reverse_name"].default.lower())
-
                 REVERSE_RELATIONS[v._raw_class][
                     v.definition["model"].__dict__["reverse_name"].default.lower()
                 ]["relation_to"] = cls.__name__
@@ -47,7 +47,7 @@ class ProsNode(StructuredNode):
                 properties[k] = v
         return properties
 
-    def all_related(self):
+    def direct_relations_as_data(self):
         q = Pypher()
         q.Match.node("s").rel("p").node("o")
         q.WHERE.s.property("uid") == self.uid
@@ -64,7 +64,6 @@ class ProsNode(StructuredNode):
                 rel.start_node.__dict__["_properties"]["real_type"]
                 == self.__class__.__name__.lower()
             ):
-
                 results[rel.type.lower()].append({**dict(obj), "relData": rel})
             else:
                 results[rel["reverse_name"].lower()].append(
@@ -82,9 +81,11 @@ def ProsRelationTo(
     cls_name, reverse_name: str | None = None, cardinality=None, model=None
 ):
     m: ProsRelationBase = type(
-        "ProsRelation",
+        model.__name__ if model else "ProsRelation",
         (model if model else ProsRelationBase,),
-        {"reverse_name": StringProperty(default=reverse_name.upper())},
+        {"reverse_name": StringProperty(default=reverse_name.upper()), **model.__dict__}
+        if model
+        else {"reverse_name": StringProperty(default=reverse_name.upper())},
     )
     REVERSE_RELATIONS[cls_name][reverse_name.lower()]
     return RelationshipTo(

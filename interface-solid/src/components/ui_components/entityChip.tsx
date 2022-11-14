@@ -6,6 +6,7 @@ const EntityChip: Component<{
   color?: string;
   label: string;
   leftSlot?: JSXElement | string;
+  class: string;
   onClick?: (e: MouseEvent) => void;
 }> = (props) => {
   const style =
@@ -22,7 +23,8 @@ const EntityChip: Component<{
     <span
       class={
         style +
-        ` bg-${props.color} cursor-pointer hover:bg-${props.color}-focus`
+        ` bg-${props.color} cursor-pointer hover:bg-${props.color}-focus ` +
+        props.class
       }
       onMouseDown={props.onClick}
     >

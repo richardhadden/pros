@@ -41,11 +41,18 @@ def build_field(p):
             "default_value": p.default,
             "required": p.required,
         }
+
     if isinstance(p, RelationshipDefinition) and p.definition["direction"] == 1:
+        print(p.definition["model"], p.definition["model"].__dict__)
         return {
             "type": "relation",
             "relation_type": p.__dict__["definition"]["relation_type"],
             "relation_to": p.__dict__["_raw_class"],
+            "relation_fields": {
+                k: build_field(v)
+                for k, v in p.definition["model"].__dict__.items()
+                if isinstance(v, Property) and k != "reverse_name"
+            },
             "cardinality": p.__dict__["manager"].__name__,
             "default_value": [],
         }

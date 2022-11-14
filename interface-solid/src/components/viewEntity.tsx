@@ -62,74 +62,81 @@ const ViewEntity: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
   const data = useRouteData();
 
-  return (
-    <Show when={data()}>
-      <TopBar
-        params={params}
-        newButton={false}
-        editButton={true}
-        barTitle={
-          <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
-            {getEntityDisplayName(params.entity_type)}
-          </div>
-        }
-        barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
-      />
+  createEffect(() => console.log(data()));
 
-      <div class="mt-32 ml-6 grid grid-cols-8">
-        <For each={Object.entries(schema[params.entity_type].fields)}>
-          {([schema_field_name, field], index) => (
-            <>
-              {field.type === "property" && (
-                <TextFieldView
-                  fieldName={schema_field_name}
-                  value={data()[schema_field_name]}
-                />
-              )}
-              {field.type === "relation" && (
+  return (
+    <>
+      <Show when={data() && data()["status"] !== "error"}>
+        <TopBar
+          params={params}
+          newButton={false}
+          editButton={true}
+          barTitle={
+            <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+              {getEntityDisplayName(params.entity_type)}
+            </div>
+          }
+          barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
+        />
+
+        <div class="mt-32 ml-6 grid grid-cols-8">
+          <For each={Object.entries(schema[params.entity_type].fields)}>
+            {([schema_field_name, field], index) => (
+              <>
+                {field.type === "property" && (
+                  <TextFieldView
+                    fieldName={schema_field_name}
+                    value={data()[schema_field_name]}
+                  />
+                )}
+                {field.type === "relation" && (
+                  <ZeroOrMoreRelationFieldView
+                    fieldName={schema_field_name}
+                    value={data()[schema_field_name]}
+                    field={field}
+                  />
+                )}
+
+                <Show
+                  when={
+                    Object.entries(schema[params.entity_type].fields).length >
+                    index() + 1
+                  }
+                >
+                  <div class="divider col-span-8" />
+                </Show>
+              </>
+            )}
+          </For>
+          {Object.keys(schema[params.entity_type].reverse_relations).length >
+            0 && <div class="col-span-8 mt-32" />}
+          <For
+            each={Object.entries(schema[params.entity_type].reverse_relations)}
+          >
+            {([schema_field_name, field], index) => (
+              <Show when={data()[schema_field_name]?.length > 0}>
                 <ZeroOrMoreRelationFieldView
                   fieldName={schema_field_name}
                   value={data()[schema_field_name]}
                   field={field}
+                  reverseRelation={true}
                 />
-              )}
 
-              <Show
-                when={
-                  Object.entries(schema[params.entity_type].fields).length >
-                  index() + 1
-                }
-              >
-                <div class="divider col-span-8" />
+                <Show
+                  when={
+                    Object.entries(schema[params.entity_type].fields).length >
+                    index() + 1
+                  }
+                ></Show>
               </Show>
-            </>
-          )}
-        </For>
-        {Object.keys(schema[params.entity_type].reverse_relations).length >
-          0 && <div class="col-span-8 mt-32" />}
-        <For
-          each={Object.entries(schema[params.entity_type].reverse_relations)}
-        >
-          {([schema_field_name, field], index) => (
-            <Show when={data()[schema_field_name]?.length > 0}>
-              <ZeroOrMoreRelationFieldView
-                fieldName={schema_field_name}
-                value={data()[schema_field_name]}
-                field={field}
-                reverseRelation={true}
-              />
-
-              <Show
-                when={
-                  Object.entries(schema[params.entity_type].fields).length >
-                  index() + 1
-                }
-              ></Show>
-            </Show>
-          )}
-        </For>
-      </div>
-    </Show>
+            )}
+          </For>
+        </div>
+      </Show>
+      <Show when={data() && data()["status"] === "error"}>
+        <TopBar params={params} barCenter={data()["data"]} />
+      </Show>
+    </>
   );
 };
 

@@ -80,25 +80,14 @@ def create_autocomplete(model_class):
 
 def create_retrieve(model_class: ProsNode):
     def retrieve(self, request, pk=None):
-        data = {}
-        for k, v in model_class.nodes.get(uid=pk).__dict__.items():
-            if k in dict(model_class.__all_relationships__):
-                # print("is rel", k)
-                data[k] = [
-                    {"label": x.label, "uid": x.uid, "real_type": x.real_type}
-                    for x in v.all()
-                ]
-                # print(data[k])
-            else:
-                # print("is not rel", k)
-                data[k] = v
-                # print(data[k])
+        try:
+            this = model_class.nodes.get(uid=pk)
+        except Exception:
+            return Response(
+                status=404, data=f"<{model_class.__name__} uid={pk}> not found"
+            )
 
-        this = model_class.nodes.get(uid=pk)
-        data["properties"] = this.properties
-        data["all_related"] = this.all_related()
-
-        data = {**this.properties, **this.all_related()}
+        data = {**this.properties, **this.direct_relations_as_data()}
 
         return Response(data)
 
@@ -149,7 +138,7 @@ def create_create(model_class):
 def create_update(model_class):
     @db.write_transaction
     def update(self, request, pk=None):
-        # #print("REQ", request.data)
+        # print("REQ", request.data)
 
         property_data, relation_data = get_property_and_relation_data(
             request, model_class
@@ -158,8 +147,9 @@ def create_update(model_class):
         model_class.create_or_update({"uid": pk, **property_data})
 
         object = model_class.nodes.get(uid=pk)
-
+        print(relation_data)
         for related_name, related in relation_data.items():
+            print("RELATED", related)
             related_ids = [r["uid"] for r in related]
             rel_manager = getattr(object, related_name)
             related_model = PROS_MODELS[
@@ -168,12 +158,11 @@ def create_update(model_class):
 
             for related in rel_manager.all():
                 # ("RELATEDID", related, related_ids, related.uid not in related_ids)
-                if related.uid not in related_ids:
-                    rel_manager.disconnect(related_model.nodes.get(uid=related.uid))
+
+                rel_manager.disconnect(related_model.nodes.get(uid=related.uid))
 
             for related_id in related_ids:
                 rel_manager.connect(related_model.nodes.get(uid=related_id))
-
         return Response({"uid": pk, "saved": True})
 
     return update

@@ -9,15 +9,21 @@ from neomodel import (
     StructuredRel,
 )
 
-from pros_core.models import ProsNode, ProsRelationTo
+from pros_core.models import ProsNode, ProsRelationTo, ProsRelationBase
 import random
 import string
+
+
+class UncertainRelation(ProsRelationBase):
+    certainty = StringProperty(default="1")
 
 
 class Factoid(ProsNode):
 
     has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF")
-    is_about_person = ProsRelationTo("Person", reverse_name="HAS_FACTOID_ABOUT")
+    is_about_person = ProsRelationTo(
+        "Person", reverse_name="HAS_FACTOID_ABOUT", model=UncertainRelation
+    )
     text = StringProperty()
 
     class Meta:

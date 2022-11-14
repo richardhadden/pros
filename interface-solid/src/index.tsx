@@ -22,6 +22,7 @@ type SchemaFieldRelation = {
   relation_to: string;
   cardinality: string;
   default_value: object[];
+  relation_fields: object[];
 };
 
 type SubClasses = {

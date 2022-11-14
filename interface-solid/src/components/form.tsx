@@ -15,6 +15,7 @@ import { CgClose } from "solid-icons/cg";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { fetchAutoCompleteData } from "../App";
 import { postNewEntityData } from "../App";
+import { filter } from "ramda";
 
 const TextEditField: Component<{
   fieldName: string;
@@ -29,7 +30,7 @@ const TextEditField: Component<{
       <div class="col-span-5 mb-4 mt-4 w-full">
         <input
           type="text"
-          class="w-full rounded-t-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+          class="w-full rounded-b-none border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           value={props.value || ""}
           onInput={props.onInput}
         />
@@ -98,12 +99,14 @@ type RelationFieldType = {
   uid: string;
   label: string;
   real_type: string;
+  relData: object;
 };
 
 const ZeroOrMoreSimpleRelationEditField: Component<{
   field: { relation_to: string };
   fieldName: string;
   relatedToType: string;
+  relationFields: object;
   value: any;
   onChange: Setter<RelationFieldType[]>;
   data: Accessor<RelationFieldType[]>;
@@ -138,11 +141,21 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
         props.field.relation_to.toLowerCase()
       );
       setAutoCompleteData(data);
-      setFilteredAutoCompleteData(data);
+      setFilteredAutoCompleteData(
+        autoCompleteData().filter((item: RelationFieldType) => {
+          const r = new RegExp(autoCompleteTextInput(), "i");
+          return (
+            r.test(item.label) &&
+            !props.value
+              .map((item: RelationFieldType) => item.uid)
+              .includes(item.uid)
+          );
+        })
+      );
     }
   };
 
-  createEffect(() => console.log("Edit field PROPS>>", props));
+  createEffect(() => console.log("Edit field VALUE>>", props.value));
 
   createEffect(() => {
     setFilteredAutoCompleteData(
@@ -164,6 +177,22 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
     props.onChange([...props.value, item]);
   };
 
+  const handleModifyRelationField = (
+    item: RelationFieldType,
+    relationfieldName: string,
+    value: any
+  ) => {
+    const updatedItem = item;
+    if (!updatedItem.relData) {
+      updatedItem.relData = {};
+    }
+    updatedItem.relData[relationfieldName] = value;
+    console.log("updated item", updatedItem);
+    props.onChange(
+      props.value.map((i) => (item["uid"] !== i["uid"] ? i : updatedItem))
+    );
+  };
+
   const handleRemoveSelection = (uid: string) => {
     props.onChange(
       props.value.filter((item: RelationFieldType) => item.uid !== uid)
@@ -181,6 +210,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
         uid: response.uid,
         label: response.label,
         real_type: embeddedType(),
+        relData: {},
       });
       setShowAddNewEntityModal(false);
       setEmbeddedData({});
@@ -200,37 +230,80 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
         </div>
       </div>
       <div class="col-span-5 mb-4 mt-4 pt-2">
-        <For each={props.value || []}>
-          {(item: RelationFieldType) => (
-            <EntityChip
-              label={item.label}
-              leftSlot={
-                <>
-                  <a
-                    onClick={() => handleRemoveSelection(item.uid)}
-                    class="btn btn-circle btn-primary btn-xs mr-3 border-primary-content"
-                  >
-                    <CgClose />
-                  </a>{" "}
-                  {getEntityDisplayName(item.real_type)}
-                </>
-              }
-              color={props.reverseRelation ? "primary" : "primary"}
-            />
-          )}
-        </For>
+        {Object.keys(props.relationFields).length > 0 ? (
+          <For each={props.value || []}>
+            {(item: RelationFieldType) => (
+              <div class="card-compact card mr-4 mb-3 inline-block w-96 rounded-md bg-base-300 p-0 shadow-sm">
+                <div
+                  class="prose-md mb-0 bg-primary p-3 text-neutral-content"
+                  //onMouseDown={props.onClick}
+                >
+                  <span class="prose-sm mr-5 font-light uppercase">
+                    <a
+                      onClick={() => handleRemoveSelection(item.uid)}
+                      class="btn btn-circle btn-primary btn-xs mr-3 border-primary-content"
+                    >
+                      <CgClose />
+                    </a>{" "}
+                    {getEntityDisplayName(item.real_type)}{" "}
+                  </span>
+                  <span class="prose-md font-semibold">{item.label}</span>
+                </div>
+                <div class="card-body grid grid-cols-7">
+                  <For each={Object.entries(props.relationFields)}>
+                    {([relationFieldName, relationField]) => (
+                      <TextEditField
+                        fieldName={relationFieldName}
+                        value={
+                          item.relData ? item.relData[relationFieldName] : ""
+                        }
+                        onInput={(e) =>
+                          handleModifyRelationField(
+                            item,
+                            relationFieldName,
+                            e.target?.value
+                          )
+                        }
+                      />
+                    )}
+                  </For>
+                </div>
+              </div>
+            )}
+          </For>
+        ) : (
+          <For each={props.value || []}>
+            {(item: RelationFieldType) => (
+              <EntityChip
+                label={item.label}
+                leftSlot={
+                  <>
+                    <a
+                      onClick={() => handleRemoveSelection(item.uid)}
+                      class="btn btn-circle btn-primary btn-xs mr-3 border-primary-content"
+                    >
+                      <CgClose />
+                    </a>{" "}
+                    {getEntityDisplayName(item.real_type)}
+                  </>
+                }
+                color={props.reverseRelation ? "primary" : "primary"}
+              />
+            )}
+          </For>
+        )}
 
         <div class="relative">
           <div class="relative col-span-6 flex w-full">
             <input
               type="text"
-              class="mb-4 mt-4 
+              class={`mb-4 mt-4 
                 w-full rounded-t-md border-b-2 
                 border-t-2 border-l-2 
                 border-r-2 border-primary border-t-transparent border-l-transparent 
                 border-r-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 
                 focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary 
-                focus:bg-base-200 focus:shadow-inner  focus:outline-none "
+                focus:bg-base-200 focus:shadow-inner  focus:outline-none`}
               value={autoCompleteTextInput()}
               onInput={(e) => setAutoCompleteTextInput(e.target.value)}
               onFocusIn={handleInputFocusIn}
@@ -324,6 +397,7 @@ const Form: Component<{
                   value={props.data()[schema_field_name] || []}
                   field={field}
                   relatedToType={field.relation_to.toLowerCase()}
+                  relationFields={field.relation_fields}
                   onChange={(value) =>
                     handleSetFieldData(schema_field_name, value)
                   }
