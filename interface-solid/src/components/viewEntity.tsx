@@ -29,7 +29,7 @@ const ZeroOrMoreRelationFieldView: Component<{
   fieldName: string;
   reverseRelation: boolean;
   field: { relation_to: string };
-  value: { label: string; real_type: string; uid: string }[];
+  value: { label: string; real_type: string; uid: string; relData: object }[];
 }> = (props) => {
   return (
     <>
@@ -45,12 +45,47 @@ const ZeroOrMoreRelationFieldView: Component<{
       <div class="col-span-6 mb-4 mt-4 select-none pt-2">
         <For each={props.value}>
           {(item) => (
-            <EntityChip
-              label={item.label}
-              leftSlot={getEntityDisplayName(item.real_type)}
-              href={`/entity/${item.real_type}/${item.uid}/`}
-              color={props.reverseRelation ? "primary" : "primary"}
-            />
+            <Show
+              when={Object.keys(item.relData).length > 0}
+              fallback={
+                <span>
+                  <EntityChip
+                    label={item.label}
+                    leftSlot={getEntityDisplayName(item.real_type)}
+                    href={`/entity/${item.real_type}/${item.uid}/`}
+                    color={props.reverseRelation ? "primary" : "primary"}
+                  />
+                </span>
+              }
+            >
+              <div class="card-compact card mr-4 mb-3 inline-block rounded-md bg-base-300 p-0 shadow-sm">
+                <NavLink
+                  href={`/entity/${item.real_type}/${item.uid}`}
+                  class="prose-md mb-0 flex max-w-4xl bg-primary p-3 text-neutral-content hover:bg-primary-focus"
+                  //onMouseDown={props.onClick}
+                >
+                  <span class="prose-sm mr-5 font-light uppercase">
+                    {getEntityDisplayName(item.real_type)}{" "}
+                  </span>
+                  <span class="prose-md font-semibold">{item.label}</span>
+                </NavLink>
+                <div class="card-body grid grid-cols-8">
+                  <For each={Object.entries(item.relData)}>
+                    {([relatedFieldName, relatedFieldValue]) => (
+                      <>
+                        <div class="prose-sm col-span-2 font-semibold uppercase">
+                          {relatedFieldName}
+                        </div>
+                        <div />
+                        <div class="prose-sm col-span-5">
+                          {relatedFieldValue}
+                        </div>
+                      </>
+                    )}
+                  </For>
+                </div>
+              </div>
+            </Show>
           )}
         </For>
       </div>

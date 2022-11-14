@@ -122,13 +122,16 @@ def create_create(model_class):
         object.save()
 
         for related_name, related in relation_data.items():
-            related_ids = [r["uid"] for r in related]
+            related_values = [r for r in related]
             rel_manager = getattr(object, related_name)
             related_model = PROS_MODELS[
                 PROS_MODELS[model_class.__name__].fields[related_name]["relation_to"]
             ].model
-            for related_id in related_ids:
-                rel_manager.connect(related_model.nodes.get(uid=related_id))
+            for related_value in related_values:
+                rel_manager.connect(
+                    related_model.nodes.get(uid=related_value["uid"]),
+                    related_value.get("relData") or {},
+                )
 
         return Response({"uid": object.uid, "label": object.label, "saved": True})
 
@@ -150,19 +153,22 @@ def create_update(model_class):
         print(relation_data)
         for related_name, related in relation_data.items():
             print("RELATED", related)
-            related_ids = [r["uid"] for r in related]
+            related_values = [r for r in related]
             rel_manager = getattr(object, related_name)
             related_model = PROS_MODELS[
                 PROS_MODELS[model_class.__name__].fields[related_name]["relation_to"]
             ].model
 
+            # Remove all relations
             for related in rel_manager.all():
-                # ("RELATEDID", related, related_ids, related.uid not in related_ids)
-
                 rel_manager.disconnect(related_model.nodes.get(uid=related.uid))
 
-            for related_id in related_ids:
-                rel_manager.connect(related_model.nodes.get(uid=related_id))
+            # And recreate them again so that the data is updated
+            for related_value in related_values:
+                rel_manager.connect(
+                    related_model.nodes.get(uid=related_value["uid"]),
+                    related_value.get("relData") or {},
+                )
         return Response({"uid": pk, "saved": True})
 
     return update

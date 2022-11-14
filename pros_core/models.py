@@ -64,10 +64,24 @@ class ProsNode(StructuredNode):
                 rel.start_node.__dict__["_properties"]["real_type"]
                 == self.__class__.__name__.lower()
             ):
-                results[rel.type.lower()].append({**dict(obj), "relData": rel})
+
+                results[rel.type.lower()].append(
+                    {
+                        **dict(obj),
+                        "relData": {
+                            k: v for k, v in rel.items() if k != "reverse_name"
+                        },
+                    }
+                )
             else:
-                results[rel["reverse_name"].lower()].append(
-                    {**dict(obj), "relData": rel}
+                reverse_name = rel["reverse_name"]
+                results[reverse_name.lower()].append(
+                    {
+                        **dict(obj),
+                        "relData": {
+                            k: v for k, v in rel.items() if k != "reverse_name"
+                        },
+                    }
                 )
 
         return results

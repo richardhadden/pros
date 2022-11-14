@@ -5,9 +5,9 @@ import {
   createSignal,
   createEffect,
   onMount,
-  onCleanup,
+  createMemo,
 } from "solid-js";
-import { useParams, useRouteData, useLocation } from "@solidjs/router";
+import { useParams, useRouteData } from "@solidjs/router";
 
 import TopBar from "./topBar";
 import { getEntityDisplayName } from "../utils/entity_names";
@@ -65,7 +65,7 @@ const EditEntityView: Component = (props) => {
           barTitle={
             <>
               Editing{" "}
-              <div class="inline-block rounded-md bg-neutral-focus prose-sm pl-3 pr-3 pt-1 pb-1 ml-3">
+              <div class="prose-sm ml-3 inline-block rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
                 {getEntityDisplayName(params.entity_type)}
               </div>
             </>
