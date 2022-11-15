@@ -47,6 +47,13 @@ class Naming(Factoid):
         )
 
 
+class Membership(Factoid):
+    member_of = ProsRelationTo("Organisation", reverse_name="membership_organisation")
+
+    class Meta:
+        label_template = "{is_about_person.label} is member of {member_of.label}"
+
+
 class Entity(ProsNode):
     class Meta:
         display_name_plural = "Entities"
@@ -56,5 +63,23 @@ class Person(Entity):
     pass
 
 
+class Organisation(Entity):
+    pass
+
+
 class Source(ProsNode):
     pass
+
+
+class Letter(Source):
+    text = StringProperty()
+    sender = ProsRelationTo(
+        "Entity", reverse_name="is_sender_of", model=UncertainRelation
+    )
+    recipient = ProsRelationTo(
+        "Entity", reverse_name="is_recipient_of", model=UncertainRelation
+    )
+
+    class Meta:
+        # __all__ can be used in label_template to add label of all related nodes
+        label_template = "Letter from {sender.__all__.label} to {recipient.label}"

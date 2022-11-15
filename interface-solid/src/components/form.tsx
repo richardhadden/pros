@@ -23,6 +23,16 @@ const nested_get = (nested, keys) => {
   const k = keys.shift();
   if (keys.length > 0) {
     if (nested.constructor === Array) {
+      if (k === "__all__") {
+        console.log(k);
+
+        return nested
+          .map((n) => {
+            const keycopy = [...keys];
+            return nested_get(n, keycopy);
+          })
+          .join(", ");
+      }
       return nested_get(nested[0][k], keys);
     }
     return nested_get(nested[k], keys);
