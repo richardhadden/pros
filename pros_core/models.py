@@ -17,8 +17,8 @@ REVERSE_RELATIONS = defaultdict(lambda: defaultdict(dict))
 
 class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
-    real_type = StringProperty()
-    label = StringProperty()
+    real_type = StringProperty(index=True)
+    label = StringProperty(index=True)
 
     def __init_subclass__(cls) -> None:
         """On subclassing ProsNode, search through all RelationshipDefinitions attached

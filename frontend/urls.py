@@ -11,52 +11,48 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from neomodel.relationship_manager import ZeroOrMore
 from pros_core.models import ProsNode
+from pros_core.filters import icontains
+
+from pypher import Pypher, __
 
 
 def create_list(model_class):
     def list(self, request):
-        def get_rel_data(data):
-            data["type"] = model_class.__name__
-            for k, v in model_class.nodes.get(uid=data["uid"]).__dict__.items():
-                if k in dict(model_class.__all_relationships__):
-                    data[k] = [{"label": x.label, "uid": x.uid} for x in v.all()]
-                else:
-                    data[k] = v
-            return data
 
         # If a text filter is set...
         filter = request.query_params.get("filter")
         if filter:
-            # Add `label`` by default
-            q = Q(label__icontains=filter)
-            if filter_fields := PROS_MODELS[model_class.__name__].meta.get(
-                "text_filter_fields"
+
+            x = icontains("s", "label")(filter)
+            y = icontains("s", "label")(filter)
+            for additional_filter in PROS_MODELS[model_class.__name__].meta.get(
+                "text_filter_fields", []
             ):
-                for filter_field in filter_fields:
-                    q |= Q(**{f"{filter_field}__icontains": filter})
+                print(additional_filter)
+                if isinstance(additional_filter, str):
+                    x = x.OR(icontains("s", additional_filter)(filter))
 
-            nodes = set(model_class.nodes.filter(q))
+                else:
+                    f = additional_filter(filter)
+                    if isinstance(f, Pypher):
+                        y = y.OR(f)
 
-            # Iterate all the subclasses of the viewed model
-            for model in PROS_MODELS[model_class.__name__].subclasses_as_list:
+            q = Pypher()
+            q.Match.node("s", labels=model_class.__name__)
+            q.WHERE(x)
+            q.RETURN(__.DISTINCT((__.s)))
+            q.UNION
+            q.MATCH.node("s", labels=model_class.__name__).rel("p").node("o")
+            q.WHERE(y)
+            q.RETURN(__.DISTINCT(__.s))
 
-                # If any text_filter_fields are set...
-                if filter_fields := model.meta.get("text_filter_fields"):
-                    # Bung them together in a Q object with OR
-                    sub_q = Q(label__icontains=filter)
-                    for filter_field in filter_fields:
-                        sub_q |= Q(**{f"{filter_field}__icontains": filter})
+            print(q)
+            results, meta = db.cypher_query(str(q), q.bound_params)
 
-                    # Look them up, and add to matched nodes
-                    for match in model.model.nodes.filter(sub_q):
-                        nodes.add(match)
-            # Then get the right fields to return
-            node_data = [
-                {"real_type": b.real_type, "uid": b.uid, "label": b.label}
-                for b in nodes
-            ]
+            node_data = [r[0] for r in results]
+
         else:
-            print(model_class)
+
             node_data = [
                 {"real_type": b.real_type, "uid": b.uid, "label": b.label}
                 for b in model_class.nodes.all()
@@ -229,7 +225,9 @@ def build_schema_from_pros_model(models, schema):
             "fields": model.fields,
             "reverse_relations": model.reverse_relations,
             "app": model.app,
-            "meta": model.meta,
+            "meta": {
+                k: v for k, v in model.meta.items() if not k == "text_filter_fields"
+            },
             **construct_subclass_hierarchy(model),
             "subclasses_list": [m.model_name for m in model.subclasses_as_list],
         }

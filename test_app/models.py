@@ -1,17 +1,9 @@
 from neomodel import (
-    StructuredNode,
     StringProperty,
-    DateProperty,
-    IntegerProperty,
-    UniqueIdProperty,
-    RelationshipTo,
-    RelationshipFrom,
-    StructuredRel,
 )
 
 from pros_core.models import ProsNode, ProsRelationTo, ProsRelationBase
-import random
-import string
+from pros_core.filters import icontains
 
 
 class UncertainRelation(ProsRelationBase):
@@ -19,7 +11,6 @@ class UncertainRelation(ProsRelationBase):
 
 
 class Factoid(ProsNode):
-
     has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF")
     is_about_person = ProsRelationTo(
         "Person", reverse_name="HAS_FACTOID_ABOUT", model=UncertainRelation
@@ -36,7 +27,13 @@ class Naming(Factoid):
     last_name = StringProperty()
 
     class Meta:
-        text_filter_fields = ["title", "first_name", "last_name", "text"]
+        text_filter_fields = [
+            "title",
+            "first_name",
+            "last_name",
+            "text",
+            icontains("o", "label"),
+        ]
 
 
 class Entity(ProsNode):

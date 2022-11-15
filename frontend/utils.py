@@ -43,7 +43,7 @@ def build_field(p):
         }
 
     if isinstance(p, RelationshipDefinition) and p.definition["direction"] == 1:
-        print(p.definition["model"], p.definition["model"].__dict__)
+        # print(p.definition["model"], p.definition["model"].__dict__)
         return {
             "type": "relation",
             "relation_type": p.__dict__["definition"]["relation_type"],
