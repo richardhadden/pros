@@ -12,7 +12,7 @@ import EntityChip from "./ui_components/entityChip";
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-md h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
-const TextFieldView: Component<{ fieldName: string; value: string }> = (
+export const TextFieldView: Component<{ fieldName: string; value: string }> = (
   props
 ) => {
   return (

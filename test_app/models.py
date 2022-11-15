@@ -11,10 +11,11 @@ class UncertainRelation(ProsRelationBase):
 
 
 class Factoid(ProsNode):
-    has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF")
     is_about_person = ProsRelationTo(
         "Person", reverse_name="HAS_FACTOID_ABOUT", model=UncertainRelation
     )
+    has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF")
+
     text = StringProperty()
 
     class Meta:
@@ -27,6 +28,10 @@ class Naming(Factoid):
     last_name = StringProperty()
 
     class Meta:
+        # Sets fields for filtering by text
+        # Can take field names as strings, or any Pypher object (or custom filters
+        # that return a Pypher object)
+        # where 's', 'p', 'o' = Subject (self), Property, (related) Object
         text_filter_fields = [
             "title",
             "first_name",
@@ -34,6 +39,12 @@ class Naming(Factoid):
             "text",
             icontains("o", "label"),
         ]
+
+        # Overrides the `label` field with template derived from other fields
+        # (dotted notation indicates access via relationship -- limited to one rel)
+        label_template = (
+            "{is_about_person.label} named {title} {first_name} {last_name}"
+        )
 
 
 class Entity(ProsNode):

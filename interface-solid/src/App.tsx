@@ -27,12 +27,12 @@ const groupByRealType = groupBy(
 );
 
 const fetchEntityViewAllData = async (uri: String) => {
-  console.log(uri);
+  //console.log(uri);
   const response = await fetch(`${BASE_URI}/${uri}`);
   const response_json: ViewEntityTypeData[] = await response.json();
-  console.log(response_json);
+  //console.log(response_json);
   const grouped_response_data = groupByRealType(response_json);
-  console.log(grouped_response_data);
+  //console.log(grouped_response_data);
   return grouped_response_data;
 };
 
@@ -59,7 +59,7 @@ const EntityViewAllData: (p: DataResourceArgs) => object = ({
 };
 
 const fetchEntityData = async (uri_end: string) => {
-  console.log("fetch_entity_data called");
+  //console.log("fetch_entity_data called");
   const response = await fetch(`${BASE_URI}/${uri_end}`);
 
   if (response.status !== 200) {
@@ -86,12 +86,12 @@ const EntityData: (p: DataResourceArgs) => object = ({
 };
 
 export const fetchAutoCompleteData = async (entity_type: string) => {
-  console.log("fetch autocompletedata called", entity_type);
+  //console.log("fetch autocompletedata called", entity_type);
   const response = await fetch(
     `${BASE_URI}/${schema[entity_type].app}/autocomplete/${entity_type}/`
   );
   const response_json = await response.json();
-  console.log(response_json);
+  //console.log(response_json);
   return response_json;
 };
 
@@ -100,7 +100,7 @@ export const putEntityData = async (
   uid: string,
   submission_data: object
 ) => {
-  console.log("postEntityData", entity, uid, submission_data);
+  //console.log("postEntityData", entity, uid, submission_data);
   const resp = await fetch(
     `${BASE_URI}/${schema[entity].app}/${entity}/${uid}`,
     {

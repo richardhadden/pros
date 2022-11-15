@@ -35,7 +35,7 @@ const EditEntityView: Component = (props) => {
 
   createEffect(() => setData(initialData));
 
-  createEffect(() => console.log(data()));
+  //createEffect(() => console.log(data()));
 
   const onSave = async () => {
     const response = await putEntityData(
@@ -43,7 +43,7 @@ const EditEntityView: Component = (props) => {
       data().uid,
       data()
     );
-    console.log("SUBMIT RESPINSE", response);
+    //console.log("SUBMIT RESPINSE", response);
     if (response.saved) {
       setHasUnsavedChange(false);
       setShowSaveToast(true);

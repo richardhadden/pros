@@ -7,6 +7,7 @@ import {
   onMount,
   Setter,
   Accessor,
+  createMemo,
 } from "solid-js";
 import { schema } from "../index";
 import EntityChip from "./ui_components/entityChip";
@@ -16,6 +17,23 @@ import { getEntityDisplayName } from "../utils/entity_names";
 import { fetchAutoCompleteData } from "../App";
 import { postNewEntityData } from "../App";
 import { filter } from "ramda";
+import { TextFieldView } from "./viewEntity";
+
+const nested_get = (nested, keys) => {
+  const k = keys.shift();
+  if (keys.length > 0) {
+    if (nested.constructor === Array) {
+      return nested_get(nested[0][k], keys);
+    }
+    return nested_get(nested[k], keys);
+  } else {
+    if (nested.constructor === Array) {
+      return nested[0][k];
+    }
+
+    return nested[k];
+  }
+};
 
 const TextEditField: Component<{
   fieldName: string;
@@ -49,7 +67,7 @@ const EmbeddedNewEntity: Component<{
   fieldName?: string;
 }> = (props) => {
   createEffect(() => {
-    console.log("changed entity type", props.entityType());
+    //console.log("changed entity type", props.entityType());
   });
 
   return (
@@ -135,7 +153,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
 
   const handleInputFocusIn = async () => {
     setResultsPanelVisible(true);
-    console.log(autoCompleteData.length);
+    //console.log(autoCompleteData.length);
     if (autoCompleteData().length === 0) {
       const data = await fetchAutoCompleteData(
         props.field.relation_to.toLowerCase()
@@ -155,7 +173,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
     }
   };
 
-  createEffect(() => console.log("Edit field VALUE>>", props.value));
+  //createEffect(() => console.log("Edit field VALUE>>", props.value));
 
   createEffect(() => {
     setFilteredAutoCompleteData(
@@ -187,7 +205,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
       updatedItem.relData = {};
     }
     updatedItem.relData[relationfieldName] = value;
-    console.log("updated item", updatedItem);
+    //console.log("updated item", updatedItem);
     props.onChange(
       props.value.map((i) => (item["uid"] !== i["uid"] ? i : updatedItem))
     );
@@ -204,7 +222,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
 
   const saveAddedEntity = async () => {
     const response = await postNewEntityData(embeddedType(), embeddedData());
-    console.log("SUBMIT RESPINSE", response);
+    //console.log("SUBMIT RESPINSE", response);
     if (response.saved) {
       handleAddSelection({
         uid: response.uid,
@@ -372,8 +390,48 @@ const Form: Component<{
   setData: Setter<object>;
 }> = (props) => {
   const handleSetFieldData = (field_name: string, value: any) => {
-    props.setData({ ...props.data(), [field_name]: value });
+    props.setData({
+      ...props.data(),
+      [field_name]: value,
+    });
+    props.setData({
+      ...props.data(),
+      label: build_label(),
+    });
   };
+
+  const build_label_template = (template) => {
+    const data = props.data();
+    try {
+      const re = new RegExp("({.*?})", "g");
+      const matches = [...template.matchAll(re)];
+      matches.forEach((match) => {
+        let s;
+        if (match[0].includes(".")) {
+          const es = match[0]
+            .replaceAll("{", "")
+            .replaceAll("}", "")
+            .split(".");
+          s = nested_get(data, es);
+        } else {
+          s = data[match[0].replaceAll("{", "").replaceAll("}", "")];
+        }
+        template = template.replace(new RegExp(match[0]), s);
+        template = template.replace(/\s\s+/g, " ");
+      });
+      return template;
+    } catch (error) {}
+  };
+
+  const build_label = createMemo(() => {
+    if (schema[props.entity_type].meta.label_template) {
+      return build_label_template(
+        schema[props.entity_type].meta.label_template
+      );
+    } else {
+      return props.data()["label"];
+    }
+  });
 
   return (
     <div class="ml-6 grid grid-cols-8">
@@ -381,7 +439,7 @@ const Form: Component<{
         <For each={Object.entries(schema[props.entity_type]?.fields)}>
           {([schema_field_name, field], index) => (
             <>
-              {field.type === "property" && (
+              {field.type === "property" && schema_field_name !== "label" && (
                 <TextEditField
                   fieldName={schema_field_name}
                   // @ts-ignore
@@ -391,6 +449,26 @@ const Form: Component<{
                   }
                 />
               )}
+              {field.type === "property" &&
+                schema_field_name === "label" &&
+                !schema[props.entity_type].meta.label_template && (
+                  <TextEditField
+                    fieldName={schema_field_name}
+                    // @ts-ignore
+                    value={props.data()[schema_field_name] || ""}
+                    onInput={(e) =>
+                      handleSetFieldData(schema_field_name, e.target?.value)
+                    }
+                  />
+                )}
+              {schema_field_name === "label" &&
+                schema[props.entity_type].meta.label_template && (
+                  <TextFieldView
+                    fieldName={schema_field_name}
+                    // @ts-ignore
+                    value={props.data()["label"] || ""}
+                  />
+                )}
               {field.type === "relation" && (
                 <ZeroOrMoreSimpleRelationEditField
                   fieldName={schema_field_name}

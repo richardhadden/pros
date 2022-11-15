@@ -20,6 +20,9 @@ class ProsNode(StructuredNode):
     real_type = StringProperty(index=True)
     label = StringProperty(index=True)
 
+    class Meta:
+        pass
+
     def __init_subclass__(cls) -> None:
         """On subclassing ProsNode, search through all RelationshipDefinitions attached
         and update the key of the relation as the relation_type.
@@ -31,6 +34,24 @@ class ProsNode(StructuredNode):
                 REVERSE_RELATIONS[v._raw_class][
                     v.definition["model"].__dict__["reverse_name"].default.lower()
                 ]["relation_to"] = cls.__name__
+
+        """ Allow meta inheritance
+        
+        N.B. Some fields should not be inherited —— display names, for obvious reasons ——
+        and subclasses should never be abstract unless specified
+        """
+
+        base_attrs = {**getattr(cls.__base__, "Meta").__dict__}
+
+        for remove_field in ["display_name", "display_name_plural", "abstract"]:
+            base_attrs.pop(remove_field, None)
+
+        meta_attrs = {**base_attrs, **cls.__dict__.get("Meta", __class__.Meta).__dict__}
+        cls.Meta = type(
+            "Meta",
+            (__class__.Meta,),
+            meta_attrs,
+        )
 
     def save(self):
         self.real_type = type(self).__name__.lower()
