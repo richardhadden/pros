@@ -261,7 +261,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
         {Object.keys(props.relationFields).length > 0 ? (
           <For each={props.value || []}>
             {(item: RelationFieldType) => (
-              <div class="card-compact card mr-4 mb-3 inline-block w-96 rounded-md bg-base-300 p-0 shadow-sm">
+              <div class="card card-compact mr-4 mb-3 inline-block w-96 rounded-md bg-base-300 p-0 shadow-sm">
                 <div
                   class="prose-md mb-0 bg-primary p-3 text-neutral-content"
                   //onMouseDown={props.onClick}
@@ -283,7 +283,9 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
                       <TextEditField
                         fieldName={relationFieldName}
                         value={
-                          item.relData ? item.relData[relationFieldName] : ""
+                          item.relData
+                            ? item.relData[relationFieldName]
+                            : relationField.default_value || ""
                         }
                         onInput={(e) =>
                           handleModifyRelationField(
@@ -453,7 +455,12 @@ const Form: Component<{
                 <TextEditField
                   fieldName={schema_field_name}
                   // @ts-ignore
-                  value={props.data()[schema_field_name] || ""}
+                  value={
+                    props.data()[schema_field_name] ||
+                    schema[props.entity_type].fields[schema_field_name]
+                      .default_value ||
+                    ""
+                  }
                   onInput={(e) =>
                     handleSetFieldData(schema_field_name, e.target?.value)
                   }

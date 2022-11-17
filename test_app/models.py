@@ -20,6 +20,23 @@ class Factoid(ProsNode):
 
     class Meta:
         abstract = True
+        text_filter_fields = [
+            icontains("o", "label"),
+        ]
+
+
+class Relation(Factoid):
+    subject_related_to = ProsRelationTo(
+        "Person", reverse_name="is_related_to_subject", model=UncertainRelation
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Acquaintanceship(Relation):
+    class Meta:
+        label_template = "{is_about_person.label} knows {subject_related_to.label}"
 
 
 class Naming(Factoid):

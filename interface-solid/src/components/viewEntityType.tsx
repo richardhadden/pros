@@ -65,7 +65,7 @@ const ViewEntityType: Component = () => {
       <TopBar
         params={params}
         barTitle={
-          <div class="prose-sm ml-3 inline-block rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+          <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
             {getEntityNamePlural(params.entity_type)}
           </div>
         }

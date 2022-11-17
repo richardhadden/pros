@@ -7,6 +7,7 @@ import { createEffect, createSignal, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Router } from "@solidjs/router";
 
+const SERVER: string = "http://127.0.0.1:8000";
 const BASE_URI: string = "http://127.0.0.1:8000/api";
 
 type SchemaFieldProperty = {
@@ -482,5 +483,5 @@ render(
   document.getElementById("root") as HTMLElement
 );
 
-export { schema, BASE_URI };
+export { schema, BASE_URI, SERVER };
 export type { SchemaObject, SchemaEntity, SubClasses };

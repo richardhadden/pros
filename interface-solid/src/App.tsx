@@ -1,15 +1,17 @@
-import { Component, createResource } from "solid-js";
+import { Component, createResource, Show } from "solid-js";
 import { Routes, Route } from "@solidjs/router";
 import { groupBy } from "ramda";
 
-import { schema, BASE_URI } from "./index";
+import { schema, BASE_URI, SERVER } from "./index";
 
 import ViewEntityType from "./components/viewEntityType";
 import ViewEntity from "./components/viewEntity";
 import EditEntityView from "./components/editEntityView";
 import NewEntityView from "./components/newEntityView";
+import Login from "./components/login";
 
 import Sidebar from "./components/sidebar";
+import { createStore } from "solid-js/store";
 
 type ViewEntityTypeData = {
   real_type: string;
@@ -143,35 +145,61 @@ export const postNewEntityData = async (
   return json;
 };
 
+export const postLogin = async (username: string, password: string) => {
+  const resp = await fetch(`${SERVER}/login/`, {
+    method: "POST", // *GET, POST, PUT, DELETE, etc.
+    mode: "no-cors", // no-cors, *cors, same-origin
+    cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: "same-origin", // include, *same-origin, omit
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + btoa(`${username}:${password}`),
+    },
+  });
+  const json = await resp.json();
+  return json;
+};
+
+const [userStatus, setUserStatus] = createStore({
+  username: "",
+  loggedIn: true,
+});
+
 const App: Component = () => {
   return (
     <>
-      <div class="flex h-full">
-        <div class="">
-          <Sidebar />
+      <Show when={userStatus.loggedIn} fallback={<Login />}>
+        <div class="flex h-full">
+          <div class="">
+            <Sidebar />
+          </div>
+          <div class="flex-grow bg-base-100 pl-5 pr-10">
+            <Routes>
+              <Route
+                path="/entity/:entity_type/new/"
+                component={NewEntityView}
+              />
+              <Route
+                path="/entity/:entity_type/:uid/"
+                component={ViewEntity}
+                data={EntityData}
+              />
+              <Route
+                path="/entity/:entity_type/"
+                component={ViewEntityType}
+                data={EntityViewAllData}
+              />
+              <Route
+                path="/entity/:entity_type/:uid/edit/"
+                component={EditEntityView}
+                data={EntityData}
+              />
+              <Route path="/login" component={Login} />
+              <Route path="/" element={<div>Home</div>} />
+            </Routes>
+          </div>
         </div>
-        <div class="flex-grow bg-base-100 pl-5 pr-10">
-          <Routes>
-            <Route path="/entity/:entity_type/new/" component={NewEntityView} />
-            <Route
-              path="/entity/:entity_type/:uid/"
-              component={ViewEntity}
-              data={EntityData}
-            />
-            <Route
-              path="/entity/:entity_type/"
-              component={ViewEntityType}
-              data={EntityViewAllData}
-            />
-            <Route
-              path="/entity/:entity_type/:uid/edit/"
-              component={EditEntityView}
-              data={EntityData}
-            />
-            <Route path="/" element={<div>Home</div>} />
-          </Routes>
-        </div>
-      </div>
+      </Show>
     </>
   );
 };
