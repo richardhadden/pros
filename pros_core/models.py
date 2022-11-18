@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from neomodel import (
     StringProperty,
     StructuredNode,
@@ -13,6 +13,8 @@ from pypher import Pypher, __
 
 
 REVERSE_RELATIONS = defaultdict(lambda: defaultdict(dict))
+
+OverrideLabel = namedtuple("OverrideLabel", ["label", "reverse_label"])
 
 
 class ProsNode(StructuredNode):

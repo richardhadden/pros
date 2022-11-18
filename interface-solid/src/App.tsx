@@ -1,17 +1,18 @@
-import { Component, createResource, Show } from "solid-js";
+import { Component, createResource, Show, onMount } from "solid-js";
 import { Routes, Route } from "@solidjs/router";
 import { groupBy } from "ramda";
 
-import { schema, BASE_URI, SERVER } from "./index";
+import { schema, BASE_URI } from "./index";
 
 import ViewEntityType from "./components/viewEntityType";
 import ViewEntity from "./components/viewEntity";
 import EditEntityView from "./components/editEntityView";
 import NewEntityView from "./components/newEntityView";
-import Login from "./components/login";
+import Login, { getSession } from "./components/login";
 
 import Sidebar from "./components/sidebar";
-import { createStore } from "solid-js/store";
+
+import { userStatus } from "./components/login";
 
 type ViewEntityTypeData = {
   real_type: string;
@@ -145,35 +146,54 @@ export const postNewEntityData = async (
   return json;
 };
 
-export const postLogin = async (username: string, password: string) => {
-  const resp = await fetch(`${SERVER}/login/`, {
-    method: "POST", // *GET, POST, PUT, DELETE, etc.
-    mode: "no-cors", // no-cors, *cors, same-origin
-    cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: "same-origin", // include, *same-origin, omit
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Basic " + btoa(`${username}:${password}`),
-    },
-  });
-  const json = await resp.json();
-  return json;
+const Home: Component = () => {
+  return (
+    <div class="mt-12 flex flex-grow flex-row justify-center">
+      <div class="w-3/6">
+        <div class="prose">
+          <h1 class="prose-h1">Home</h1>
+          <p class="prose-lead">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae a
+            veniam consequuntur nesciunt omnis cumque doloremque aperiam tempora
+            magnam quas, praesentium rem ex harum numquam vitae ducimus ut vero
+            nostrum!
+          </p>
+          <p>
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Error
+            aspernatur libero cum deserunt ex exercitationem distinctio, dolorum
+            sequi magni earum assumenda quod eaque molestias quos eos placeat
+            nisi in autem.
+          </p>
+        </div>
+        <div class="hero mt-12 bg-base-200">
+          <div class="hero-content text-center">
+            <div class="max-w-md">
+              <h1 class="text-5xl font-bold">Hello there</h1>
+              <p class="py-6">
+                Provident cupiditate voluptatem et in. Quaerat fugiat ut
+                assumenda excepturi exercitationem quasi. In deleniti eaque aut
+                repudiandae et a id nisi.
+              </p>
+              <button class="btn btn-primary">Get Started</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-const [userStatus, setUserStatus] = createStore({
-  username: "",
-  loggedIn: true,
-});
-
 const App: Component = () => {
+  onMount(getSession);
+
   return (
     <>
-      <Show when={userStatus.loggedIn} fallback={<Login />}>
+      <Show when={userStatus.isAuthenticated} fallback={<Login />}>
         <div class="flex h-full">
           <div class="">
             <Sidebar />
           </div>
-          <div class="flex-grow bg-base-100 pl-5 pr-10">
+          <div class="flex-grow pl-5 pr-10">
             <Routes>
               <Route
                 path="/entity/:entity_type/new/"
@@ -195,7 +215,7 @@ const App: Component = () => {
                 data={EntityData}
               />
               <Route path="/login" component={Login} />
-              <Route path="/" element={<div>Home</div>} />
+              <Route path="/" component={Home} />
             </Routes>
           </div>
         </div>

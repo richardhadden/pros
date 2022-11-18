@@ -58,7 +58,7 @@ const TextEditField: Component<{
       <div class="col-span-5 mb-4 mt-4 w-full">
         <input
           type="text"
-          class="w-full rounded-b-none border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+          class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           value={props.value || ""}
           onInput={props.onInput}
         />
@@ -131,6 +131,7 @@ type RelationFieldType = {
 };
 
 const ZeroOrMoreSimpleRelationEditField: Component<{
+  override_labels: object;
   field: { relation_to: string };
   fieldName: string;
   relatedToType: string;
@@ -249,7 +250,9 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
   return (
     <>
       <div class="col-span-2 mb-4 mt-4 select-none font-semibold uppercase">
-        {props.fieldName.replaceAll("_", " ")}
+        {props.override_labels
+          ? props.override_labels[0]
+          : props.fieldName.replaceAll("_", " ")}
         <div class="mt-1 ml-1 select-none">
           <BsArrowReturnRight class="inline-block" />{" "}
           <span class="prose-sm rounded-md bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
@@ -488,6 +491,11 @@ const Form: Component<{
                 )}
               {field.type === "relation" && (
                 <ZeroOrMoreSimpleRelationEditField
+                  override_labels={
+                    schema[props.entity_type].meta.override_labels[
+                      schema_field_name
+                    ]
+                  }
                   fieldName={schema_field_name}
                   value={props.data()[schema_field_name] || []}
                   field={field}

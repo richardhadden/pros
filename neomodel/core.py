@@ -22,20 +22,23 @@ def drop_constraints(quiet=True, stdout=None):
     if not stdout or stdout is None:
         stdout = sys.stdout
 
-    results, meta = db.cypher_query("CALL db.constraints()")
-    pattern = re.compile(":(.*) \).*\.(\w*)")
+    results, meta = db.cypher_query("SHOW constraint")
+
     for constraint in results:
-        # Versions prior to 4.0 have a very different return format
-        if constraint[0].startswith("CONSTRAINT "):
-            db.cypher_query("DROP {!s}".format(constraint[0]))
-            match = pattern.search(constraint[0])
-        else:
-            db.cypher_query("DROP CONSTRAINT {!s}".format(constraint[0]))
-            match = pattern.search(constraint[1])
+        (
+            constraint_id,
+            constraint_name,
+            constraint_type,
+            entityType,
+            labelsOrTypes,
+            properties,
+            ownedIndex,
+        ) = constraint
+
+        db.cypher_query(f"DROP CONSTRAINT {constraint_name}")
+
         stdout.write(
-            """ - Dropping unique constraint and index on label {0} with property {1}.\n""".format(
-                match.group(1), match.group(2)
-            )
+            f""" - Dropping unique constraint and index on label {entityType} with property {properties}.\n"""
         )
     stdout.write("\n")
 
@@ -50,25 +53,28 @@ def drop_indexes(quiet=True, stdout=None):
     if not stdout or stdout is None:
         stdout = sys.stdout
 
-    results, meta = db.cypher_query("CALL db.indexes()")
-    pattern = re.compile(":(.*)\((.*)\)")
+    results, meta = db.cypher_query("SHOW INDEXES")
+
     for index in results:
-        # Versions prior to 4.0 have a very different return format
-        if not isinstance(index[0], int) and index[0].startswith("INDEX "):
-            db.cypher_query("DROP " + index[0])
-            match = pattern.search(index[0])
-            stdout.write(
-                " - Dropping index on label {0} with property {1}.\n".format(
-                    match.group(1), match.group(2)
-                )
+        (
+            index_id,
+            index_name,
+            state,
+            populationPercent,
+            index_type,
+            entityType,
+            labelsOrTypes,
+            properties,
+            indexProvider,
+            owningConstraint,
+        ) = index
+
+        db.cypher_query("DROP INDEX " + index_name)
+        stdout.write(
+            " - Dropping index on label {0} with property {1}.\n".format(
+                labelsOrTypes, properties
             )
-        else:
-            db.cypher_query("DROP INDEX " + index[1])
-            stdout.write(
-                " - Dropping index on label {0} with property {1}.\n".format(
-                    index[7][0], index[8][0]
-                )
-            )
+        )
     stdout.write("\n")
 
 

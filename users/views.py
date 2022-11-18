@@ -1,36 +1,58 @@
-from django.contrib.auth import login, logout
+import json
 
-from rest_framework import generics
-from rest_framework import permissions
-from rest_framework import status
-from rest_framework import views
-from rest_framework.response import Response
-
-from . import serializers
+from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
+from django.views.decorators.http import require_POST
 
 
-class LoginView(views.APIView):
-    # This view should be accessible also for unauthenticated users.
-    permission_classes = (permissions.AllowAny,)
+def get_csrf(request):
+    response = JsonResponse({"detail": "CSRF cookie set"})
+    response["X-CSRFToken"] = get_token(request)
+    return response
 
-    def post(self, request, format=None):
-        serializer = serializers.LoginSerializer(
-            data=self.request.data, context={"request": self.request}
+
+@require_POST
+@csrf_exempt
+def login_view(request):
+    data = json.loads(request.body)
+    print(data)
+    username = data.get("username")
+    password = data.get("password")
+
+    if username is None or password is None:
+        return JsonResponse(
+            {"detail": "Please provide username and password."}, status=400
         )
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data["user"]
-        login(request, user)
-        return Response(None, status=status.HTTP_202_ACCEPTED)
+
+    user = authenticate(username=username, password=password)
+
+    if user is None:
+        return JsonResponse({"detail": "Invalid credentials."}, status=400)
+
+    login(request, user)
+    return JsonResponse({"detail": "Successfully logged in."})
 
 
-class LogoutView(views.APIView):
-    def post(self, request, format=None):
-        logout(request)
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
+def logout_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "You're not logged in."}, status=400)
+
+    logout(request)
+    return JsonResponse({"detail": "Successfully logged out."})
 
 
-class ProfileView(generics.RetrieveAPIView):
-    serializer_class = serializers.UserSerializer
+@ensure_csrf_cookie
+def session_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"isAuthenticated": False})
 
-    def get_object(self):
-        return self.request.user
+    return JsonResponse({"isAuthenticated": True, "username": request.user.username})
+
+
+def whoami_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"isAuthenticated": False})
+
+    return JsonResponse({"username": request.user.username})

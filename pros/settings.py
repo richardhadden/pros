@@ -132,6 +132,34 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_TRUSTED_ORIGINS = [
+    "http://*",
+    "https://*.mydomain.com",
+    "https://*.127.0.0.1",
+    "http://127.0.0.1:3000",
+    "http://localhost:4173",
+]
+"""
+CORS_ALLOWED_ORIGINS = [
+    "http://*",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ORIGIN_WHITELIST = [
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+]"""
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
+CORS_ALLOW_CREDENTIALS = True
+
 """
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

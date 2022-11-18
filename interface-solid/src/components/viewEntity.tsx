@@ -26,6 +26,7 @@ export const TextFieldView: Component<{ fieldName: string; value: string }> = (
 };
 
 const ZeroOrMoreRelationFieldView: Component<{
+  override_label: string;
   fieldName: string;
   reverseRelation: boolean;
   field: { relation_to: string };
@@ -34,7 +35,7 @@ const ZeroOrMoreRelationFieldView: Component<{
   return (
     <>
       <div class={`col-span-2 mb-4 mt-4 select-none font-semibold uppercase`}>
-        {props.fieldName.replaceAll("_", " ")}
+        {props.override_label || props.fieldName.replaceAll("_", " ")}
         <div class="mt-1 ml-1 select-none">
           <BsArrowReturnRight class="inline-block" />{" "}
           <span class="prose-sm rounded-md bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
@@ -58,7 +59,7 @@ const ZeroOrMoreRelationFieldView: Component<{
                 </span>
               }
             >
-              <div class="card-compact card mr-4 mb-3 inline-block rounded-md bg-base-300 p-0 shadow-sm">
+              <div class="card card-compact mr-4 mb-3 inline-block rounded-md bg-base-300 p-0 shadow-sm">
                 <NavLink
                   href={`/entity/${item.real_type}/${item.uid}`}
                   class="prose-md mb-0 flex max-w-4xl bg-primary p-3 text-neutral-content hover:bg-primary-focus"
@@ -126,6 +127,11 @@ const ViewEntity: Component = () => {
                 )}
                 {field.type === "relation" && (
                   <ZeroOrMoreRelationFieldView
+                    override_label={
+                      schema[params.entity_type].meta.override_labels?.[
+                        schema_field_name.toLowerCase()
+                      ]?.[0]
+                    }
                     fieldName={schema_field_name}
                     value={data()[schema_field_name]}
                     field={field}

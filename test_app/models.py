@@ -2,7 +2,7 @@ from neomodel import (
     StringProperty,
 )
 
-from pros_core.models import ProsNode, ProsRelationTo, ProsRelationBase
+from pros_core.models import ProsNode, ProsRelationTo, ProsRelationBase, OverrideLabel
 from pros_core.filters import icontains
 
 
@@ -25,21 +25,19 @@ class Factoid(ProsNode):
         ]
 
 
-class Relation(Factoid):
-    subject_related_to = ProsRelationTo(
-        "Person", reverse_name="is_related_to_subject", model=UncertainRelation
-    )
-
-    class Meta:
-        abstract = True
+class Event(Factoid):
+    pass
 
 
-class Acquaintanceship(Relation):
-    class Meta:
-        label_template = "{is_about_person.label} knows {subject_related_to.label}"
+class Birth(Event):
+    pass
 
 
-class Naming(Factoid):
+class Death(Event):
+    pass
+
+
+class Naming(Event):
     title = StringProperty()
     first_name = StringProperty()
     last_name = StringProperty()
@@ -62,6 +60,32 @@ class Naming(Factoid):
         label_template = (
             "{is_about_person.label} named {title} {first_name} {last_name}"
         )
+
+
+class Relation(Factoid):
+    subject_related_to = ProsRelationTo(
+        "Person", reverse_name="is_related_to_subject", model=UncertainRelation
+    )
+
+    class Meta:
+        abstract = True
+
+
+class ParentChildRelation(Relation):
+    class Meta:
+        display_name = "Parent-Child Relation"
+        label_template = (
+            "{is_about_person.label} is parent of {subject_related_to.label}"
+        )
+        override_labels = {
+            "is_about_person": OverrideLabel("parent", "is_identified_as_parent"),
+            "subject_related_to": OverrideLabel("child", "identified_as_child"),
+        }
+
+
+class Acquaintanceship(Relation):
+    class Meta:
+        label_template = "{is_about_person.label} knows {subject_related_to.label}"
 
 
 class Membership(Factoid):

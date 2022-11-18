@@ -15,7 +15,9 @@ import { schema, SchemaEntity, SubClasses } from "../index";
 import { getEntityNamePlural } from "../utils/entity_names";
 
 import { BsPlus, BsQuestion } from "solid-icons/bs";
+import { AiOutlineLine } from "solid-icons/ai";
 import { CgAbstract } from "solid-icons/cg";
+import { logout, userStatus } from "./login";
 
 const SideBarListItems: Component<{
   subclasses: SubClasses | undefined;
@@ -83,19 +85,26 @@ const Sidebar: Component = () => {
 
   return (
     <div class="drawer-mobile drawer h-full">
-      <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content flex flex-col items-center justify-center">
-        <label
-          for="my-drawer-2"
-          class="btn btn-primary drawer-button lg:hidden"
-        >
-          Open drawer
-        </label>
-      </div>
-      <div class="h-full min-h-screen min-w-fit bg-base-300 shadow-inner">
-        <label for="my-drawer-2" class="drawer-overlay">
-          Hello
-        </label>
+      <div class="relative h-full min-h-screen min-w-fit bg-base-300 shadow-inner">
+        <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner">
+          <Link
+            href="/"
+            class="prose prose-xl ml-2 mb-4 block text-center font-black hover:text-accent"
+          >
+            PROS
+          </Link>
+          <div class="flex justify-evenly">
+            <span class="prose-sm mt-1 mr-1 font-semibold uppercase">
+              User{" "}
+            </span>
+            <span class="btn btn-disabled btn-sm prose-sm mr-3 ml-1 bg-base-300 text-base-content">
+              {userStatus.username}
+            </span>{" "}
+            <Link href="/" class="btn btn-sm" onClick={logout}>
+              Log Out
+            </Link>
+          </div>
+        </div>
         <ul class="overflow-y-auto p-4 pr-10 text-base-content ">
           <For each={topLevelEntities()}>
             {([entity_name, entity], index) => (

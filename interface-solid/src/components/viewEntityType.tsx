@@ -73,7 +73,7 @@ const ViewEntityType: Component = () => {
           <input
             type="text"
             placeholder="Filter..."
-            class="input w-full max-w-xs text-black"
+            class="input w-full max-w-xs"
             value={filterValue()}
             onInput={(e: InputEvent) => onFilterInput(e.target?.value)}
           />
@@ -88,7 +88,7 @@ const ViewEntityType: Component = () => {
               <>
                 <div class="grid grid-cols-8 gap-y-6">
                   <div class="col-span-2 rounded-l-md pt-4 pb-6 pl-3">
-                    <h2 class="prose-md font-semibold uppercase text-base-content">
+                    <h2 class="prose-md select-none font-semibold uppercase text-base-content">
                       {getEntityNamePlural(entity_name)}
                     </h2>
                   </div>
@@ -102,7 +102,7 @@ const ViewEntityType: Component = () => {
                           >
                             <div class="flex-col content-center">
                               <div>
-                                <span class="prose-sm mr-7 font-light uppercase">
+                                <span class="prose-sm mr-7 select-none font-light uppercase">
                                   {getEntityDisplayName(item.real_type)}
                                 </span>
                               </div>
