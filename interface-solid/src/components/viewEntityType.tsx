@@ -73,7 +73,7 @@ const ViewEntityType: Component = () => {
           <input
             type="text"
             placeholder="Filter..."
-            class="input w-full max-w-xs"
+            class="input w-full max-w-xs text-black"
             value={filterValue()}
             onInput={(e: InputEvent) => onFilterInput(e.target?.value)}
           />

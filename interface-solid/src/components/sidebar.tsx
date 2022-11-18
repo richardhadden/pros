@@ -86,7 +86,7 @@ const Sidebar: Component = () => {
   return (
     <div class="drawer-mobile drawer h-full">
       <div class="relative h-full min-h-screen min-w-fit bg-base-300 shadow-inner">
-        <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner">
+        <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner ">
           <Link
             href="/"
             class="prose prose-xl ml-2 mb-4 block text-center font-black hover:text-accent"
@@ -105,7 +105,7 @@ const Sidebar: Component = () => {
             </Link>
           </div>
         </div>
-        <ul class="overflow-y-auto p-4 pr-10 text-base-content ">
+        <ul class="overflow-y-scroll p-4 pr-10 text-base-content ">
           <For each={topLevelEntities()}>
             {([entity_name, entity], index) => (
               <>

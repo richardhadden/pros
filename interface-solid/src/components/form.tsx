@@ -492,7 +492,7 @@ const Form: Component<{
               {field.type === "relation" && (
                 <ZeroOrMoreSimpleRelationEditField
                   override_labels={
-                    schema[props.entity_type].meta.override_labels[
+                    schema[props.entity_type].meta?.override_labels?.[
                       schema_field_name
                     ]
                   }
