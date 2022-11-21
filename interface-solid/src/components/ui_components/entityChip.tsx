@@ -13,7 +13,10 @@ const EntityChip: Component<{
     "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-md h-12 prose-md relative top-1.5 font-semibold inline-block";
   return props.href ? (
     <NavLink
-      class={style + ` bg-${props.color} hover:bg-${props.color}-focus`}
+      class={
+        style +
+        ` bg-${props.color} hover:bg-${props.color}-focus transition-all`
+      }
       href={props.href}
     >
       <span class="prose-sm mr-5 font-light uppercase">{props.leftSlot} </span>

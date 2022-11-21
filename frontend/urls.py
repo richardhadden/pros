@@ -1,8 +1,10 @@
+import datetime
 from rest_framework import routers
 
 from django.urls import path
 
-from neomodel import db, Q
+from neomodel import db, Q, DateProperty
+from neomodel.properties import DateTimeProperty
 from .utils import PROS_APPS, PROS_MODELS
 
 from rest_framework import viewsets
@@ -90,11 +92,24 @@ def create_retrieve(model_class: ProsNode):
     return retrieve
 
 
+def prepare_data_value(properties, k, v):
+    if isinstance(properties[k], DateProperty):
+        v = datetime.date.fromisoformat(v)
+    if isinstance(properties[k], DateTimeProperty):
+        if v:
+            v = datetime.datetime.fromisoformat(v.replace("Z", ""))
+        else:
+            None
+
+    return v
+
+
 def get_property_and_relation_data(request, model_class):
+    properties = PROS_MODELS[model_class.__name__].properties
     property_data = {
-        k: v
+        k: prepare_data_value(properties, k, v)
         for k, v in request.data.items()
-        if k in PROS_MODELS[model_class.__name__].properties
+        if k in properties
     }
 
     relation_data = {

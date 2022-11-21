@@ -84,9 +84,9 @@ const Sidebar: Component = () => {
   );
 
   return (
-    <div class="drawer-mobile drawer h-full">
+    <div class="drawer drawer-mobile h-full">
       <div class="relative h-full min-h-screen min-w-fit bg-base-300 shadow-inner">
-        <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner ">
+        <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner shadow-2xl">
           <Link
             href="/"
             class="prose prose-xl ml-2 mb-4 block text-center font-black hover:text-accent"

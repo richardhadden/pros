@@ -1,4 +1,10 @@
-import { Component, createResource, Show, onMount } from "solid-js";
+import {
+  Component,
+  createResource,
+  Show,
+  onMount,
+  createSignal,
+} from "solid-js";
 import { Routes, Route } from "@solidjs/router";
 import { groupBy } from "ramda";
 
@@ -71,6 +77,7 @@ const fetchEntityData = async (uri_end: string) => {
   }
 
   const response_json = await response.json();
+  console.log(response_json);
   return response_json;
 };
 
@@ -147,6 +154,7 @@ export const postNewEntityData = async (
 };
 
 const Home: Component = () => {
+  const [c, setC] = createSignal(true);
   return (
     <div class="mt-12 flex flex-grow flex-row justify-center">
       <div class="w-3/6">

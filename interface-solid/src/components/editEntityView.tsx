@@ -25,6 +25,7 @@ const EditEntityView: Component = (props) => {
   const [data, setData] = createSignal(initialData);
 
   const handleSetData = (data) => {
+    console.log(data);
     setData(data);
     setHasUnsavedChange(true);
   };
@@ -34,8 +35,6 @@ const EditEntityView: Component = (props) => {
   const [showSaveToast, setShowSaveToast] = createSignal(false);
 
   createEffect(() => setData(initialData));
-
-  //createEffect(() => console.log(data()));
 
   const onSave = async () => {
     const response = await putEntityData(

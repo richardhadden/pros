@@ -45,23 +45,101 @@ const nested_get = (nested, keys) => {
   }
 };
 
-const TextEditField: Component<{
+const TypedInputField: Component<{
   fieldName: string;
-  value: string;
-  onInput: (e: InputEvent) => void;
+  value: any;
+  setValue: (v: any) => void;
+  propertyType: "StringProperty" | "EmailProperty" | "IntegerProperty";
+  helpText: string;
 }> = (props) => {
+  //createEffect(() => console.log(props.fieldName, props.value));
+
+  const setFloat = (e) => {
+    e.preventDefault();
+    const v = e.target.value;
+    const regex = /^\d*.?\d*$/;
+    if (regex.test(v) || v === "") {
+      props.setValue(v);
+    } else {
+      props.setValue(props.value);
+    }
+  };
+
   return (
     <>
-      <div class="col-span-2 mb-4 mt-8 select-none font-semibold uppercase">
-        {props.fieldName.replaceAll("_", " ")}
+      <div class="col-span-2 mb-4 mt-8 flex select-none flex-col items-baseline font-semibold uppercase">
+        <div>{props.fieldName.replaceAll("_", " ")}</div>
+        <label
+          class="prose prose-sm mt-4 block select-none uppercase text-gray-300"
+          for={props.fieldName}
+        >
+          {props.helpText}
+        </label>
       </div>
       <div class="col-span-5 mb-4 mt-4 w-full">
-        <input
-          type="text"
-          class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
-          value={props.value || ""}
-          onInput={props.onInput}
-        />
+        {props.propertyType === "StringProperty" && (
+          <input
+            type="text"
+            class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            value={props.value || ""}
+            onInput={(e) => props.setValue(e.target?.value)}
+          />
+        )}
+        {props.propertyType === "EmailProperty" && (
+          <input
+            type="email"
+            class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            value={props.value || ""}
+            onInput={(e) => props.setValue(e.target?.value)}
+          />
+        )}
+        {props.propertyType === "IntegerProperty" && (
+          <input
+            step="any"
+            type="number"
+            class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            value={props.value}
+            onInput={(e) => props.setValue(e.target?.value)}
+            id={props.fieldName}
+          />
+        )}
+        {props.propertyType === "FloatProperty" && (
+          <input
+            step="any"
+            type="text"
+            pattern="^\d*\.?\d*$"
+            class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            value={props.value || ""}
+            onInput={setFloat}
+          />
+        )}
+        {props.propertyType === "BooleanProperty" && (
+          <input
+            type="checkbox"
+            class="toggle toggle-primary mt-3"
+            checked={props.value}
+            onChange={(e) => props.setValue(e.target.checked)}
+          />
+        )}
+
+        {props.propertyType === "DateProperty" && (
+          <input
+            step="any"
+            type="date"
+            class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            value={props.value || ""}
+            onInput={(e) => props.setValue(e.target?.value)}
+          />
+        )}
+        {props.propertyType === "DateTimeProperty" && (
+          <input
+            step="any"
+            type="datetime"
+            class="appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            value={props.value || ""}
+            onInput={(e) => props.setValue(e.target?.value)}
+          />
+        )}
       </div>
       <div class="col-span-1" />
     </>
@@ -76,10 +154,6 @@ const EmbeddedNewEntity: Component<{
   initialType: string;
   fieldName?: string;
 }> = (props) => {
-  createEffect(() => {
-    //console.log("changed entity type", props.entityType());
-  });
-
   return (
     <>
       <div class="bg-neutral bg-opacity-80 p-6">
@@ -283,18 +357,21 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
                 <div class="card-body grid grid-cols-7">
                   <For each={Object.entries(props.relationFields)}>
                     {([relationFieldName, relationField]) => (
-                      <TextEditField
+                      <TypedInputField
+                        helpText={relationField.help_text}
+                        propertyType={relationField.property_type}
                         fieldName={relationFieldName}
                         value={
-                          item.relData
+                          item.relData &&
+                          item.relData[relationFieldName] !== null
                             ? item.relData[relationFieldName]
                             : relationField.default_value || ""
                         }
-                        onInput={(e) =>
+                        setValue={(value) =>
                           handleModifyRelationField(
                             item,
                             relationFieldName,
-                            e.target?.value
+                            value
                           )
                         }
                       />
@@ -409,10 +486,12 @@ const Form: Component<{
       ...props.data(),
       [field_name]: value,
     });
-    props.setData({
-      ...props.data(),
-      label: build_label(),
-    });
+    if (schema[props.entity_type].meta.label_template) {
+      props.setData({
+        ...props.data(),
+        label: build_label(),
+      });
+    }
   };
 
   const build_label_template = (template) => {
@@ -455,29 +534,32 @@ const Form: Component<{
           {([schema_field_name, field], index) => (
             <>
               {field.type === "property" && schema_field_name !== "label" && (
-                <TextEditField
+                <TypedInputField
                   fieldName={schema_field_name}
-                  // @ts-ignore
+                  propertyType={field.property_type}
+                  helpText={field.help_text}
                   value={
-                    props.data()[schema_field_name] ||
-                    schema[props.entity_type].fields[schema_field_name]
-                      .default_value ||
-                    ""
+                    props.data()[schema_field_name] !== null
+                      ? props.data()[schema_field_name]
+                      : schema[props.entity_type].fields[schema_field_name]
+                          .default_value || ""
                   }
-                  onInput={(e) =>
-                    handleSetFieldData(schema_field_name, e.target?.value)
+                  setValue={(value) =>
+                    handleSetFieldData(schema_field_name, value)
                   }
                 />
               )}
               {field.type === "property" &&
                 schema_field_name === "label" &&
                 !schema[props.entity_type].meta.label_template && (
-                  <TextEditField
+                  <TypedInputField
                     fieldName={schema_field_name}
+                    helpText={field.help_text}
+                    propertyType={field.property_type}
                     // @ts-ignore
                     value={props.data()[schema_field_name] || ""}
-                    onInput={(e) =>
-                      handleSetFieldData(schema_field_name, e.target?.value)
+                    setValue={(value) =>
+                      handleSetFieldData(schema_field_name, value)
                     }
                   />
                 )}

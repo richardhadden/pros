@@ -20,7 +20,9 @@ export const TextFieldView: Component<{ fieldName: string; value: string }> = (
       <div class="col-span-2 mb-4 mt-4 select-none font-semibold uppercase">
         {props.fieldName.replaceAll("_", " ")}
       </div>
-      <div class="col-span-6 mb-4 mt-4">{props.value}</div>
+      <div class="col-span-6 mb-4 mt-4">
+        {props.value && props.value.toString()}
+      </div>
     </>
   );
 };

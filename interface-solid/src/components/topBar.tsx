@@ -35,7 +35,7 @@ const TopBar: Component<{
   return schema ? (
     <>
       <div class="mr-32">
-        <div class="navbar fixed z-50 ml-32 h-20 w-4/6 rounded-b-lg bg-neutral pr-0 pt-0 pb-0 text-neutral-content shadow-xl">
+        <div class="navbar fixed z-50 ml-32 h-20 w-4/6 rounded-b-lg bg-neutral pr-0 pt-0 pb-0 text-neutral-content shadow-2xl">
           <div class="navbar-start prose-xl ml-3 font-semibold uppercase">
             {props.barTitle}
           </div>

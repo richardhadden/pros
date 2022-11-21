@@ -1,6 +1,14 @@
 from neomodel import (
     StringProperty,
 )
+from neomodel.properties import (
+    BooleanProperty,
+    DateProperty,
+    DateTimeProperty,
+    EmailProperty,
+    FloatProperty,
+    IntegerProperty,
+)
 
 from pros_core.models import ProsNode, ProsRelationTo, ProsRelationBase, OverrideLabel
 from pros_core.filters import icontains
@@ -124,3 +132,12 @@ class Letter(Source):
     class Meta:
         # __all__ can be used in label_template to add label of all related nodes
         label_template = "Letter from {sender.__all__.label} to {recipient.label}"
+
+
+class Test(ProsNode):
+    integer = IntegerProperty(help_text="An integer for you to enjoy")
+    float = FloatProperty()
+    boolean = BooleanProperty(default=True)
+    date = DateProperty()
+    dateTime = DateTimeProperty()
+    email = EmailProperty()

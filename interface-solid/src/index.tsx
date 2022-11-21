@@ -69,7 +69,17 @@ function SchemaWrapper(props: SchemaWrapperProps) {
   });
 
   return (
-    <Show when={Object.keys(schema).length > 0} fallback={<>Loading...</>}>
+    <Show
+      when={Object.keys(schema).length > 0}
+      fallback={
+        <div class="flex items-center justify-center">
+          <div
+            class="spinner-border inline-block h-8 w-8 animate-spin rounded-full border-4"
+            role="status"
+          ></div>
+        </div>
+      }
+    >
       {props.children}
     </Show>
   );

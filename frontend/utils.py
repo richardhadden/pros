@@ -35,11 +35,13 @@ AppModel = namedtuple(
 
 def build_field(p):
     if isinstance(p, Property):
+
         return {
             "type": "property",
             "property_type": p.__class__.__name__,
             "default_value": p.default,
             "required": p.required,
+            "help_text": p.help_text or None,
         }
 
     if isinstance(p, RelationshipDefinition) and p.definition["direction"] == 1:
@@ -103,12 +105,14 @@ def build_app_model(app_name, model, model_name):
         model_name=model_name,
         meta=build_meta(model),
         properties={
-            n
+            n: p
             for n, p in model.__all_properties__
             if not isinstance(p, UniqueIdProperty)
         },
         relations={
-            n for n, p in model.__all_relationships__ if p.definition["direction"] == 1
+            n: p
+            for n, p in model.__all_relationships__
+            if p.definition["direction"] == 1
         },  # This check for direction is so we can only set on the TO side
         fields={
             n: build_field(p)

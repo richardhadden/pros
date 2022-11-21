@@ -20,7 +20,7 @@ OverrideLabel = namedtuple("OverrideLabel", ["label", "reverse_label"])
 class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
     real_type = StringProperty(index=True)
-    label = StringProperty(index=True)
+    label = StringProperty(index=True, help_text="Short text description")
 
     class Meta:
         pass
