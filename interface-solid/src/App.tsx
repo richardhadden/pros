@@ -4,6 +4,7 @@ import {
   Show,
   onMount,
   createSignal,
+  lazy,
 } from "solid-js";
 import { Routes, Route } from "@solidjs/router";
 import { groupBy } from "ramda";
@@ -19,6 +20,7 @@ import Login, { getSession } from "./components/login";
 import Sidebar from "./components/sidebar";
 
 import { userStatus } from "./components/login";
+import { CUSTOM_ADVANCED_FIELDS } from "../../interface-solid/interface-config.js";
 
 type ViewEntityTypeData = {
   real_type: string;
@@ -157,6 +159,7 @@ const Home: Component = () => {
   const [c, setC] = createSignal(true);
   return (
     <div class="mt-12 flex flex-grow flex-row justify-center">
+      {CUSTOM_ADVANCED_FIELDS["date_field"]}
       <div class="w-3/6">
         <div class="prose">
           <h1 class="prose-h1">Home</h1>
