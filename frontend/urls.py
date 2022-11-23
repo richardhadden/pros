@@ -235,7 +235,7 @@ def create_update(model_class):
 urlpatterns = []
 
 for _, model in PROS_MODELS.items():
-    if _ == "inlineRelationDefinitions":
+    if model.meta.get("inline_only"):
         continue
     vs = type(
         f"{model.model_name}ViewSet",
