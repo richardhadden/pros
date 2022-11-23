@@ -7,7 +7,7 @@ from unicodedata import name
 from neomodel import StructuredNode
 from neomodel.properties import Property, UniqueIdProperty
 from neomodel.relationship_manager import RelationshipDefinition
-from pros_core.models import ProsNode, ProsInlineRelation, REVERSE_RELATIONS
+from pros_core.models import ProsNode, REVERSE_RELATIONS, InlineRelation
 from django.apps import apps
 
 PROS_APPS = [
@@ -25,6 +25,7 @@ AppModel = namedtuple(
         "meta",
         "properties",
         "relations",
+        "inline_relations",
         "reverse_relations",
         "fields",
         "subclasses",
@@ -54,7 +55,8 @@ def build_field(p):
                 k: build_field(v)
                 for k, v in p.definition["model"].__dict__.items()
                 if isinstance(v, Property) and k != "reverse_name"
-            }
+            },
+            "inline_relation": issubclass(p.definition["model"], InlineRelation)
             if p.definition.get("model")
             else {},
             "cardinality": p.__dict__["manager"].__name__,
@@ -115,7 +117,14 @@ def build_app_model(app_name, model, model_name):
             n: p
             for n, p in model.__all_relationships__
             if p.definition["direction"] == 1
+            and not issubclass(p.definition["model"], InlineRelation)
         },  # This check for direction is so we can only set on the TO side
+        inline_relations={
+            n: p
+            for n, p in model.__all_relationships__
+            if p.definition["direction"] == 1
+            and issubclass(p.definition["model"], InlineRelation)
+        },
         fields={
             n: build_field(p)
             for n, p in (
@@ -140,7 +149,7 @@ def build_app_model(app_name, model, model_name):
 for app_name in PROS_APPS:
     app = __import__(app_name)
     app_model_classes = {}
-    app_inline_relations = {}
+
     for m in inspect.getmembers(app.models, inspect.isclass):
         model = getattr(app.models, m[0])
         model_name = model.__name__
@@ -149,18 +158,12 @@ for app_name in PROS_APPS:
         # and that it's a top-level node
         if m[1].__module__ == f"{app_name}.models" and issubclass(model, ProsNode):
 
-            app_model_classes[model_name] = build_app_model(app_name, model, model_name)
-
-        if m[1].__module__ == f"{app_name}.models" and issubclass(
-            model, ProsInlineRelation
-        ):
-            app_inline_relations[model_name] = build_app_model(
+            app_model_classes[model_name.lower()] = build_app_model(
                 app_name, model, model_name
             )
     PROS_MODELS = {
         **PROS_MODELS,
         **app_model_classes,
-        "inlineRelationDefinitions": app_inline_relations,
     }
 
 

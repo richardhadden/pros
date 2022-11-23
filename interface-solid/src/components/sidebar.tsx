@@ -58,7 +58,7 @@ const SideBarListItems: Component<{
                     href={`/entity/${entity_name}/new/`}
                     class="btn btn-accent btn-square btn-sm"
                   >
-                    <BsPlus />
+                    <BsPlus size={18} />
                   </Link>
                 </div>
               )}
@@ -108,7 +108,7 @@ const Sidebar: Component = () => {
         <ul class="overflow-y-scroll p-4 pr-10 text-base-content ">
           <For each={topLevelEntities()}>
             {([entity_name, entity], index) => (
-              <>
+              <Show when={!schema[entity_name].meta.inline_only}>
                 {schema[entity_name].meta.abstract ? (
                   <li class="flex">
                     <div class="btn-group mb-2 grow ">
@@ -140,7 +140,7 @@ const Sidebar: Component = () => {
                         href={`/entity/${entity_name}/new/`}
                         class="btn btn-accent  btn-square btn-sm"
                       >
-                        <BsPlus />
+                        <BsPlus size={18} />
                       </Link>
                     </div>
                   </li>
@@ -150,7 +150,7 @@ const Sidebar: Component = () => {
                 <Show when={topLevelEntities().length > index() + 1}>
                   <div class="divider" />
                 </Show>
-              </>
+              </Show>
             )}
           </For>
         </ul>

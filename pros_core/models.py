@@ -9,6 +9,7 @@ from neomodel import (
     ZeroOrMore,
     One,
 )
+from neomodel.properties import BooleanProperty
 from neomodel.relationship_manager import (
     RelationshipDefinition,
     RelationshipManager,
@@ -25,75 +26,21 @@ REVERSE_RELATIONS = defaultdict(lambda: defaultdict(dict))
 OverrideLabel = namedtuple("OverrideLabel", ["label", "reverse_label"])
 
 
-class OverriddenRelationshipDefinition(RelationshipDefinition):
-    def __init__(self):
-        current_frame = inspect.currentframe()
-
-        def enumerate_traceback(initial_frame):
-            depth, frame = 0, initial_frame
-            while frame is not None:
-                yield depth, frame
-                frame = frame.f_back
-                depth += 1
-
-        frame_number = 5
-        for i, frame in enumerate_traceback(current_frame):
-            if self.init_vals["cls_name"] in frame.f_globals:
-                frame_number = i
-                break
-        self.module_name = sys._getframe(frame_number).f_globals["__name__"]
-        print(self.module_name)
-        if "__file__" in sys._getframe(frame_number).f_globals:
-            self.module_file = sys._getframe(frame_number).f_globals["__file__"]
-        self._raw_class = self.init_vals["cls_name"]
-        self.manager = self.init_vals["manager"]
-        self.definition = {}
-        self.definition["relation_type"] = self.init_vals["relation_type"]
-        self.definition["direction"] = self.init_vals["direction"]
-        self.definition["model"] = self.init_vals["model"]
-
-        if self.init_vals["model"] is not None:
-            # Relationships are easier to instantiate because (at the moment), they cannot have multiple labels. So, a
-            # relationship's type determines the class that should be instantiated uniquely. Here however, we still use
-            # a `frozenset([relation_type])` to preserve the mapping type.
-            label_set = frozenset([self.init_vals["relation_type"]])
-            try:
-                # If the relationship mapping exists then it is attempted to be redefined so that it applies to the same
-                # label. In this case, it has to be ensured that the class that is overriding the relationship is a
-                # descendant of the already existing class
-                model_from_registry = db._NODE_CLASS_REGISTRY[label_set]
-                if not issubclass(self.init_vals["model"], model_from_registry):
-                    is_parent = issubclass(model_from_registry, self.init_vals["model"])
-                    if (
-                        is_direct_subclass(self.init_vals["model"], StructuredRel)
-                        and not is_parent
-                    ):
-                        raise RelationshipClassRedefined(
-                            self.init_vals["relation_type"],
-                            db._NODE_CLASS_REGISTRY,
-                            self.init_vals["model"],
-                        )
-                else:
-                    db._NODE_CLASS_REGISTRY[label_set] = self.init_vals["model"]
-            except KeyError:
-                # If the mapping does not exist then it is simply created.
-                db._NODE_CLASS_REGISTRY[label_set] = self.init_vals["model"]
-
-
-class ProsInlineRelation(StructuredNode):
-    @classmethod
-    def as_field(cls):
-        return RelationshipTo(
-            cls.__name__,
-            f"has_{cls.__name__}",
-            cardinality=One,
-        )
+class InlineRelation(StructuredRel):
+    inline = BooleanProperty(default=True)
 
 
 class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
     real_type = StringProperty(index=True)
-    label = StringProperty(index=True, help_text="Short text description")
+
+    @classmethod
+    def as_inline_field(cls):
+
+        """Allows embedding of model as an inline field with cardinality-one relationship"""
+        return RelationshipTo(
+            cls.__name__, f"has_{cls.__name__}", cardinality=One, model=InlineRelation
+        )
 
     class Meta:
         pass
@@ -160,9 +107,14 @@ class ProsNode(StructuredNode):
 
         for r in db_results:
             subj, rel, obj = r
-
+            print(rel.type)
             # TODO: thought of a problem with this, but can't remember what it was
-            if (
+            if rel.get("inline"):
+                res = dict(obj)
+                res.pop("uid")
+                res["type"] = res.pop("real_type")
+                results[rel.type.lower()] = res
+            elif (
                 rel.start_node.__dict__["_properties"]["real_type"]
                 == self.__class__.__name__.lower()
             ):

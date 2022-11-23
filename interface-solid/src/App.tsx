@@ -159,7 +159,6 @@ const Home: Component = () => {
   const [c, setC] = createSignal(true);
   return (
     <div class="mt-12 flex flex-grow flex-row justify-center">
-      {CUSTOM_ADVANCED_FIELDS["date_field"]}
       <div class="w-3/6">
         <div class="prose">
           <h1 class="prose-h1">Home</h1>

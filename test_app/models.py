@@ -15,7 +15,6 @@ from pros_core.models import (
     ProsRelationTo,
     ProsRelationBase,
     OverrideLabel,
-    ProsInlineRelation,
 )
 from pros_core.filters import icontains
 
@@ -24,41 +23,52 @@ class UncertainRelation(ProsRelationBase):
     certainty = StringProperty(default="1")
 
 
-class ComplexDate(ProsInlineRelation):
+class ComplexDate(ProsNode):
+    class Meta:
+        abstract = True
+        inline_only = True
+
+
+class SingleDate(ComplexDate):
     class Meta:
         abstract = True
 
 
-class PreciseDate(ComplexDate):
-    date = DateProperty()
+class DateRange(ComplexDate):
+    class Meta:
+        abstract = True
 
 
-class PreciseDateRange(ComplexDate):
-    start = DateProperty()
-    end = DateProperty()
+class PreciseDate(SingleDate):
+    date = StringProperty()
 
 
-class ImpreciseDate(ComplexDate):
-    not_before = DateProperty()
-    not_after = DateProperty()
+class ImpreciseDate(SingleDate):
+    not_before = StringProperty()
+    not_after = StringProperty()
 
 
-class ImpreciseDateRange(ComplexDate):
-    start_not_before = DateProperty()
-    start_not_after = DateProperty()
-    end_not_before = DateProperty()
-    end_not_after = DateProperty()
+class PreciseDateRange(DateRange):
+    start = StringProperty()
+    end = StringProperty()
+
+
+class ImpreciseDateRange(DateRange):
+    start_not_before = StringProperty()
+    start_not_after = StringProperty()
+    end_not_before = StringProperty()
+    end_not_after = StringProperty()
 
 
 class Factoid(ProsNode):
+    label = StringProperty(index=True, help_text="Short text description")
+
     is_about_person = ProsRelationTo(
         "Person", reverse_name="HAS_FACTOID_ABOUT", model=UncertainRelation
     )
     has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF")
 
     text = StringProperty()
-
-    date = ComplexDate.as_field()
 
     class Meta:
         abstract = True
@@ -72,11 +82,11 @@ class Event(Factoid):
 
 
 class Birth(Event):
-    pass
+    date = SingleDate.as_inline_field()
 
 
 class Death(Event):
-    pass
+    date = SingleDate.as_inline_field()
 
 
 class Naming(Event):
@@ -126,18 +136,23 @@ class ParentChildRelation(Relation):
 
 
 class Acquaintanceship(Relation):
+    date = ComplexDate.as_inline_field()
+
     class Meta:
         label_template = "{is_about_person.label} knows {subject_related_to.label}"
 
 
 class Membership(Factoid):
     member_of = ProsRelationTo("Organisation", reverse_name="membership_organisation")
+    date = DateRange.as_inline_field()
 
     class Meta:
         label_template = "{is_about_person.label} is member of {member_of.label}"
 
 
 class Entity(ProsNode):
+    label = StringProperty(index=True, help_text="Short text description")
+
     class Meta:
         display_name_plural = "Entities"
 
@@ -151,11 +166,12 @@ class Organisation(Entity):
 
 
 class Source(ProsNode):
-    pass
+    label = StringProperty(index=True, help_text="Short text description")
 
 
 class Letter(Source):
     text = StringProperty()
+    date = SingleDate.as_inline_field()
     sender = ProsRelationTo(
         "Entity", reverse_name="is_sender_of", model=UncertainRelation
     )
@@ -169,6 +185,8 @@ class Letter(Source):
 
 
 class Test(ProsNode):
+    label = StringProperty(index=True, help_text="Short text description")
+
     integer = IntegerProperty(help_text="An integer for you to enjoy")
     float = FloatProperty()
     boolean = BooleanProperty(default=True)

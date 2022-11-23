@@ -3,6 +3,7 @@ from rest_framework import routers
 
 from django.urls import path
 
+from neomodel.exceptions import DoesNotExist
 from neomodel import db, Q, DateProperty
 from neomodel.properties import DateTimeProperty
 from .utils import PROS_APPS, PROS_MODELS
@@ -12,7 +13,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from neomodel.relationship_manager import ZeroOrMore
-from pros_core.models import ProsNode, ProsInlineRelation
+from pros_core.models import ProsNode
 from pros_core.filters import icontains
 
 from pypher import Pypher, __
@@ -27,7 +28,7 @@ def create_list(model_class):
 
             x = icontains("s", "label")(filter)
             y = icontains("s", "label")(filter)
-            for additional_filter in PROS_MODELS[model_class.__name__].meta.get(
+            for additional_filter in PROS_MODELS[model_class.__name__.lower()].meta.get(
                 "text_filter_fields", []
             ):
                 # print(additional_filter)
@@ -48,7 +49,7 @@ def create_list(model_class):
             q.WHERE(y)
             q.RETURN(__.DISTINCT(__.s))
 
-            print(q)
+            # print(q)
             results, meta = db.cypher_query(str(q), q.bound_params)
 
             node_data = [r[0] for r in results]
@@ -105,7 +106,7 @@ def prepare_data_value(properties, k, v):
 
 
 def get_property_and_relation_data(request, model_class):
-    properties = PROS_MODELS[model_class.__name__].properties
+    properties = PROS_MODELS[model_class.__name__.lower()].properties
     property_data = {
         k: prepare_data_value(properties, k, v)
         for k, v in request.data.items()
@@ -115,18 +116,27 @@ def get_property_and_relation_data(request, model_class):
     relation_data = {
         k: v
         for k, v in request.data.items()
-        if k in PROS_MODELS[model_class.__name__].relations
+        if k in PROS_MODELS[model_class.__name__.lower()].relations
     }
-    return property_data, relation_data
+    # print("RDI", request.data.items())
+    inline_relations = {
+        k: v
+        for k, v in request.data.items()
+        if k in PROS_MODELS[model_class.__name__.lower()].inline_relations
+    }
+
+    return property_data, relation_data, inline_relations
 
 
 def create_create(model_class):
     @db.write_transaction
     def create(self, request):
 
-        property_data, relation_data = get_property_and_relation_data(
-            request, model_class
-        )
+        (
+            property_data,
+            relation_data,
+            inline_relation_data,
+        ) = get_property_and_relation_data(request, model_class)
 
         object = model_class(**property_data)
 
@@ -136,13 +146,25 @@ def create_create(model_class):
             related_values = [r for r in related]
             rel_manager = getattr(object, related_name)
             related_model = PROS_MODELS[
-                PROS_MODELS[model_class.__name__].fields[related_name]["relation_to"]
+                PROS_MODELS[model_class.__name__.lower()]
+                .fields[related_name]["relation_to"]
+                .lower()
             ].model
             for related_value in related_values:
                 rel_manager.connect(
                     related_model.nodes.get(uid=related_value["uid"]),
                     related_value.get("relData") or {},
                 )
+        for inline_related_name, inline_related in inline_relation_data.items():
+
+            rel_manager = getattr(object, inline_related_name)
+            related_model = PROS_MODELS[inline_related["type"]].model
+
+            inline_related.pop("type")
+
+            new_related_node = related_model(**inline_related)
+            new_related_node.save()
+            rel_manager.connect(new_related_node)
 
         return Response({"uid": object.uid, "label": object.label, "saved": True})
 
@@ -154,20 +176,24 @@ def create_update(model_class):
     def update(self, request, pk=None):
         # print("REQ", request.data)
 
-        property_data, relation_data = get_property_and_relation_data(
-            request, model_class
-        )
+        (
+            property_data,
+            relation_data,
+            inline_relation_data,
+        ) = get_property_and_relation_data(request, model_class)
 
         model_class.create_or_update({"uid": pk, **property_data})
 
         object = model_class.nodes.get(uid=pk)
-        print(relation_data)
+
         for related_name, related in relation_data.items():
-            print("RELATED", related)
+            # (related_name)
             related_values = [r for r in related]
             rel_manager = getattr(object, related_name)
             related_model = PROS_MODELS[
-                PROS_MODELS[model_class.__name__].fields[related_name]["relation_to"]
+                PROS_MODELS[model_class.__name__.lower()]
+                .fields[related_name]["relation_to"]
+                .lower()
             ].model
 
             # Remove all relations
@@ -180,6 +206,27 @@ def create_update(model_class):
                     related_model.nodes.get(uid=related_value["uid"]),
                     related_value.get("relData") or {},
                 )
+
+        for inline_related_name, inline_related in inline_relation_data.items():
+
+            rel_manager = getattr(object, inline_related_name)
+            related_model = PROS_MODELS[inline_related["type"]].model
+
+            inline_related.pop("type")
+
+            try:
+
+                old_related_node = rel_manager.get()
+                print(old_related_node)
+                new_related_node = related_model(**inline_related)
+                new_related_node.save()
+                rel_manager.reconnect(old_related_node, new_related_node)
+                print("HERE")
+            except DoesNotExist:
+                new_related_node = related_model(**inline_related)
+                new_related_node.save()
+                rel_manager.connect(new_related_node)
+
         return Response({"uid": pk, "saved": True})
 
     return update
@@ -236,29 +283,7 @@ def construct_subclass_hierarchy(model):
 
 def build_schema_from_pros_model(models, schema):
 
-    schema["META"] = {}
-    schema["META"]["inline_relation_definitions"] = {}
     for _, model in models.items():
-        if _ == "inlineRelationDefinitions":
-
-            schema["META"]["inline_relation_definitions"] = {
-                k: {
-                    "top_level": True
-                    if v.model.__bases__ == (ProsInlineRelation,)
-                    else False,
-                    "fields": v.fields,
-                    "reverse_relations": v.reverse_relations,
-                    "app": v.app,
-                    "meta": {
-                        k: v for k, v in v.meta.items() if not k == "text_filter_fields"
-                    },
-                    **construct_subclass_hierarchy(v),
-                    "subclasses_list": [m.model_name for m in v.subclasses_as_list],
-                }
-                for k, v in model.items()
-            }
-            continue
-
         schema[model.model_name.lower()] = {
             "top_level": True if model.model.__bases__ == (ProsNode,) else False,
             "fields": model.fields,

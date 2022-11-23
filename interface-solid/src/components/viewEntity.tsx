@@ -1,4 +1,4 @@
-import { Component, For, Show, createEffect, Accessor } from "solid-js";
+import { Component, For, Show, createEffect, Switch, Match } from "solid-js";
 import { useParams, useRouteData, NavLink } from "@solidjs/router";
 
 import TopBar from "./topBar";
@@ -6,6 +6,7 @@ import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
 
 import { BsArrowReturnRight } from "solid-icons/bs";
+import { CgOptions } from "solid-icons/cg";
 
 import EntityChip from "./ui_components/entityChip";
 
@@ -21,7 +22,7 @@ export const TextFieldView: Component<{ fieldName: string; value: string }> = (
         {props.fieldName.replaceAll("_", " ")}
       </div>
       <div class="col-span-6 mb-4 mt-4">
-        {props.value && props.value.toString()}
+        {props.value !== null && props.value.toString()}
       </div>
     </>
   );
@@ -96,6 +97,47 @@ const ZeroOrMoreRelationFieldView: Component<{
   );
 };
 
+const InlineRelationView: Component = (props) => {
+  return (
+    <Show
+      when={props.value}
+      fallback={
+        <>
+          <div
+            class={`col-span-2 mb-4 mt-4 select-none font-semibold uppercase`}
+          >
+            {props.fieldName.replaceAll("_", " ")}
+          </div>
+        </>
+      }
+    >
+      <div class={`col-span-2 mb-4 mt-4 select-none font-semibold uppercase`}>
+        {props.fieldName.replaceAll("_", " ")}
+        <div class="mt-2 ml-1 select-none">
+          <CgOptions class="mt-0 mr-2 inline-block" />{" "}
+          <span class="prose-sm rounded-md bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+            {getEntityDisplayName(props.value.type)}
+          </span>
+        </div>
+      </div>
+      <div class="flex-none">
+        <div class="mt-3 flex w-full flex-row items-stretch">
+          <For each={Object.entries(schema[props.value.type].fields)}>
+            {([field_name, field]) => (
+              <div class="mr-12 w-40 flex-none justify-self-stretch">
+                <div class="pros-sm prose w-full select-none font-semibold uppercase">
+                  {field_name.replaceAll("_", " ")}
+                </div>
+                <div class="mt-3">{props.value[field_name]}</div>
+              </div>
+            )}
+          </For>
+        </div>
+      </div>
+    </Show>
+  );
+};
+
 const ViewEntity: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
   const data = useRouteData();
@@ -121,24 +163,37 @@ const ViewEntity: Component = () => {
           <For each={Object.entries(schema[params.entity_type].fields)}>
             {([schema_field_name, field], index) => (
               <>
-                {field.type === "property" && (
-                  <TextFieldView
-                    fieldName={schema_field_name}
-                    value={data()[schema_field_name]}
-                  />
-                )}
-                {field.type === "relation" && (
-                  <ZeroOrMoreRelationFieldView
-                    override_label={
-                      schema[params.entity_type].meta.override_labels?.[
-                        schema_field_name.toLowerCase()
-                      ]?.[0]
-                    }
-                    fieldName={schema_field_name}
-                    value={data()[schema_field_name]}
-                    field={field}
-                  />
-                )}
+                <Switch>
+                  <Match when={field.type === "property"}>
+                    <TextFieldView
+                      fieldName={schema_field_name}
+                      value={data()[schema_field_name]}
+                    />
+                  </Match>
+                  <Match
+                    when={field.type === "relation" && !field.inline_relation}
+                  >
+                    <ZeroOrMoreRelationFieldView
+                      override_label={
+                        schema[params.entity_type].meta.override_labels?.[
+                          schema_field_name.toLowerCase()
+                        ]?.[0]
+                      }
+                      fieldName={schema_field_name}
+                      value={data()[schema_field_name]}
+                      field={field}
+                    />
+                  </Match>
+                  <Match
+                    when={field.type === "relation" && field.inline_relation}
+                  >
+                    <InlineRelationView
+                      fieldName={schema_field_name}
+                      value={data()[schema_field_name]}
+                      field={field}
+                    />
+                  </Match>
+                </Switch>
 
                 <Show
                   when={
