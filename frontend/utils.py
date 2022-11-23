@@ -7,7 +7,7 @@ from unicodedata import name
 from neomodel import StructuredNode
 from neomodel.properties import Property, UniqueIdProperty
 from neomodel.relationship_manager import RelationshipDefinition
-from pros_core.models import ProsNode, REVERSE_RELATIONS
+from pros_core.models import ProsNode, ProsInlineRelation, REVERSE_RELATIONS
 from django.apps import apps
 
 PROS_APPS = [
@@ -54,7 +54,9 @@ def build_field(p):
                 k: build_field(v)
                 for k, v in p.definition["model"].__dict__.items()
                 if isinstance(v, Property) and k != "reverse_name"
-            },
+            }
+            if p.definition.get("model")
+            else {},
             "cardinality": p.__dict__["manager"].__name__,
             "default_value": [],
         }
@@ -138,6 +140,7 @@ def build_app_model(app_name, model, model_name):
 for app_name in PROS_APPS:
     app = __import__(app_name)
     app_model_classes = {}
+    app_inline_relations = {}
     for m in inspect.getmembers(app.models, inspect.isclass):
         model = getattr(app.models, m[0])
         model_name = model.__name__
@@ -148,4 +151,17 @@ for app_name in PROS_APPS:
 
             app_model_classes[model_name] = build_app_model(app_name, model, model_name)
 
-    PROS_MODELS = {**PROS_MODELS, **app_model_classes}
+        if m[1].__module__ == f"{app_name}.models" and issubclass(
+            model, ProsInlineRelation
+        ):
+            app_inline_relations[model_name] = build_app_model(
+                app_name, model, model_name
+            )
+    PROS_MODELS = {
+        **PROS_MODELS,
+        **app_model_classes,
+        "inlineRelationDefinitions": app_inline_relations,
+    }
+
+
+# print(PROS_MODELS["inlineRelationDefinitions"])

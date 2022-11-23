@@ -20,6 +20,11 @@ const getEntityDisplayName: (entity_name: string) => string = (entity_name) => {
             return e.meta.display_name;
         }
     }
+
+    const f = schema.META.inline_relation_definitions?.[entity_name]?.meta?.display_name;
+    if (f) {
+        return f;
+    }
   
     return entity_name;
    

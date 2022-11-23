@@ -10,12 +10,44 @@ from neomodel.properties import (
     IntegerProperty,
 )
 
-from pros_core.models import ProsNode, ProsRelationTo, ProsRelationBase, OverrideLabel
+from pros_core.models import (
+    ProsNode,
+    ProsRelationTo,
+    ProsRelationBase,
+    OverrideLabel,
+    ProsInlineRelation,
+)
 from pros_core.filters import icontains
 
 
 class UncertainRelation(ProsRelationBase):
     certainty = StringProperty(default="1")
+
+
+class ComplexDate(ProsInlineRelation):
+    class Meta:
+        abstract = True
+
+
+class PreciseDate(ComplexDate):
+    date = DateProperty()
+
+
+class PreciseDateRange(ComplexDate):
+    start = DateProperty()
+    end = DateProperty()
+
+
+class ImpreciseDate(ComplexDate):
+    not_before = DateProperty()
+    not_after = DateProperty()
+
+
+class ImpreciseDateRange(ComplexDate):
+    start_not_before = DateProperty()
+    start_not_after = DateProperty()
+    end_not_before = DateProperty()
+    end_not_after = DateProperty()
 
 
 class Factoid(ProsNode):
@@ -25,6 +57,8 @@ class Factoid(ProsNode):
     has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF")
 
     text = StringProperty()
+
+    date = ComplexDate.as_field()
 
     class Meta:
         abstract = True

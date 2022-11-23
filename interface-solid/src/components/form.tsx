@@ -8,16 +8,26 @@ import {
   Setter,
   Accessor,
   createMemo,
+  onCleanup,
 } from "solid-js";
 import { schema } from "../index";
 import EntityChip from "./ui_components/entityChip";
 import { BsArrowReturnRight, BsPlus } from "solid-icons/bs";
 import { CgClose } from "solid-icons/cg";
+
 import { getEntityDisplayName } from "../utils/entity_names";
 import { fetchAutoCompleteData } from "../App";
 import { postNewEntityData } from "../App";
 import { filter } from "ramda";
 import { TextFieldView } from "./viewEntity";
+import { CgOptions } from "solid-icons/cg";
+
+function clickOutside(el, accessor) {
+  const onClick = (e) => !el.contains(e.target) && accessor()?.();
+  document.body.addEventListener("click", onClick);
+
+  onCleanup(() => document.body.removeEventListener("click", onClick));
+}
 
 const nested_get = (nested, keys) => {
   const k = keys.shift();
@@ -476,6 +486,94 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
   );
 };
 
+const InlineRelationEditField: Component = (props) => {
+  const field = () =>
+    schema["META"]["inline_relation_definitions"][
+      props.inlineRelationFieldName
+    ];
+
+  const subclasses_list = () => {
+    let list = [];
+    if (!field().meta?.abstract) {
+      list.push(props.inlineRelationFieldName);
+    }
+    list = [...list, ...field()["subclasses_list"]];
+    return list;
+  };
+  const [selectedType, setSelectedType] = createSignal(subclasses_list()[0]);
+  const [showDropdown, setShowDropdown] = createSignal(false);
+
+  const selectedTypeModel = () => {
+    return schema["META"]["inline_relation_definitions"][selectedType()];
+  };
+  return (
+    <>
+      <div class="col-span-2 mb-2 mt-8 flex select-none flex-col items-baseline font-semibold uppercase">
+        <div>{props.fieldName.replaceAll("_", " ")}</div>
+        <label
+          class="prose prose-sm mt-4 block select-none uppercase text-gray-300"
+          for={props.fieldName}
+        >
+          {props.helpText}
+        </label>
+        <div
+          class=" flex flex-col"
+          use:clickOutside={() => setShowDropdown(false)}
+        >
+          <div class="justify-left ml-1 flex select-none flex-row">
+            <CgOptions class="mt-2 mr-2 inline-block" />
+            <button
+              class="btn btn-accent btn-sm w-fit"
+              onClick={() => setShowDropdown(!showDropdown())}
+            >
+              {getEntityDisplayName(selectedType())}
+            </button>
+          </div>
+          <Show when={showDropdown()}>
+            <ul class="dropdown-content z-50 mt-1 grid w-fit grid-cols-1">
+              <For each={subclasses_list()}>
+                {(subclass) =>
+                  subclass !== selectedType() && (
+                    <li
+                      class="btn btn-active btn-sm  mb-1"
+                      onClick={() => {
+                        setSelectedType(subclass);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      {getEntityDisplayName(subclass)}
+                    </li>
+                  )
+                }
+              </For>
+            </ul>
+          </Show>
+        </div>
+      </div>
+      {/* HERE START THE FIELDS */}
+      <div class="flex-none">
+        <div class="mt-3 flex w-full flex-row items-stretch">
+          <For each={Object.entries(selectedTypeModel()["fields"])}>
+            {([field_name, field]) => (
+              <div class="w-min-32 mr-12 w-fit flex-none justify-self-stretch">
+                <div class="pros-sm prose w-full font-semibold uppercase">
+                  {field_name.replaceAll("_", " ")}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
+          </For>
+        </div>
+      </div>
+    </>
+  );
+};
+
 const Form: Component<{
   entity_type: string;
   data: Accessor<{ [key: string]: RelationFieldType[] | string }>;
@@ -571,23 +669,39 @@ const Form: Component<{
                     value={props.data()["label"] || ""}
                   />
                 )}
-              {field.type === "relation" && (
-                <ZeroOrMoreSimpleRelationEditField
-                  override_labels={
-                    schema[props.entity_type].meta?.override_labels?.[
-                      schema_field_name
-                    ]
-                  }
-                  fieldName={schema_field_name}
-                  value={props.data()[schema_field_name] || []}
-                  field={field}
-                  relatedToType={field.relation_to.toLowerCase()}
-                  relationFields={field.relation_fields}
-                  onChange={(value) =>
-                    handleSetFieldData(schema_field_name, value)
-                  }
-                />
-              )}
+              {field.type === "relation" &&
+                !schema["META"]["inline_relation_definitions"][
+                  field.relation_to
+                ] && (
+                  <ZeroOrMoreSimpleRelationEditField
+                    override_labels={
+                      schema[props.entity_type].meta?.override_labels?.[
+                        schema_field_name
+                      ]
+                    }
+                    fieldName={schema_field_name}
+                    value={props.data()[schema_field_name] || []}
+                    field={field}
+                    relatedToType={field.relation_to.toLowerCase()}
+                    relationFields={field.relation_fields}
+                    onChange={(value) =>
+                      handleSetFieldData(schema_field_name, value)
+                    }
+                  />
+                )}
+              {field.type === "relation" &&
+                schema["META"]["inline_relation_definitions"][
+                  field.relation_to
+                ] && (
+                  <InlineRelationEditField
+                    value={props.data()[schema_field_name] || {}}
+                    onChange={(value) =>
+                      handleSetFieldData(schema_field_name, value)
+                    }
+                    fieldName={schema_field_name}
+                    inlineRelationFieldName={field.relation_to}
+                  />
+                )}
 
               <Show
                 when={

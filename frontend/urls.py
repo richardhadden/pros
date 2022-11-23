@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from neomodel.relationship_manager import ZeroOrMore
-from pros_core.models import ProsNode
+from pros_core.models import ProsNode, ProsInlineRelation
 from pros_core.filters import icontains
 
 from pypher import Pypher, __
@@ -30,7 +30,7 @@ def create_list(model_class):
             for additional_filter in PROS_MODELS[model_class.__name__].meta.get(
                 "text_filter_fields", []
             ):
-                print(additional_filter)
+                # print(additional_filter)
                 if isinstance(additional_filter, str):
                     x = x.OR(icontains("s", additional_filter)(filter))
 
@@ -188,6 +188,8 @@ def create_update(model_class):
 urlpatterns = []
 
 for _, model in PROS_MODELS.items():
+    if _ == "inlineRelationDefinitions":
+        continue
     vs = type(
         f"{model.model_name}ViewSet",
         (viewsets.ViewSet,),
@@ -233,8 +235,30 @@ def construct_subclass_hierarchy(model):
 
 
 def build_schema_from_pros_model(models, schema):
-    # (models.items())
+
+    schema["META"] = {}
+    schema["META"]["inline_relation_definitions"] = {}
     for _, model in models.items():
+        if _ == "inlineRelationDefinitions":
+
+            schema["META"]["inline_relation_definitions"] = {
+                k: {
+                    "top_level": True
+                    if v.model.__bases__ == (ProsInlineRelation,)
+                    else False,
+                    "fields": v.fields,
+                    "reverse_relations": v.reverse_relations,
+                    "app": v.app,
+                    "meta": {
+                        k: v for k, v in v.meta.items() if not k == "text_filter_fields"
+                    },
+                    **construct_subclass_hierarchy(v),
+                    "subclasses_list": [m.model_name for m in v.subclasses_as_list],
+                }
+                for k, v in model.items()
+            }
+            continue
+
         schema[model.model_name.lower()] = {
             "top_level": True if model.model.__bases__ == (ProsNode,) else False,
             "fields": model.fields,
@@ -246,6 +270,7 @@ def build_schema_from_pros_model(models, schema):
             **construct_subclass_hierarchy(model),
             "subclasses_list": [m.model_name for m in model.subclasses_as_list],
         }
+
     return schema
 
 
