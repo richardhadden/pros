@@ -254,40 +254,55 @@ def create_update(model_class):
 
 urlpatterns = []
 
+
+def build_viewset_functions(model):
+    viewset_functions = {
+        "list": create_list(model.model),
+    }
+    if not model.meta.get("abstract"):
+        viewset_functions["retrieve"] = create_retrieve(model.model)
+        viewset_functions["create"] = create_create(model.model)
+        viewset_functions["put"] = create_update(model.model)
+        viewset_functions["autocomplete"] = create_autocomplete(model.model)
+    return viewset_functions
+
+
+def build_url_patterns(model, vs):
+    patterns = [
+        path(f"{model.app}/{model.model_name.lower()}/", vs.as_view({"get": "list"})),
+    ]
+    if not model.meta.get("abstract"):
+        patterns += [
+            path(
+                f"{model.app}/autocomplete/{model.model_name.lower()}/",
+                vs.as_view({"get": "autocomplete"}),
+            ),
+            path(
+                f"{model.app}/{model.model_name.lower()}/<str:pk>",
+                vs.as_view({"get": "retrieve"}),
+            ),
+            path(
+                f"{model.app}/{model.model_name.lower()}/<str:pk>",
+                vs.as_view({"put": "put"}),
+            ),
+            path(
+                f"{model.app}/{model.model_name.lower()}/new/",
+                vs.as_view({"post": "create"}),
+            ),
+        ]
+    return patterns
+
+
 for _, model in PROS_MODELS.items():
     if model.meta.get("inline_only"):
         continue
     vs = type(
         f"{model.model_name}ViewSet",
         (viewsets.ViewSet,),
-        {
-            "list": create_list(model.model),
-            "retrieve": create_retrieve(model.model),
-            "create": create_create(model.model),
-            "put": create_update(model.model),
-            "autocomplete": create_autocomplete(model.model),
-        },
+        build_viewset_functions(model),
     )
 
-    urlpatterns += [
-        path(f"{model.app}/{model.model_name.lower()}/", vs.as_view({"get": "list"})),
-        path(
-            f"{model.app}/autocomplete/{model.model_name.lower()}/",
-            vs.as_view({"get": "autocomplete"}),
-        ),
-        path(
-            f"{model.app}/{model.model_name.lower()}/<str:pk>",
-            vs.as_view({"get": "retrieve"}),
-        ),
-        path(
-            f"{model.app}/{model.model_name.lower()}/<str:pk>",
-            vs.as_view({"put": "put"}),
-        ),
-        path(
-            f"{model.app}/{model.model_name.lower()}/new/",
-            vs.as_view({"post": "create"}),
-        ),
-    ]
+    urlpatterns += build_url_patterns(model, vs)
 
 
 def construct_subclass_hierarchy(model):
