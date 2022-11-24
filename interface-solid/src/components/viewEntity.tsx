@@ -22,7 +22,7 @@ export const TextFieldView: Component<{ fieldName: string; value: string }> = (
         {props.fieldName.replaceAll("_", " ")}
       </div>
       <div class="col-span-6 mb-4 mt-4">
-        {props.value !== null && props.value.toString()}
+        {props.value !== null && props.value?.toString()}
       </div>
     </>
   );
@@ -148,9 +148,11 @@ const ViewEntity: Component = () => {
     <>
       <Show when={data() && data()["status"] !== "error"}>
         <TopBar
+          data={data}
           params={params}
           newButton={false}
           editButton={true}
+          deleteButton={true}
           barTitle={
             <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
               {getEntityDisplayName(params.entity_type)}

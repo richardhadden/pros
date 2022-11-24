@@ -675,6 +675,7 @@ const Form: Component<{
           s = data[match[0].replaceAll("{", "").replaceAll("}", "")];
         }
         template = template.replace(new RegExp(match[0]), s);
+        template = template.replaceAll("undefined", "");
         template = template.replace(/\s\s+/g, " ");
       });
       return template;
