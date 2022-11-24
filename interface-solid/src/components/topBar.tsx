@@ -9,6 +9,7 @@ import { Link, useNavigate } from "@solidjs/router";
 import EntityChip from "./ui_components/entityChip";
 import { schema } from "../index";
 import { getEntityDisplayName } from "../utils/entity_names";
+import DeleteModal from "./deleteModal";
 
 const TopBar: Component<{
   params: { entity_type: string; uid: string };
@@ -24,8 +25,6 @@ const TopBar: Component<{
   const navigate = useNavigate();
   const [redirectModalVisible, setRedirectModalVisible] = createSignal(false);
   const [deleteModalVisible, setDeleteModalVisible] = createSignal(false);
-
-  const [deleteModalEntityName, setDeleteModalEntityName] = createSignal("");
 
   const onClickUnsaved = () => {
     setRedirectModalVisible(true);
@@ -134,44 +133,11 @@ const TopBar: Component<{
         </div>
       </Show>
       <Show when={deleteModalVisible()}>
-        <div class="modal modal-open pr-96 pl-96">
-          <div class="modal-box min-w-full p-5">
-            <div class="">
-              <h3 class="select-none font-semibold uppercase">
-                CONFIRM DELETE
-              </h3>
-              <p class="prose prose-base"></p>
-            </div>
-            <div class="mt-5 flex flex-row justify-center">
-              <EntityChip
-                color="primary"
-                leftSlot={getEntityDisplayName(props.params.entity_type)}
-                label={props.data().label}
-              />
-            </div>
-            <div class="divider mt-10 mb-10" />
-            <div class="mt-5 mr-20 ml-20 pb-10">
-              <label>Type the entity name here to confirm deletion</label>
-              <input
-                onInput={(e) => setDeleteModalEntityName(e.target?.value)}
-                type="text"
-                class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
-              />
-            </div>
-
-            <div class="modal-action">
-              <span class="btn btn-error" onClick={onConfirmDelete}>
-                Confirm
-              </span>
-              <span
-                onClick={() => setDeleteModalVisible(false)}
-                class="btn btn-success"
-              >
-                Cancel
-              </span>
-            </div>
-          </div>
-        </div>
+        <DeleteModal
+          setDeleteModalVisible={setDeleteModalVisible}
+          data={props.data}
+          entityType={props.params.entity_type}
+        />
       </Show>
     </>
   ) : (
