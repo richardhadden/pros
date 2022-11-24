@@ -1,11 +1,11 @@
-import { Component, createSignal, Accessor } from "solid-js";
+import { Component, createSignal, Accessor, Setter } from "solid-js";
 import EntityChip from "./ui_components/entityChip";
 import { getEntityDisplayName } from "../utils/entity_names";
 
 const DeleteModal: Component<{
   data: any;
-  entity_type: string;
-  setDeletModalVisible: any;
+  entityType: string;
+  setDeleteModalVisible: Setter<boolean>;
 }> = (props) => {
   const [deleteModalEntityName, setDeleteModalEntityName] = createSignal("");
   const onConfirmDelete = () => {
@@ -35,7 +35,9 @@ const DeleteModal: Component<{
         <div class="mt-5 mr-20 ml-20 pb-10">
           <label>Type the entity name here to confirm deletion</label>
           <input
-            onInput={(e) => setDeleteModalEntityName(e.target?.value)}
+            onInput={(e) =>
+              setDeleteModalEntityName((e.target as HTMLInputElement).value)
+            }
             type="text"
             class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           />

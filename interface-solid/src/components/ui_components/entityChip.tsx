@@ -6,7 +6,7 @@ const EntityChip: Component<{
   color?: string;
   label: string;
   leftSlot?: JSXElement | string;
-  class: string;
+  class?: string;
   onClick?: (e: MouseEvent) => void;
 }> = (props) => {
   const style =

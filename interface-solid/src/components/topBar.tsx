@@ -19,6 +19,7 @@ const TopBar: Component<{
   editButton?: boolean;
   viewButton?: boolean;
   saveButton?: boolean;
+  deleteButton?: boolean;
   hasUnsavedChange?: boolean;
   onClickSaveButton?: (e: MouseEvent) => null;
 }> = (props) => {
@@ -32,16 +33,6 @@ const TopBar: Component<{
 
   const onClickDelete = () => {
     setDeleteModalVisible(true);
-  };
-
-  const onConfirmDelete = () => {
-    if (
-      deleteModalEntityName().toLowerCase() !== props.data().label.toLowerCase()
-    ) {
-      alert("does not match");
-    } else {
-      alert("does match deleting");
-    }
   };
 
   const doNavigateAway = () => {
