@@ -171,6 +171,11 @@ def create_create(model_class):
     return create
 
 
+def get_non_default_fields(node):
+    node_dict = node.__dict__
+    return {k: v for k, v in node_dict.items() if k not in ["uid", "real_type", "id"]}
+
+
 def create_update(model_class):
     @db.write_transaction
     def update(self, request, pk=None):
@@ -212,17 +217,32 @@ def create_update(model_class):
             rel_manager = getattr(object, inline_related_name)
             related_model = PROS_MODELS[inline_related["type"]].model
 
-            inline_related.pop("type")
+            new_type = inline_related.pop("type")
 
-            try:
+            try:  # If there is already a node related here...
+                old_related_node = rel_manager.get()  # Get it...
 
-                old_related_node = rel_manager.get()
-                print(old_related_node)
-                new_related_node = related_model(**inline_related)
-                new_related_node.save()
-                rel_manager.reconnect(old_related_node, new_related_node)
-                print("HERE")
+                # If the data sent by the update is the same as the old node,
+                # and they are the same type, no need to replace or delete
+                if (
+                    old_related_node.real_type != new_type
+                    or get_non_default_fields(old_related_node) != inline_related
+                ):
+                    # But if the types differ, or the data differs...
+
+                    # Create a new node with the data
+                    new_related_node = related_model(**inline_related)
+                    new_related_node.save()
+
+                    # Reconnect from the old node to the new node
+                    rel_manager.reconnect(old_related_node, new_related_node)
+
+                    # If the old node is not related to anything else
+                    # delete it
+                    if not old_related_node.has_relations():
+                        old_related_node.delete()
             except DoesNotExist:
+                # Otherwise, this node does not exist
                 new_related_node = related_model(**inline_related)
                 new_related_node.save()
                 rel_manager.connect(new_related_node)

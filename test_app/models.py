@@ -60,6 +60,25 @@ class ImpreciseDateRange(DateRange):
     end_not_after = StringProperty()
 
 
+class Source(ProsNode):
+    label = StringProperty(index=True, help_text="Short text description")
+
+
+class Letter(Source):
+    text = StringProperty()
+    date = SingleDate.as_inline_field()
+    sender = ProsRelationTo(
+        "Entity", reverse_name="is_sender_of", model=UncertainRelation
+    )
+    recipient = ProsRelationTo(
+        "Entity", reverse_name="is_recipient_of", model=UncertainRelation
+    )
+
+    class Meta:
+        # __all__ can be used in label_template to add label of all related nodes
+        label_template = "Letter from {sender.__all__.label} to {recipient.label}"
+
+
 class Factoid(ProsNode):
     label = StringProperty(index=True, help_text="Short text description")
 
@@ -87,6 +106,7 @@ class Birth(Event):
 
 class Death(Event):
     date = SingleDate.as_inline_field()
+    fake_source = Source.as_inline_field()
 
 
 class Naming(Event):
@@ -163,25 +183,6 @@ class Person(Entity):
 
 class Organisation(Entity):
     pass
-
-
-class Source(ProsNode):
-    label = StringProperty(index=True, help_text="Short text description")
-
-
-class Letter(Source):
-    text = StringProperty()
-    date = SingleDate.as_inline_field()
-    sender = ProsRelationTo(
-        "Entity", reverse_name="is_sender_of", model=UncertainRelation
-    )
-    recipient = ProsRelationTo(
-        "Entity", reverse_name="is_recipient_of", model=UncertainRelation
-    )
-
-    class Meta:
-        # __all__ can be used in label_template to add label of all related nodes
-        label_template = "Letter from {sender.__all__.label} to {recipient.label}"
 
 
 class Test(ProsNode):

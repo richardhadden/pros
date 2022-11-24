@@ -36,8 +36,10 @@ class ProsNode(StructuredNode):
 
     @classmethod
     def as_inline_field(cls):
+        """Allows embedding of model as an inline field with cardinality-one relationship.
 
-        """Allows embedding of model as an inline field with cardinality-one relationship"""
+        Use with caution. Changing a related field inline will create a new instance,
+        not modify the original."""
         return RelationshipTo(
             cls.__name__, f"has_{cls.__name__}", cardinality=One, model=InlineRelation
         )
@@ -139,6 +141,17 @@ class ProsNode(StructuredNode):
                 )
 
         return results
+
+    def has_relations(self):
+        print(self.uid)
+        q = Pypher()
+        q.Match.node("s").rel().node("o")
+        q.WHERE.s.property("uid") == self.uid
+        q.RETURN(__.s, __.o)
+
+        db_results, meta = db.cypher_query(str(q), q.bound_params)
+
+        return db_results
 
 
 class ProsRelationBase(StructuredRel):
