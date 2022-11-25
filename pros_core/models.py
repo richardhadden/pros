@@ -27,6 +27,11 @@ OverrideLabel = namedtuple("OverrideLabel", ["label", "reverse_label"])
 
 
 class InlineRelation(StructuredRel):
+    """Does not do anything useful as a class, except provide a hook to
+    determine whether a relation is inline or not. Can use the 'inline'
+    field value (when getting data), or class relation (during setup)
+    to determine this."""
+
     inline = BooleanProperty(default=True)
 
 
@@ -62,6 +67,7 @@ class ProsNode(StructuredNode):
                     REVERSE_RELATIONS[v._raw_class][
                         v.definition["model"].__dict__["reverse_name"].default.lower()
                     ]["relation_to"] = cls.__name__
+                    # print(v.__dict__)
                 except:
                     pass
 
@@ -107,21 +113,20 @@ class ProsNode(StructuredNode):
         db_results, meta = db.cypher_query(str(q), q.bound_params)
 
         results = defaultdict(list)
-        print(db_results)
+
         for r in db_results:
             subj, rel, obj = r
-            # print(rel.type)
-            # TODO: thought of a problem with this, but can't remember what it was
+
             if rel.get("inline"):
                 res = dict(obj)
                 res.pop("uid")
                 res["type"] = res.pop("real_type")
                 results[rel.type.lower()] = res
             elif (
+                # TODO: thought of a problem with this, but can't remember what it was
                 rel.start_node.__dict__["_properties"]["real_type"]
                 == self.__class__.__name__.lower()
             ):
-
                 results[rel.type.lower()].append(
                     {
                         **dict(obj),
@@ -170,6 +175,7 @@ def ProsRelationTo(
         else {"reverse_name": StringProperty(default=reverse_name.upper())},
     )
     REVERSE_RELATIONS[cls_name][reverse_name.lower()]
+
     return RelationshipTo(
         cls_name,
         f"{cls_name}{reverse_name}",

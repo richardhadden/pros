@@ -1,10 +1,9 @@
 from collections import namedtuple
-from distutils.command.build import build
+
 
 import inspect
-from unicodedata import name
 
-from neomodel import StructuredNode
+
 from neomodel.properties import Property, UniqueIdProperty
 from neomodel.relationship_manager import RelationshipDefinition
 from pros_core.models import ProsNode, REVERSE_RELATIONS, InlineRelation
@@ -102,6 +101,22 @@ def build_subclasses_as_list(
     return subclasses
 
 
+def get_all_reverse_relations(model, model_name):
+    """Reverse relations are defined in REVERSE RELATIONS but we need
+    to also get the parent reverse relations"""
+
+    parent_reverse_relations = {}
+    for parent_model in inspect.getmro(model):
+        if parent_model is ProsNode:
+            break
+        parent_reverse_relations = {
+            **parent_reverse_relations,
+            **REVERSE_RELATIONS[parent_model.__name__],
+        }
+
+    return {**REVERSE_RELATIONS[model_name], **parent_reverse_relations}
+
+
 def build_app_model(app_name, model, model_name):
     return AppModel(
         app=app_name,
@@ -135,7 +150,7 @@ def build_app_model(app_name, model, model_name):
             and n not in ["real_type", "is_deleted"]
             if build_field(p)
         },
-        reverse_relations=REVERSE_RELATIONS[model_name],
+        reverse_relations=get_all_reverse_relations(model, model_name),
         subclasses={
             m.__name__: build_app_model(app_name, m, m.__name__)
             for m in model.__subclasses__()
