@@ -106,7 +106,6 @@ class Birth(Event):
 
 class Death(Event):
     date = SingleDate.as_inline_field()
-    fake_source = Source.as_inline_field()
 
 
 class Naming(Event):

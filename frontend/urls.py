@@ -272,7 +272,7 @@ def create_update(model_class):
 def create_delete(model_class: ProsNode):
     @db.write_transaction
     def delete(self, request, pk=None):
-        print(request.query_params)
+
         if request.query_params.get("restore"):
             instance: ProsNode = model_class.nodes.get(uid=pk)
             if instance.is_deleted:
@@ -288,6 +288,7 @@ def create_delete(model_class: ProsNode):
         try:
             instance: ProsNode = model_class.nodes.get(uid=pk)
             if instance.has_dependent_relations():
+
                 instance.is_deleted = True
                 instance.save()
                 return Response(

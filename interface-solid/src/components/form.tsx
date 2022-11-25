@@ -23,6 +23,12 @@ import { postNewEntityData } from "../App";
 import { filter } from "ramda";
 import { TextFieldView } from "./viewEntity";
 import { CgOptions } from "solid-icons/cg";
+import {
+  AiFillWarning,
+  AiFillDelete,
+  AiFillClockCircle,
+  AiFillCheckCircle,
+} from "solid-icons/ai";
 
 function clickOutside(el, accessor) {
   const onClick = (e) => !el.contains(e.target) && accessor()?.();
@@ -377,10 +383,15 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
             {(item: RelationFieldType) => (
               <div class="card card-compact mr-4 mb-3 inline-block w-96 rounded-md bg-base-300 p-0 shadow-sm">
                 <div
-                  class="prose-md mb-0 bg-primary p-3 text-neutral-content"
-                  //onMouseDown={props.onClick}
+                  class="prose-md mb-0 flex flex-row  p-3 text-neutral-content"
+                  classList={{
+                    ["bg-primary"]: !item.is_deleted,
+                    ["bg-gray-400"]: item.is_deleted,
+                    ["hover:bg-primary-focus"]: !item.is_deleted,
+                    ["hover:bg-gray-500"]: item.is_deleted,
+                  }}
                 >
-                  <span class="prose-sm mr-5 font-light uppercase">
+                  <span class="prose-sm mr-5 select-none font-light uppercase">
                     <a
                       onClick={() => handleRemoveSelection(item.uid)}
                       class="btn btn-circle btn-primary btn-xs mr-3 border-primary-content"
@@ -389,7 +400,27 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
                     </a>{" "}
                     {getEntityDisplayName(item.real_type)}{" "}
                   </span>
-                  <span class="prose-md font-semibold">{item.label}</span>
+                  <span class="prose-md select-none font-semibold">
+                    {item.label}
+                  </span>
+                  <Show when={item.is_deleted}>
+                    <span class="ml-auto select-none">
+                      <div class="relative mr-2 flex flex-row">
+                        <AiFillDelete size={20} class="mt-0.5 text-gray-600" />
+                        {item.deleted_and_has_dependent_nodes ? (
+                          <AiFillClockCircle
+                            size={20}
+                            class="mt-0.5 ml-2 rounded-full text-warning"
+                          />
+                        ) : (
+                          <AiFillCheckCircle
+                            size={20}
+                            class="mt-0.5 ml-2 text-success"
+                          />
+                        )}
+                      </div>
+                    </span>
+                  </Show>
                 </div>
                 <div class="card-body grid grid-cols-7">
                   <For each={Object.entries(props.relationFields)}>

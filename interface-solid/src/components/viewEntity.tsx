@@ -9,7 +9,12 @@ import { schema } from "../index";
 
 import { BsArrowReturnRight } from "solid-icons/bs";
 import { CgOptions } from "solid-icons/cg";
-import { AiFillWarning } from "solid-icons/ai";
+import {
+  AiFillWarning,
+  AiFillDelete,
+  AiFillClockCircle,
+  AiFillCheckCircle,
+} from "solid-icons/ai";
 
 import EntityChip from "./ui_components/entityChip";
 
@@ -36,7 +41,14 @@ const ZeroOrMoreRelationFieldView: Component<{
   fieldName: string;
   reverseRelation: boolean;
   field: { relation_to: string };
-  value: { label: string; real_type: string; uid: string; relData: object }[];
+  value: {
+    label: string;
+    real_type: string;
+    uid: string;
+    relData: object;
+    is_deleted: boolean;
+    deleted_and_has_dependent_nodes?: boolean;
+  }[];
 }> = (props) => {
   return (
     <>
@@ -61,21 +73,61 @@ const ZeroOrMoreRelationFieldView: Component<{
                     leftSlot={getEntityDisplayName(item.real_type)}
                     href={`/entity/${item.real_type}/${item.uid}/`}
                     color={props.reverseRelation ? "primary" : "primary"}
+                    isDeleted={item.is_deleted}
+                    deletedAndHasDependentNodes={
+                      item.is_deleted && item.deleted_and_has_dependent_nodes
+                    }
                   />
                 </span>
               }
             >
               <div class="card card-compact mr-4 mb-3 inline-block rounded-md bg-base-300 p-0 shadow-sm">
-                <UnsavedLink
-                  href={`/entity/${item.real_type}/${item.uid}`}
-                  class="prose-md mb-0 flex max-w-4xl cursor-pointer bg-primary p-3 text-neutral-content hover:bg-primary-focus"
-                  //onMouseDown={props.onClick}
-                >
-                  <span class="prose-sm mr-5 font-light uppercase">
-                    {getEntityDisplayName(item.real_type)}{" "}
-                  </span>
-                  <span class="prose-md font-semibold">{item.label}</span>
-                </UnsavedLink>
+                <Switch>
+                  <Match when={item.is_deleted}>
+                    <UnsavedLink
+                      href={`/entity/${item.real_type}/${item.uid}`}
+                      class="prose-md mb-0 flex max-w-4xl cursor-pointer bg-gray-400 p-3 text-neutral-content hover:bg-gray-500"
+                      //onMouseDown={props.onClick}
+                    >
+                      <span class="prose-sm mr-5 font-light uppercase">
+                        {getEntityDisplayName(item.real_type)}{" "}
+                      </span>
+                      <span class="prose-md font-semibold">{item.label}</span>
+                      <span class="ml-auto">
+                        <div class="relative mr-2 flex flex-row">
+                          <AiFillDelete
+                            size={20}
+                            class="mt-0.5 text-gray-600"
+                          />
+                          {item.deleted_and_has_dependent_nodes ? (
+                            <AiFillClockCircle
+                              size={20}
+                              class="mt-0.5 ml-2 rounded-full text-warning"
+                            />
+                          ) : (
+                            <AiFillCheckCircle
+                              size={20}
+                              class="mt-0.5 ml-2 text-success"
+                            />
+                          )}
+                        </div>
+                      </span>
+                    </UnsavedLink>
+                  </Match>
+                  <Match when={true}>
+                    <UnsavedLink
+                      href={`/entity/${item.real_type}/${item.uid}`}
+                      class="prose-md mb-0 flex max-w-4xl cursor-pointer bg-primary p-3 text-neutral-content hover:bg-primary-focus"
+                      //onMouseDown={props.onClick}
+                    >
+                      <span class="prose-sm mr-5 font-light uppercase">
+                        {getEntityDisplayName(item.real_type)}{" "}
+                      </span>
+                      <span class="prose-md font-semibold">{item.label}</span>
+                    </UnsavedLink>
+                  </Match>
+                </Switch>
+
                 <div class="card-body grid grid-cols-8">
                   <For each={Object.entries(item.relData)}>
                     {([relatedFieldName, relatedFieldValue]) => (

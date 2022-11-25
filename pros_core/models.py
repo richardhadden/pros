@@ -130,6 +130,9 @@ class ProsNode(StructuredNode):
                 results[rel.type.lower()].append(
                     {
                         **dict(obj),
+                        "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                            dict(obj)["uid"]
+                        ),
                         "relData": {
                             k: v for k, v in rel.items() if k != "reverse_name"
                         },
@@ -140,6 +143,9 @@ class ProsNode(StructuredNode):
                 results[reverse_name.lower()].append(
                     {
                         **dict(obj),
+                        "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                            dict(obj)["uid"]
+                        ),
                         "relData": {
                             k: v for k, v in rel.items() if k != "reverse_name"
                         },
@@ -159,15 +165,15 @@ class ProsNode(StructuredNode):
 
         return db_results[0][0]
 
-    def has_dependent_relations(self):
+    def has_dependent_relations(self, uid=None):
+        uid = uid or self.uid
         """-> Bool: other nodes are dependent on this node. Deleting it would break links."""
         q = Pypher()
         q.Match.node("s").rel_in().node("o")
-        q.WHERE.s.property("uid") == self.uid
+        q.WHERE.s.property("uid") == uid
         q.RETURN.count("s") > 0
 
         db_results, meta = db.cypher_query(str(q), q.bound_params)
-
         return db_results[0][0]
 
 
