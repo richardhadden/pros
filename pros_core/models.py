@@ -33,6 +33,7 @@ class InlineRelation(StructuredRel):
 class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
     real_type = StringProperty(index=True)
+    is_deleted = BooleanProperty(default=False)
 
     @classmethod
     def as_inline_field(cls):
