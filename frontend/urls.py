@@ -55,9 +55,16 @@ def create_list(model_class):
             node_data = [r[0] for r in results]
 
         else:
-
+            # TODO: fix as this is a lot of DB thrashing!!
             node_data = [
-                {"real_type": b.real_type, "uid": b.uid, "label": b.label}
+                {
+                    "real_type": b.real_type,
+                    "uid": b.uid,
+                    "label": b.label,
+                    "is_deleted": b.is_deleted,
+                    "deleted_and_has_dependent_nodes": b.is_deleted
+                    and b.has_dependent_relations(),
+                }
                 for b in model_class.nodes.all()
             ]
         # print(node_data)
@@ -69,7 +76,12 @@ def create_list(model_class):
 def create_autocomplete(model_class):
     def list(self, request):
         node_data = [
-            {"uid": b.uid, "label": b.label, "real_type": b.real_type}
+            {
+                "uid": b.uid,
+                "label": b.label,
+                "real_type": b.real_type,
+                "is_deleted": b.is_deleted,
+            }
             for b in model_class.nodes.all()
         ]
         return Response(node_data)
@@ -86,7 +98,12 @@ def create_retrieve(model_class: ProsNode):
                 status=404, data=f"<{model_class.__name__} uid={pk}> not found"
             )
 
-        data = {**this.properties, **this.direct_relations_as_data()}
+        data = {
+            **this.properties,
+            "deleted_and_has_dependent_nodes": this.is_deleted
+            and this.has_dependent_relations(),
+            **this.direct_relations_as_data(),
+        }
 
         return Response(data)
 
@@ -252,6 +269,48 @@ def create_update(model_class):
     return update
 
 
+def create_delete(model_class: ProsNode):
+    @db.write_transaction
+    def delete(self, request, pk=None):
+        print(request.query_params)
+        if request.query_params.get("restore"):
+            instance: ProsNode = model_class.nodes.get(uid=pk)
+            if instance.is_deleted:
+                instance.is_deleted = False
+                instance.save()
+            print("RESTORED")
+            return Response(
+                {
+                    "detail": f"Deleted {model_class.__name__} '{instance.label}' restored.",
+                }
+            )
+
+        try:
+            instance: ProsNode = model_class.nodes.get(uid=pk)
+            if instance.has_dependent_relations():
+                instance.is_deleted = True
+                instance.save()
+                return Response(
+                    {
+                        "detail": (
+                            f"Marked {model_class.__name__} '{instance.label}' as deletion desired,"
+                            " pending removal of references from dependent entities"
+                        )
+                    }
+                )
+            else:
+                instance.delete()
+                return Response(
+                    {
+                        "detail": f"Deleted {model_class.__name__} {pk} as it has no dependencies"
+                    }
+                )
+        except DoesNotExist:
+            return Response({"detail": "Not found"})
+
+    return delete
+
+
 urlpatterns = []
 
 
@@ -264,6 +323,8 @@ def build_viewset_functions(model):
         viewset_functions["create"] = create_create(model.model)
         viewset_functions["put"] = create_update(model.model)
         viewset_functions["autocomplete"] = create_autocomplete(model.model)
+        viewset_functions["delete"] = create_delete(model.model)
+
     return viewset_functions
 
 
@@ -288,6 +349,10 @@ def build_url_patterns(model, vs):
             path(
                 f"{model.app}/{model.model_name.lower()}/new/",
                 vs.as_view({"post": "create"}),
+            ),
+            path(
+                f"{model.app}/{model.model_name.lower()}/<str:pk>/",
+                vs.as_view({"delete": "delete"}),
             ),
         ]
     return patterns

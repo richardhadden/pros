@@ -1,5 +1,7 @@
 import { Component, For, Show, createEffect, Switch, Match } from "solid-js";
-import { useParams, useRouteData, NavLink } from "@solidjs/router";
+import { useParams, useRouteData } from "@solidjs/router";
+
+import UnsavedLink from "../utils/UnsavedLink";
 
 import TopBar from "./topBar";
 import { getEntityDisplayName } from "../utils/entity_names";
@@ -7,6 +9,7 @@ import { schema } from "../index";
 
 import { BsArrowReturnRight } from "solid-icons/bs";
 import { CgOptions } from "solid-icons/cg";
+import { AiFillWarning } from "solid-icons/ai";
 
 import EntityChip from "./ui_components/entityChip";
 
@@ -63,16 +66,16 @@ const ZeroOrMoreRelationFieldView: Component<{
               }
             >
               <div class="card card-compact mr-4 mb-3 inline-block rounded-md bg-base-300 p-0 shadow-sm">
-                <NavLink
+                <UnsavedLink
                   href={`/entity/${item.real_type}/${item.uid}`}
-                  class="prose-md mb-0 flex max-w-4xl bg-primary p-3 text-neutral-content hover:bg-primary-focus"
+                  class="prose-md mb-0 flex max-w-4xl cursor-pointer bg-primary p-3 text-neutral-content hover:bg-primary-focus"
                   //onMouseDown={props.onClick}
                 >
                   <span class="prose-sm mr-5 font-light uppercase">
                     {getEntityDisplayName(item.real_type)}{" "}
                   </span>
                   <span class="prose-md font-semibold">{item.label}</span>
-                </NavLink>
+                </UnsavedLink>
                 <div class="card-body grid grid-cols-8">
                   <For each={Object.entries(item.relData)}>
                     {([relatedFieldName, relatedFieldValue]) => (
@@ -152,6 +155,7 @@ const ViewEntity: Component = () => {
           params={params}
           newButton={false}
           editButton={true}
+          editButtonDeactivated={data().is_deleted}
           deleteButton={true}
           barTitle={
             <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
@@ -162,9 +166,32 @@ const ViewEntity: Component = () => {
         />
 
         <div class="mt-32 ml-6 grid grid-cols-8">
+          <Show when={data()["is_deleted"]}>
+            <div class="col-span-1" />
+            {data().deleted_and_has_dependent_nodes ? (
+              <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
+                <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                <span class="ml-6 normal-case">
+                  Remove as a {getEntityDisplayName(params.entity_type)}{" "}
+                  referenced by the items below before trying to delete again
+                </span>
+              </div>
+            ) : (
+              <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-success p-3 font-semibold uppercase text-success-content shadow-lg">
+                <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                <span class="ml-6 normal-case">
+                  No more references to this{" "}
+                  {getEntityDisplayName(params.entity_type)}, so it can be
+                  safely deleted
+                </span>
+              </div>
+            )}
+
+            <div class="col-span-1" />
+          </Show>
           <For each={Object.entries(schema[params.entity_type].fields)}>
             {([schema_field_name, field], index) => (
-              <>
+              <Show when={schema_field_name !== "is_deleted"}>
                 <Switch>
                   <Match when={field.type === "property"}>
                     <TextFieldView
@@ -205,7 +232,7 @@ const ViewEntity: Component = () => {
                 >
                   <div class="divider col-span-8" />
                 </Show>
-              </>
+              </Show>
             )}
           </For>
           {Object.keys(schema[params.entity_type].reverse_relations).length >

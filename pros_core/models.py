@@ -33,6 +33,7 @@ class InlineRelation(StructuredRel):
 class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
     real_type = StringProperty(index=True)
+    is_deleted = BooleanProperty(default=False)
 
     @classmethod
     def as_inline_field(cls):
@@ -109,7 +110,7 @@ class ProsNode(StructuredNode):
 
         for r in db_results:
             subj, rel, obj = r
-            print(rel.type)
+            # print(rel.type)
             # TODO: thought of a problem with this, but can't remember what it was
             if rel.get("inline"):
                 res = dict(obj)
@@ -143,15 +144,26 @@ class ProsNode(StructuredNode):
         return results
 
     def has_relations(self):
-        print(self.uid)
+        """-> Bool: node is related to another node"""
         q = Pypher()
         q.Match.node("s").rel().node("o")
         q.WHERE.s.property("uid") == self.uid
-        q.RETURN(__.s, __.o)
+        q.RETURN.count("s") > 0
 
         db_results, meta = db.cypher_query(str(q), q.bound_params)
 
-        return db_results
+        return db_results[0][0]
+
+    def has_dependent_relations(self):
+        """-> Bool: other nodes are dependent on this node. Deleting it would break links."""
+        q = Pypher()
+        q.Match.node("s").rel_in().node("o")
+        q.WHERE.s.property("uid") == self.uid
+        q.RETURN.count("s") > 0
+
+        db_results, meta = db.cypher_query(str(q), q.bound_params)
+
+        return db_results[0][0]
 
 
 class ProsRelationBase(StructuredRel):

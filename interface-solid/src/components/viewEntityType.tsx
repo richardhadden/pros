@@ -6,13 +6,12 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import {
-  Link,
-  useParams,
-  useRouteData,
-  useSearchParams,
-} from "@solidjs/router";
+import { useParams, useRouteData, useSearchParams } from "@solidjs/router";
 
+import UnsavedLink from "../utils/UnsavedLink";
+import { AiFillDelete } from "solid-icons/ai";
+import { AiFillClockCircle } from "solid-icons/ai";
+import { AiFillCheckCircle } from "solid-icons/ai";
 import TopBar from "./topBar";
 import {
   getEntityDisplayName,
@@ -96,19 +95,46 @@ const ViewEntityType: Component = () => {
                     <For each={items}>
                       {(item) => (
                         <div>
-                          <Link
+                          <UnsavedLink
                             href={`/entity/${entity_name}/${item.uid}`}
-                            class="mb-3 flex max-w-4xl rounded-md bg-primary p-3 text-neutral-content hover:bg-primary-focus"
+                            class={`mb-3 flex max-w-4xl cursor-pointer flex-row rounded-md p-3 text-neutral-content  ${
+                              item.is_deleted
+                                ? "bg-gray-300 hover:bg-gray-500"
+                                : "bg-primary hover:bg-primary-focus"
+                            }`}
                           >
-                            <div class="flex-col content-center">
+                            <div class="flex flex-col content-center">
                               <div>
                                 <span class="prose-sm mr-7 select-none font-light uppercase">
                                   {getEntityDisplayName(item.real_type)}
                                 </span>
                               </div>
                             </div>{" "}
-                            <div>{item.label}</div>
-                          </Link>
+                            <div class="relative">
+                              <div class="inline-block">{item.label}</div>
+                            </div>
+                            <div class="right-0 ml-auto justify-self-end">
+                              {item.is_deleted && (
+                                <div class="relative mr-2 flex flex-row">
+                                  <AiFillDelete
+                                    size={20}
+                                    class="mt-0.5 text-gray-600"
+                                  />
+                                  {item.deleted_and_has_dependent_nodes ? (
+                                    <AiFillClockCircle
+                                      size={20}
+                                      class="mt-0.5 ml-2 rounded-full text-warning"
+                                    />
+                                  ) : (
+                                    <AiFillCheckCircle
+                                      size={20}
+                                      class="mt-0.5 ml-2 text-success"
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </UnsavedLink>
                         </div>
                       )}
                     </For>

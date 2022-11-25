@@ -9,7 +9,9 @@ import {
   Accessor,
 } from "solid-js";
 
-import { Link } from "@solidjs/router";
+import { useLocation } from "@solidjs/router";
+
+import UnsavedUnsavedLink from "../utils/UnsavedUnsavedLink";
 
 import { schema, SchemaEntity, SubClasses } from "../index";
 import { getEntityNamePlural } from "../utils/entity_names";
@@ -18,11 +20,13 @@ import { BsPlus, BsQuestion } from "solid-icons/bs";
 import { AiOutlineLine } from "solid-icons/ai";
 import { CgAbstract } from "solid-icons/cg";
 import { logout, userStatus } from "./login";
+import UnsavedLink from "../utils/UnsavedLink";
 
 const SideBarListItems: Component<{
   subclasses: SubClasses | undefined;
   level: number;
 }> = ({ subclasses, level }) => {
+  const location = useLocation();
   return (
     subclasses && (
       <For each={Object.entries(subclasses)}>
@@ -31,35 +35,43 @@ const SideBarListItems: Component<{
             <li class={`ml-4 flex`}>
               {schema[entity_name].meta.abstract ? (
                 <div class="btn-group mb-2 grow border-0">
-                  <Link
-                    class="btn btn-sm w-full"
+                  <UnsavedLink
+                    class={`btn btn-sm w-full ${
+                      location.pathname.includes("/entity/" + entity_name)
+                        ? " btn-primary"
+                        : ""
+                    }`}
                     href={`/entity/${entity_name}/`}
                   >
                     {getEntityNamePlural(entity_name)}
-                  </Link>
+                  </UnsavedLink>
 
-                  <Link
+                  <UnsavedLink
                     href={`/entity/${entity_name}/new/`}
                     class="btn btn-disabled btn-square btn-sm"
                   >
                     <CgAbstract />
-                  </Link>
+                  </UnsavedLink>
                 </div>
               ) : (
                 <div class="btn-group mb-2 grow border-0">
-                  <Link
-                    class="btn btn-sm w-full"
+                  <UnsavedLink
+                    class={`btn btn-sm w-full ${
+                      location.pathname.includes("/entity/" + entity_name)
+                        ? " btn-primary"
+                        : ""
+                    }`}
                     href={`/entity/${entity_name}/`}
                   >
                     {getEntityNamePlural(entity_name)}
-                  </Link>
+                  </UnsavedLink>
 
-                  <Link
+                  <UnsavedLink
                     href={`/entity/${entity_name}/new/`}
                     class="btn btn-accent btn-square btn-sm"
                   >
                     <BsPlus size={18} />
-                  </Link>
+                  </UnsavedLink>
                 </div>
               )}
             </li>
@@ -79,6 +91,10 @@ const SideBarListItems: Component<{
 };
 
 const Sidebar: Component = () => {
+  const location = useLocation();
+
+  createEffect(() => console.log("LOC", location.pathname));
+
   const topLevelEntities = createMemo(() =>
     Object.entries(schema).filter(([key, entry], index) => entry.top_level)
   );
@@ -87,12 +103,12 @@ const Sidebar: Component = () => {
     <div class="drawer drawer-mobile h-full">
       <div class="relative h-full min-h-screen min-w-fit bg-base-300 shadow-inner">
         <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner shadow-2xl">
-          <Link
+          <UnsavedLink
             href="/"
             class="prose prose-xl ml-2 mb-4 block text-center font-black hover:text-accent"
           >
             PROS
-          </Link>
+          </UnsavedLink>
           <div class="flex justify-evenly">
             <span class="prose-sm mt-1 mr-1 font-semibold uppercase">
               User{" "}
@@ -100,9 +116,9 @@ const Sidebar: Component = () => {
             <span class="btn btn-disabled btn-sm prose-sm mr-3 ml-1 bg-base-300 text-base-content">
               {userStatus.username}
             </span>{" "}
-            <Link href="/" class="btn btn-sm" onClick={logout}>
+            <UnsavedLink href="/" class="btn btn-sm" onClick={logout}>
               Log Out
-            </Link>
+            </UnsavedLink>
           </div>
         </div>
         <ul class="overflow-y-scroll p-4 pr-10 text-base-content ">
@@ -112,36 +128,44 @@ const Sidebar: Component = () => {
                 {schema[entity_name].meta.abstract ? (
                   <li class="flex">
                     <div class="btn-group mb-2 grow ">
-                      <Link
+                      <UnsavedLink
                         href={`/entity/${entity_name}/`}
-                        class="btn btn-sm  w-full"
+                        class={`btn btn-sm w-full ${
+                          location.pathname.includes("/entity/" + entity_name)
+                            ? " btn-primary"
+                            : ""
+                        }`}
                       >
                         {getEntityNamePlural(entity_name)}
-                      </Link>
+                      </UnsavedLink>
 
-                      <Link
+                      <UnsavedLink
                         href={`/entity/${entity_name}/new/`}
                         class="btn btn-disabled btn-square btn-sm"
                       >
                         <CgAbstract />
-                      </Link>
+                      </UnsavedLink>
                     </div>
                   </li>
                 ) : (
                   <li class="flex">
                     <div class="btn-group mb-2 grow ">
-                      <Link
+                      <UnsavedLink
                         href={`/entity/${entity_name}/`}
-                        class="btn btn-sm  w-full"
+                        class={`btn btn-sm w-full ${
+                          location.pathname.includes("/entity/" + entity_name)
+                            ? " btn-primary"
+                            : ""
+                        }`}
                       >
                         {getEntityNamePlural(entity_name)}
-                      </Link>
-                      <Link
+                      </UnsavedLink>
+                      <UnsavedLink
                         href={`/entity/${entity_name}/new/`}
                         class="btn btn-accent  btn-square btn-sm"
                       >
                         <BsPlus size={18} />
-                      </Link>
+                      </UnsavedLink>
                     </div>
                   </li>
                 )}

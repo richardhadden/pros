@@ -22,6 +22,8 @@ import Sidebar from "./components/sidebar";
 import { userStatus } from "./components/login";
 import { CUSTOM_ADVANCED_FIELDS } from "../../interface-solid/interface-config.js";
 
+export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
+
 type ViewEntityTypeData = {
   real_type: string;
   uid: string;
@@ -153,6 +155,20 @@ export const postNewEntityData = async (
   );
   const json = await resp.json();
   return json;
+};
+
+export const deleteEntity = async (entity_type, uid, restore = false) => {
+  const uri = `${BASE_URI}/${schema[entity_type].app}/${entity_type}/${uid}/${
+    restore ? "?restore=true" : ""
+  }`;
+  console.log(uri);
+  const resp = await fetch(uri, {
+    method: "DELETE", // *GET, POST, PUT, DELETE, etc.
+    mode: "cors", // no-cors, *cors, same-origin
+    cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: "same-origin", // include, *same-origin, omit
+  });
+  return resp.status === 200;
 };
 
 const Home: Component = () => {

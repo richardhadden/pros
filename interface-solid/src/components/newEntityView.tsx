@@ -7,12 +7,9 @@ import {
   onMount,
   onCleanup,
 } from "solid-js";
-import {
-  useParams,
-  useRouteData,
-  useLocation,
-  useNavigate,
-} from "@solidjs/router";
+import { useParams, useRouteData, useNavigate } from "@solidjs/router";
+
+import { hasUnsavedChange, setHasUnsavedChange } from "../App";
 
 import TopBar from "./topBar";
 import { getEntityDisplayName } from "../utils/entity_names";
@@ -32,11 +29,9 @@ const NewEntityView: Component = (props) => {
   const [data, setData] = createSignal({});
 
   const handleSetData = (data) => {
-    setData(data);
     setHasUnsavedChange(true);
+    setData(data);
   };
-
-  const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
 
   const [showSaveToast, setShowSaveToast] = createSignal(false);
 

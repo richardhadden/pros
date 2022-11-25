@@ -1,5 +1,5 @@
 import { Component, JSXElement, Show } from "solid-js";
-import { NavLink } from "@solidjs/router";
+import UnsavedLink from "../../utils/UnsavedLink";
 
 const EntityChip: Component<{
   href?: string | undefined;
@@ -12,16 +12,16 @@ const EntityChip: Component<{
   const style =
     "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-md h-12 prose-md relative top-1.5 font-semibold inline-block";
   return props.href ? (
-    <NavLink
+    <UnsavedLink
       class={
         style +
-        ` bg-${props.color} hover:bg-${props.color}-focus transition-all`
+        ` bg-${props.color} hover:bg-${props.color}-focus cursor-pointer transition-all`
       }
       href={props.href}
     >
       <span class="prose-sm mr-5 font-light uppercase">{props.leftSlot} </span>
       {props.label}
-    </NavLink>
+    </UnsavedLink>
   ) : (
     <span
       class={

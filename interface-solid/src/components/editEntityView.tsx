@@ -9,11 +9,14 @@ import {
 } from "solid-js";
 import { useParams, useRouteData } from "@solidjs/router";
 
+import { hasUnsavedChange, setHasUnsavedChange } from "../App";
+
 import TopBar from "./topBar";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
 import Form from "./form";
 import { putEntityData } from "../App";
+import { AiFillWarning } from "solid-icons/ai";
 
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-md h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
@@ -29,8 +32,6 @@ const EditEntityView: Component = (props) => {
     setData(data);
     setHasUnsavedChange(true);
   };
-
-  const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
 
   const [showSaveToast, setShowSaveToast] = createSignal(false);
 
@@ -71,7 +72,33 @@ const EditEntityView: Component = (props) => {
           }
           barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
         />
+
         <div class="mt-32 mb-48">
+          <Show when={data()["is_deleted"]}>
+            <div class="grid grid-cols-8">
+              <div class="col-span-1" />
+              {data().deleted_and_has_dependent_nodes ? (
+                <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
+                  <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                  <span class="ml-6 normal-case">
+                    Remove as a {getEntityDisplayName(params.entity_type)}{" "}
+                    referenced by other items
+                  </span>
+                </div>
+              ) : (
+                <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-success p-3 font-semibold uppercase text-success-content shadow-lg">
+                  <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                  <span class="ml-6 normal-case">
+                    No more references to this{" "}
+                    {getEntityDisplayName(params.entity_type)}, so it can be
+                    safely deleted
+                  </span>
+                </div>
+              )}
+
+              <div class="col-span-1" />
+            </div>
+          </Show>
           <Form
             data={data}
             setData={handleSetData}
