@@ -15,6 +15,7 @@ from pros_core.models import (
     ProsRelationTo,
     ProsRelationBase,
     OverrideLabel,
+    ProsDateProperty,
 )
 from pros_core.filters import icontains
 
@@ -193,3 +194,4 @@ class Test(ProsNode):
     date = DateProperty()
     dateTime = DateTimeProperty()
     email = EmailProperty()
+    prosdate = ProsDateProperty()

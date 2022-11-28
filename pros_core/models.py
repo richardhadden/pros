@@ -199,3 +199,36 @@ def ProsRelationTo(
         cardinality=cardinality or ZeroOrMore,
         model=m,
     )
+
+
+from neomodel.properties import Property, validator
+import neo4j.time
+from numpy import datetime64, datetime_as_string
+from flexidate import FlexiDate, parse
+
+
+class ProsDateProperty(Property):
+    """
+    Stores a date
+    """
+
+    form_field_class = "DateField"
+
+    @validator
+    def inflate(self, value):
+        # print(value, type(value))
+        # value = parse(value)
+        return value
+
+    @validator
+    def deflate(self, value):
+        if not isinstance(value, FlexiDate):
+            try:
+                value = parse(value)
+                return value.isoformat()
+            except:
+
+                msg = "Expected something convertable to a FlexiDate format"
+                raise ValueError(msg)
+
+        return value.isoformat()
