@@ -281,6 +281,7 @@ def create_delete(model_class: ProsNode):
             print("RESTORED")
             return Response(
                 {
+                    "result": "success",
                     "detail": f"Deleted {model_class.__name__} '{instance.label}' restored.",
                 }
             )
@@ -296,18 +297,20 @@ def create_delete(model_class: ProsNode):
                         "detail": (
                             f"Marked {model_class.__name__} '{instance.label}' as deletion desired,"
                             " pending removal of references from dependent entities"
-                        )
+                        ),
+                        "result": "pending",
                     }
                 )
             else:
                 instance.delete()
                 return Response(
                     {
-                        "detail": f"Deleted {model_class.__name__} {pk} as it has no dependencies"
+                        "detail": f"Deleted {model_class.__name__} {pk} as it has no dependencies",
+                        "result": "success",
                     }
                 )
         except DoesNotExist:
-            return Response({"detail": "Not found"})
+            return Response({"detail": "Not found", "result": "fail"})
 
     return delete
 

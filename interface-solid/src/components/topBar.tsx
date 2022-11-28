@@ -5,13 +5,12 @@ import { BiRegularExit } from "solid-icons/bi";
 import { AiFillDelete } from "solid-icons/ai";
 import { AiOutlineReload } from "solid-icons/ai";
 
-import { Component, createSignal, Show, JSXElement } from "solid-js";
-import { useNavigate } from "@solidjs/router";
-import EntityChip from "./ui_components/entityChip";
+import { Component, createSignal, Show, JSXElement, Accessor } from "solid-js";
+
 import { schema } from "../index";
-import { deleteEntity } from "../App";
-import { getEntityDisplayName } from "../utils/entity_names";
-import DeleteModal from "./deleteModal";
+
+import DeleteModal from "./DeleteModal";
+import RestoreModal from "./RestoreModal";
 
 import UnsavedLink from "../utils/UnsavedLink";
 
@@ -27,31 +26,14 @@ const TopBar: Component<{
   deleteButton?: boolean;
   hasUnsavedChange?: boolean;
   onClickSaveButton?: (e: MouseEvent) => null;
+  refetchData?: any;
+  data?: Accessor<object>;
 }> = (props) => {
-  const navigate = useNavigate();
-
   const [deleteModalVisible, setDeleteModalVisible] = createSignal(false);
   const [restoreModalVisible, setRestoreModalVisible] = createSignal(false);
 
   const onClickDelete = () => {
     setDeleteModalVisible(true);
-  };
-
-  const doRestore = async () => {
-    const restored = await deleteEntity(
-      props.params.entity_type,
-      props.params.uid,
-      true
-    );
-    if (restored) {
-      setRestoreModalVisible(false);
-      navigate(`/entity/${props.params.entity_type}/`, {
-        replace: true,
-      });
-    } else {
-      setDeleteModalVisible(false);
-      alert("Could not be restored");
-    }
   };
 
   return schema ? (
@@ -137,27 +119,12 @@ const TopBar: Component<{
       </Show>
 
       <Show when={restoreModalVisible()}>
-        <div class="modal modal-open">
-          <div class="modal-box z-50 text-black">
-            <h3 class="font-semibold uppercase">Restore</h3>
-            <p class="py-4">
-              Are you sure you want to restore deleted{" "}
-              {getEntityDisplayName(props.params.entity_type)} &ldquo;
-              {props.data().label}&rdquo;?
-            </p>
-            <div class="modal-action">
-              <span class="btn btn-error" onClick={doRestore}>
-                Confirm
-              </span>
-              <span
-                onClick={() => setRestoreModalVisible(false)}
-                class="btn btn-success"
-              >
-                Cancel
-              </span>
-            </div>
-          </div>
-        </div>
+        <RestoreModal
+          uid={props.params.uid}
+          entityType={props.params.entity_type}
+          data={props.data}
+          setRestoreModalVisible={setRestoreModalVisible}
+        />
       </Show>
     </>
   ) : (

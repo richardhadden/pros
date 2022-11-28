@@ -11,10 +11,10 @@ import { useParams, useRouteData, useNavigate } from "@solidjs/router";
 
 import { hasUnsavedChange, setHasUnsavedChange } from "../App";
 
-import TopBar from "./topBar";
+import TopBar from "../components/TopBar";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
-import Form from "./form";
+import Form from "../components/EditForm";
 import { postNewEntityData } from "../App";
 
 const ViewedItemTopBarStyle =
@@ -22,7 +22,7 @@ const ViewedItemTopBarStyle =
 
 const NewEntityView: Component = (props) => {
   const params = useParams();
-  const initialData = useRouteData();
+  //const [initialData, refetchInitialData] = useRouteData();
 
   const navigate = useNavigate();
 

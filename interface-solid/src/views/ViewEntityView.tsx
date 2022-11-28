@@ -3,7 +3,7 @@ import { useParams, useRouteData } from "@solidjs/router";
 
 import UnsavedLink from "../utils/UnsavedLink";
 
-import TopBar from "./topBar";
+import TopBar from "../components/TopBar";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
 
@@ -16,7 +16,9 @@ import {
   AiFillCheckCircle,
 } from "solid-icons/ai";
 
-import EntityChip from "./ui_components/entityChip";
+import { SchemaEntity, SchemaFieldRelation } from "../types/schemaTypes";
+
+import EntityChip from "../components/ui_components/entityChip";
 
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-md h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
@@ -195,7 +197,7 @@ const InlineRelationView: Component = (props) => {
 
 const ViewEntity: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
-  const data = useRouteData();
+  const [data, refetchData] = useRouteData();
 
   createEffect(() => console.log(data()));
 
@@ -215,6 +217,7 @@ const ViewEntity: Component = () => {
             </div>
           }
           barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
+          refetchData={refetchData}
         />
 
         <div class="mt-32 ml-6 grid grid-cols-8">
@@ -262,7 +265,7 @@ const ViewEntity: Component = () => {
                       }
                       fieldName={schema_field_name}
                       value={data()[schema_field_name]}
-                      field={field}
+                      field={field as SchemaFieldRelation}
                     />
                   </Match>
                   <Match

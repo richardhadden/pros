@@ -2,7 +2,7 @@ import { Component, createSignal, Accessor, Setter } from "solid-js";
 import EntityChip from "./ui_components/entityChip";
 import { getEntityDisplayName } from "../utils/entity_names";
 
-import { useNavigate } from "@solidjs/router";
+import { useNavigate, useRouteData } from "@solidjs/router";
 import { deleteEntity } from "../App";
 
 const DeleteModal: Component<{
@@ -11,6 +11,7 @@ const DeleteModal: Component<{
   uid: string;
   setDeleteModalVisible: Setter<boolean>;
 }> = (props) => {
+  const [data, refetchData] = useRouteData();
   const navigate = useNavigate();
   const [deleteModalEntityName, setDeleteModalEntityName] = createSignal("");
   const onConfirmDelete = async () => {
@@ -20,8 +21,13 @@ const DeleteModal: Component<{
       alert("does not match");
     } else {
       const del = await deleteEntity(props.entityType, props.uid);
-      if (del) {
-        navigate(`/entity/${props.entityType}`, { replace: true });
+      if (del.result === "pending") {
+        refetchData();
+        props.setDeleteModalVisible(false);
+        //navigate(`/entity/${props.entityType}/${props.uid}`, { replace: true });
+      } else if (del.result === "success") {
+        props.setDeleteModalVisible(false);
+        navigate(`/entity/${props.entityType}/`, { replace: true });
       }
     }
   };

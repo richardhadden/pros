@@ -12,7 +12,7 @@ import UnsavedLink from "../utils/UnsavedLink";
 import { AiFillDelete } from "solid-icons/ai";
 import { AiFillClockCircle } from "solid-icons/ai";
 import { AiFillCheckCircle } from "solid-icons/ai";
-import TopBar from "./topBar";
+import TopBar from "../components/TopBar";
 import {
   getEntityDisplayName,
   getEntityNamePlural,
@@ -40,9 +40,9 @@ const debounce = <F extends (...args: any) => any>(
   return debounced as (...args: Parameters<F>) => ReturnType<F>;
 };
 
-const ViewEntityType: Component = () => {
+const ViewEntityListView: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
-  const data = useRouteData();
+  const [data, refetchData] = useRouteData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterValue, setFilterValue] = createSignal<string>("");
 
@@ -153,4 +153,4 @@ const ViewEntityType: Component = () => {
   );
 };
 
-export default ViewEntityType;
+export default ViewEntityListView;

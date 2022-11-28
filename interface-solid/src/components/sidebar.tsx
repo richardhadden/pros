@@ -19,7 +19,7 @@ import { getEntityNamePlural } from "../utils/entity_names";
 import { BsPlus, BsQuestion } from "solid-icons/bs";
 import { AiOutlineLine } from "solid-icons/ai";
 import { CgAbstract } from "solid-icons/cg";
-import { logout, userStatus } from "./login";
+import { logout, userStatus } from "./Login";
 import UnsavedLink from "../utils/UnsavedLink";
 
 const SideBarListItems: Component<{

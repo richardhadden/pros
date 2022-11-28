@@ -11,15 +11,15 @@ import { groupBy } from "ramda";
 
 import { schema, BASE_URI } from "./index";
 
-import ViewEntityType from "./components/viewEntityType";
-import ViewEntity from "./components/viewEntity";
-import EditEntityView from "./components/editEntityView";
-import NewEntityView from "./components/newEntityView";
-import Login, { getSession } from "./components/login";
+import ViewEntityListView from "./views/ViewEntityListView";
+import ViewEntity from "./views/ViewEntityView";
+import EditEntityView from "./views/EditEntityView";
+import NewEntityView from "./views/NewEntityView";
+import Login, { getSession } from "./components/Login";
 
-import Sidebar from "./components/sidebar";
+import Sidebar from "./components/SideBar";
 
-import { userStatus } from "./components/login";
+import { userStatus } from "./components/Login";
 import { CUSTOM_ADVANCED_FIELDS } from "../../interface-solid/interface-config.js";
 
 export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
@@ -62,13 +62,13 @@ const EntityViewAllData: (p: DataResourceArgs) => object = ({
   navigate,
   data,
 }) => {
-  const [entity_view_data] = createResource(
+  const [entity_view_data, { mutate, refetch }] = createResource(
     () =>
       `${schema[params.entity_type].app}/${params.entity_type}/` +
       location.search,
     fetchEntityViewAllData
   );
-  return entity_view_data;
+  return [entity_view_data, refetch];
 };
 
 const fetchEntityData = async (uri_end: string) => {
@@ -91,12 +91,12 @@ const EntityData: (p: DataResourceArgs) => object = ({
   navigate,
   data,
 }) => {
-  const [entity_data] = createResource(
+  const [entity_data, { mutate, refetch }] = createResource(
     () =>
       `${schema[params.entity_type].app}/${params.entity_type}/${params.uid}`,
     fetchEntityData
   );
-  return entity_data;
+  return [entity_data, refetch];
 };
 
 export const fetchAutoCompleteData = async (entity_type: string) => {
@@ -168,7 +168,9 @@ export const deleteEntity = async (entity_type, uid, restore = false) => {
     cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
     credentials: "same-origin", // include, *same-origin, omit
   });
-  return resp.status === 200;
+  const json = await resp.json();
+  console.log(json);
+  return json;
 };
 
 const Home: Component = () => {
@@ -232,7 +234,7 @@ const App: Component = () => {
               />
               <Route
                 path="/entity/:entity_type/"
-                component={ViewEntityType}
+                component={ViewEntityListView}
                 data={EntityViewAllData}
               />
               <Route

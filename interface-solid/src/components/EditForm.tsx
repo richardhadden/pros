@@ -20,8 +20,12 @@ import { CgClose } from "solid-icons/cg";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { fetchAutoCompleteData } from "../App";
 import { postNewEntityData } from "../App";
-import { filter } from "ramda";
-import { TextFieldView } from "./viewEntity";
+import {
+  SchemaEntity,
+  SchemaFieldProperty,
+  SchemaFieldRelation,
+} from "../types/schemaTypes";
+import { TextFieldView } from "../views/ViewEntityView";
 import { CgOptions } from "solid-icons/cg";
 import {
   AiFillWarning,
@@ -37,7 +41,10 @@ function clickOutside(el, accessor) {
   onCleanup(() => document.body.removeEventListener("click", onClick));
 }
 
-const nested_get = (nested, keys) => {
+const nested_get = (
+  nested: object | object[] | string[],
+  keys: string[] | number[]
+) => {
   const k = keys.shift();
   if (keys.length > 0) {
     if (nested.constructor === Array) {
@@ -75,11 +82,11 @@ const TypedInputField: Component<{
     | "BooleanProperty"
     | "DateProperty"
     | "DateTimeProperty";
-  helpText: string;
+  helpText?: string;
 }> = (props) => {
-  const setFloat = (e) => {
+  const setFloat = (e: InputEvent) => {
     e.preventDefault();
-    const v = e.target.value;
+    const v = (e.currentTarget as HTMLInputElement).value;
     const regex = /^\d*.?\d*$/;
     if (regex.test(v) || v === "") {
       props.setValue(v);
@@ -94,7 +101,7 @@ const TypedInputField: Component<{
           type="text"
           class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           value={props.value || ""}
-          onInput={(e) => props.setValue(e.target?.value)}
+          onInput={(e) => props.setValue(e.currentTarget.value)}
         />
       </Match>
       <Match when={props.propertyType === "EmailProperty"}>
@@ -102,7 +109,7 @@ const TypedInputField: Component<{
           type="email"
           class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           value={props.value || ""}
-          onInput={(e) => props.setValue(e.target?.value)}
+          onInput={(e) => props.setValue(e.currentTarget.value)}
         />
       </Match>
       <Match when={props.propertyType === "IntegerProperty"}>
@@ -111,7 +118,7 @@ const TypedInputField: Component<{
           type="number"
           class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           value={props.value}
-          onInput={(e) => props.setValue(e.target?.value)}
+          onInput={(e) => props.setValue(e.currentTarget.value)}
           id={props.fieldName}
         />
       </Match>
@@ -130,7 +137,7 @@ const TypedInputField: Component<{
           type="checkbox"
           class="toggle toggle-primary mt-3"
           checked={props.value}
-          onChange={(e) => props.setValue(e.target.checked)}
+          onChange={(e) => props.setValue(e.currentTarget.checked)}
         />
       </Match>
       <Match when={props.propertyType === "DateProperty"}>
@@ -139,7 +146,7 @@ const TypedInputField: Component<{
           type="date"
           class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           value={props.value || ""}
-          onInput={(e) => props.setValue(e.target?.value)}
+          onInput={(e) => props.setValue(e.currentTarget.value)}
         />
       </Match>
       <Match when={props.propertyType === "DateTimeProperty"}>
@@ -148,7 +155,7 @@ const TypedInputField: Component<{
           type="datetime"
           class="appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
           value={props.value || ""}
-          onInput={(e) => props.setValue(e.target?.value)}
+          onInput={(e) => props.setValue(e.currentTarget.value)}
         />
       </Match>
     </Switch>
@@ -689,7 +696,7 @@ const Form: Component<{
     }
   };
 
-  const build_label_template = (template) => {
+  const build_label_template = (template: string) => {
     const data = props.data();
     try {
       const re = new RegExp("({.*?})", "g");
@@ -716,7 +723,7 @@ const Form: Component<{
   const build_label = createMemo(() => {
     if (schema[props.entity_type].meta.label_template) {
       return build_label_template(
-        schema[props.entity_type].meta.label_template
+        (schema[props.entity_type] as SchemaEntity).meta.label_template
       );
     } else {
       return props.data()["label"];
@@ -727,18 +734,22 @@ const Form: Component<{
     <div class="ml-6 grid grid-cols-8">
       <Show when={schema[props.entity_type]}>
         <For each={Object.entries(schema[props.entity_type]?.fields)}>
-          {([schema_field_name, field], index) => (
+          {(
+            [schema_field_name, field]: [string, unknown],
+            index: Accessor<number>
+          ) => (
             <>
               <Switch>
                 {/* Renders default property field */}
                 <Match
                   when={
-                    field.type === "property" && schema_field_name !== "label"
+                    (field as SchemaFieldProperty).type === "property" &&
+                    schema_field_name !== "label"
                   }
                 >
                   <TypedInputRow
                     fieldName={schema_field_name}
-                    propertyType={field.property_type}
+                    propertyType={(field as SchemaFieldProperty).property_type}
                     helpText={field.help_text}
                     value={
                       props.data()[schema_field_name] !== null
@@ -755,15 +766,15 @@ const Form: Component<{
                 {/* Renders label as editable field if no label template */}
                 <Match
                   when={
-                    field.type === "property" &&
+                    (field as SchemaFieldProperty).type === "property" &&
                     schema_field_name === "label" &&
                     !schema[props.entity_type].meta.label_template
                   }
                 >
                   <TypedInputRow
                     fieldName={schema_field_name}
-                    helpText={field.help_text}
-                    propertyType={field.property_type}
+                    helpText={(field as SchemaFieldProperty).help_text}
+                    propertyType={(field as SchemaFieldProperty).property_type}
                     // @ts-ignore
                     value={props.data()[schema_field_name] || ""}
                     setValue={(value) =>
@@ -788,7 +799,10 @@ const Form: Component<{
 
                 {/* Renders normal relation field */}
                 <Match
-                  when={field.type === "relation" && !field.inline_relation}
+                  when={
+                    (field as SchemaFieldRelation).type === "relation" &&
+                    !(field as SchemaFieldRelation).inline_relation
+                  }
                 >
                   <ZeroOrMoreSimpleRelationEditField
                     override_labels={
@@ -798,9 +812,13 @@ const Form: Component<{
                     }
                     fieldName={schema_field_name}
                     value={props.data()[schema_field_name] || []}
-                    field={field}
-                    relatedToType={field.relation_to.toLowerCase()}
-                    relationFields={field.relation_fields}
+                    field={field as SchemaFieldRelation}
+                    relatedToType={(
+                      field as SchemaFieldRelation
+                    ).relation_to.toLowerCase()}
+                    relationFields={
+                      (field as SchemaFieldRelation).relation_fields
+                    }
                     onChange={(value) =>
                       handleSetFieldData(schema_field_name, value)
                     }
@@ -808,7 +826,10 @@ const Form: Component<{
                 </Match>
                 {/* Renders inline relation field */}
                 <Match
-                  when={field.type === "relation" && field.inline_relation}
+                  when={
+                    (field as SchemaFieldRelation).type === "relation" &&
+                    (field as SchemaFieldRelation).inline_relation
+                  }
                 >
                   <InlineRelationEditField
                     value={props.data()[schema_field_name] || {}}
@@ -816,7 +837,9 @@ const Form: Component<{
                       handleSetFieldData(schema_field_name, value)
                     }
                     fieldName={schema_field_name}
-                    inlineRelationFieldName={field.relation_to}
+                    inlineRelationFieldName={
+                      (field as SchemaFieldRelation).relation_to
+                    }
                   />
                 </Match>
               </Switch>
