@@ -3,7 +3,7 @@ import EntityChip from "./ui_components/entityChip";
 import { getEntityDisplayName } from "../utils/entity_names";
 
 import { useNavigate, useRouteData } from "@solidjs/router";
-import { deleteEntity } from "../App";
+import { deleteEntity } from "../data/DataEndpoints";
 
 const DeleteModal: Component<{
   data: any;
@@ -58,12 +58,12 @@ const DeleteModal: Component<{
         </div>
 
         <div class="modal-action">
-          <span class="btn btn-error" onClick={onConfirmDelete}>
+          <span class="btn-error btn" onClick={onConfirmDelete}>
             Confirm
           </span>
           <span
             onClick={() => props.setDeleteModalVisible(false)}
-            class="btn btn-success"
+            class="btn-success btn"
           >
             Cancel
           </span>

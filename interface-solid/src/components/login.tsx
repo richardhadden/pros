@@ -13,14 +13,11 @@ export const [userStatus, setUserStatus] = createStore({
 });
 import { SERVER } from "../index";
 
-export const refreshToken = async () => {
-  console.log(Cookies.get("refreshToken"));
-  console.log(Cookies.get("accessToken"));
+export async function refreshToken() {
   const refresh = await fetch(`${SERVER}/token/refresh/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      //"X-CSRFToken": userStatus.csrf,
     },
     credentials: "include",
     body: JSON.stringify({ refresh: Cookies.get("refreshToken") }),
@@ -28,19 +25,21 @@ export const refreshToken = async () => {
   const refresh_data = await refresh.json();
   Cookies.set("accessToken", refresh_data.access);
   setUserStatus({ isAuthenticated: true });
-};
+}
 
-export const alreadyLoggedIn = async () => {
+export async function alreadyLoggedIn() {
   if (Cookies.get("accessToken")) {
-    setUserStatus({ isAuthenticated: true });
+    setUserStatus({ isAuthenticated: true, username: Cookies.get("username") });
   } else {
     await refreshToken();
   }
-};
+}
 
 const [loginFailed, setLoginFailed] = createSignal(false);
 
-const login = async (event) => {
+const IN_FIVE_MINUTES = new Date(new Date().getTime() + 5 * 60 * 1000);
+
+async function login(event: SubmitEvent) {
   console.log("login tried");
   event.preventDefault();
   //console.log(userStatus.csrf);
@@ -58,8 +57,9 @@ const login = async (event) => {
   });
   const data = await resp.json();
   if (resp.status === 200) {
-    Cookies.set("accessToken", data.access, { expires: 7 });
-    Cookies.set("refreshToken", data.refresh, { expires: 7 });
+    Cookies.set("accessToken", data.access, { expires: IN_FIVE_MINUTES });
+    Cookies.set("refreshToken", data.refresh, { expires: 1 });
+    Cookies.set("username", userStatus.username);
     setUserStatus({
       accessToken: data.access,
       refreshToken: data.refresh,
@@ -68,7 +68,7 @@ const login = async (event) => {
   } else if (resp.status === 401) {
     setLoginFailed(true);
   }
-};
+}
 
 export const logout = () => {
   setUserStatus({ isAuthenticated: false });
@@ -77,9 +77,7 @@ export const logout = () => {
 };
 
 const Login: Component = () => {
-  const navigate = useNavigate();
-  //onMount(getCSRF);
-  const onSubmit = async (e) => {
+  const onSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
     await login(e);
     if (!userStatus.isAuthenticated) {
@@ -108,14 +106,18 @@ const Login: Component = () => {
               placeholder="User Name"
               value={userStatus.username}
               class="input mb-4"
-              onInput={(e) => setUserStatus({ username: e.target.value })}
+              onInput={(e) =>
+                setUserStatus({ username: e.currentTarget.value })
+              }
             />
             <input
               type="password"
               placeholder="Password"
               value={userStatus.password}
               class="input mb-4"
-              onInput={(e) => setUserStatus({ password: e.target.value })}
+              onInput={(e) =>
+                setUserStatus({ password: e.currentTarget.value })
+              }
             />
 
             <input type="submit" class="btn-primary btn" value="Log In" />

@@ -15,7 +15,7 @@ import TopBar from "../components/TopBar";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
 import Form from "../components/EditForm";
-import { postNewEntityData } from "../App";
+import { postNewEntityData } from "../data/DataEndpoints";
 
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-md h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
@@ -85,7 +85,7 @@ const NewEntityView: Component = (props) => {
       </Show>
 
       <Show when={showSaveToast()}>
-        <div class="toast toast-end">
+        <div class="toast-end toast">
           <div class="alert alert-success text-success-content">
             <div>
               <span>Save successful</span>

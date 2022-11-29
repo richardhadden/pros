@@ -2,7 +2,7 @@ import { Component, Setter, Accessor } from "solid-js";
 import { useRouteData } from "@solidjs/router";
 
 import { getEntityDisplayName } from "../utils/entity_names";
-import { deleteEntity } from "../App";
+import { deleteEntity } from "../data/DataEndpoints";
 
 const RestoreModal: Component<{
   uid: string;
@@ -31,12 +31,12 @@ const RestoreModal: Component<{
           {props.data().label}&rdquo;?
         </p>
         <div class="modal-action">
-          <span class="btn btn-error" onClick={doRestore}>
+          <span class="btn-error btn" onClick={doRestore}>
             Confirm
           </span>
           <span
             onClick={() => props.setRestoreModalVisible(false)}
-            class="btn btn-success"
+            class="btn-success btn"
           >
             Cancel
           </span>

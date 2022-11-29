@@ -15,7 +15,7 @@ import TopBar from "../components/TopBar";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
 import Form from "../components/EditForm";
-import { putEntityData } from "../App";
+import { putEntityData } from "../data/DataEndpoints";
 import { AiFillWarning } from "solid-icons/ai";
 
 const ViewedItemTopBarStyle =
@@ -108,7 +108,7 @@ const EditEntityView: Component = (props) => {
       </Show>
 
       <Show when={showSaveToast()}>
-        <div class="toast toast-end">
+        <div class="toast-end toast">
           <div class="alert alert-success text-success-content">
             <div>
               <span>Save successful</span>

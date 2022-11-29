@@ -7,7 +7,6 @@ import { AiFillCheckCircle } from "solid-icons/ai";
 
 const EntityChip: Component<{
   href?: string | undefined;
-
   label: string;
   leftSlot?: JSXElement | string;
   class?: string;

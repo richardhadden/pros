@@ -18,8 +18,11 @@ import { BsArrowReturnRight, BsPlus } from "solid-icons/bs";
 import { CgClose } from "solid-icons/cg";
 
 import { getEntityDisplayName } from "../utils/entity_names";
-import { fetchAutoCompleteData } from "../App";
-import { postNewEntityData } from "../App";
+import {
+  fetchAutoCompleteData,
+  postNewEntityData,
+} from "../data/DataEndpoints";
+
 import {
   SchemaEntity,
   SchemaFieldProperty,
@@ -135,7 +138,7 @@ const TypedInputField: Component<{
       <Match when={props.propertyType === "BooleanProperty"}>
         <input
           type="checkbox"
-          class="toggle toggle-primary mt-3"
+          class="toggle-primary toggle mt-3"
           checked={props.value}
           onChange={(e) => props.setValue(e.currentTarget.checked)}
         />
@@ -212,7 +215,7 @@ const EmbeddedNewEntity: Component<{
 
         <span
           onClick={() => props.setEntityType(props.initialType)}
-          class={`btn btn-sm prose-sm ml-3 font-semibold uppercase ${
+          class={`btn-sm btn prose-sm ml-3 font-semibold uppercase ${
             props.initialType === props.entityType()
               ? "btn-accent"
               : "btn-neutral"
@@ -224,7 +227,7 @@ const EmbeddedNewEntity: Component<{
           {(item) => (
             <span
               onClick={() => props.setEntityType(item.toLowerCase())}
-              class={`btn btn-sm prose-sm ml-3 rounded-md font-semibold uppercase ${
+              class={`btn-sm btn prose-sm ml-3 rounded-md font-semibold uppercase ${
                 item.toLowerCase() === props.entityType()
                   ? "btn-accent"
                   : "btn-neutral"
@@ -401,7 +404,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
                   <span class="prose-sm mr-5 select-none font-light uppercase">
                     <a
                       onClick={() => handleRemoveSelection(item.uid)}
-                      class="btn btn-circle btn-primary btn-xs mr-3 border-primary-content"
+                      class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
                     >
                       <CgClose />
                     </a>{" "}
@@ -465,7 +468,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
                   <>
                     <a
                       onClick={() => handleRemoveSelection(item.uid)}
-                      class="btn btn-circle btn-primary btn-xs mr-3 border-primary-content"
+                      class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
                     >
                       <CgClose />
                     </a>{" "}
@@ -497,7 +500,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
             />{" "}
             <span
               onClick={() => setShowAddNewEntityModal(true)}
-              class="btn-base btn btn-square btn-sm relative top-6 ml-12"
+              class="btn-base btn-sm btn-square btn relative top-6 ml-12"
             >
               <BsPlus />
             </span>
@@ -533,13 +536,13 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
             <div class="modal-action mr-5">
               <span
                 onClick={() => saveAddedEntity()}
-                class="btn btn-warning btn-sm"
+                class="btn-warning btn-sm btn"
               >
                 Add
               </span>
               <span
                 onClick={() => setShowAddNewEntityModal(false)}
-                class="btn btn-success btn-sm"
+                class="btn-success btn-sm btn"
               >
                 Cancel
               </span>
@@ -624,7 +627,7 @@ const InlineRelationEditField: Component = (props) => {
           <div class="justify-left ml-1 flex select-none flex-row">
             <CgOptions class="mt-2 mr-2 inline-block" />
             <button
-              class="btn btn-accent btn-sm w-fit rounded-sm"
+              class="btn-accent btn-sm btn w-fit rounded-sm"
               onClick={() => setShowDropdown(!showDropdown())}
             >
               {getEntityDisplayName(selectedType())}
@@ -636,7 +639,7 @@ const InlineRelationEditField: Component = (props) => {
                 {(subclass) =>
                   subclass !== selectedType() && (
                     <li
-                      class="btn btn-active btn-sm  mb-1"
+                      class="btn-active btn-sm btn  mb-1"
                       onClick={() => {
                         changeSelectedType(subclass);
                         setShowDropdown(false);
