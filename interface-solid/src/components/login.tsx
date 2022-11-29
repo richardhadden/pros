@@ -47,7 +47,6 @@ async function login(event: SubmitEvent) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      //"X-CSRFToken": userStatus.csrf,
     },
     credentials: "include",
     body: JSON.stringify({
