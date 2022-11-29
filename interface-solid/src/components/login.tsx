@@ -2,106 +2,83 @@ import { Component, createSignal, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
 import { BiSolidError } from "solid-icons/bi";
-
+import Cookies from "js-cookie";
 export const [userStatus, setUserStatus] = createStore({
-  csrf: "",
   username: "",
   password: "",
   error: "",
   isAuthenticated: false,
+  accessToken: "",
+  refreshToken: "",
 });
+import { SERVER } from "../index";
 
-const getCSRF = () => {
-  fetch("http://localhost:8000/user/csrf/", {
-    credentials: "include",
-  })
-    .then((res) => {
-      let csrfToken = res.headers.get("X-CSRFToken");
-      setUserStatus({ csrf: csrfToken });
-      console.log(csrfToken);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
-
-export const getSession = () => {
-  fetch("http://localhost:8000/user/session/", {
-    credentials: "include",
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      console.log(data);
-      if (data.isAuthenticated) {
-        setUserStatus({ isAuthenticated: true, username: data.username });
-      } else {
-        setUserStatus({ isAuthenticated: false });
-        getCSRF();
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
-
-const isResponseOk = (response) => {
-  if (response.status >= 200 && response.status <= 299) {
-    return response.json();
-  } else {
-    throw Error(response.statusText);
-  }
-};
-
-const login = async (event) => {
-  event.preventDefault();
-  console.log(userStatus.csrf);
-  fetch("http://localhost:8000/user/login/", {
+export const refreshToken = async () => {
+  console.log(Cookies.get("refreshToken"));
+  console.log(Cookies.get("accessToken"));
+  const refresh = await fetch(`${SERVER}/token/refresh/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-CSRFToken": userStatus.csrf,
+      //"X-CSRFToken": userStatus.csrf,
+    },
+    credentials: "include",
+    body: JSON.stringify({ refresh: Cookies.get("refreshToken") }),
+  });
+  const refresh_data = await refresh.json();
+  Cookies.set("accessToken", refresh_data.access);
+  setUserStatus({ isAuthenticated: true });
+};
+
+export const alreadyLoggedIn = async () => {
+  if (Cookies.get("accessToken")) {
+    setUserStatus({ isAuthenticated: true });
+  } else {
+    await refreshToken();
+  }
+};
+
+const [loginFailed, setLoginFailed] = createSignal(false);
+
+const login = async (event) => {
+  console.log("login tried");
+  event.preventDefault();
+  //console.log(userStatus.csrf);
+  const resp = await fetch("http://localhost:8000/token/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      //"X-CSRFToken": userStatus.csrf,
     },
     credentials: "include",
     body: JSON.stringify({
       username: userStatus.username,
       password: userStatus.password,
     }),
-  })
-    .then(isResponseOk)
-    .then((data) => {
-      console.log(data);
-      setUserStatus({
-        isAuthenticated: true,
-        username: userStatus.username,
-        password: "",
-        error: "",
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      setUserStatus({ error: "Wrong username or password." });
+  });
+  const data = await resp.json();
+  if (resp.status === 200) {
+    Cookies.set("accessToken", data.access, { expires: 7 });
+    Cookies.set("refreshToken", data.refresh, { expires: 7 });
+    setUserStatus({
+      accessToken: data.access,
+      refreshToken: data.refresh,
+      isAuthenticated: true,
     });
+  } else if (resp.status === 401) {
+    setLoginFailed(true);
+  }
 };
 
 export const logout = () => {
-  fetch("http://localhost:8000/user/logout", {
-    credentials: "include",
-  })
-    .then(isResponseOk)
-    .then((data) => {
-      console.log(data);
-      setUserStatus({ isAuthenticated: false });
-      getCSRF();
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  setUserStatus({ isAuthenticated: false });
+  Cookies.remove("accessToken");
+  Cookies.remove("refreshToken");
 };
 
 const Login: Component = () => {
-  const [loginFailed, setLoginFailed] = createSignal(false);
   const navigate = useNavigate();
-  onMount(getCSRF);
+  //onMount(getCSRF);
   const onSubmit = async (e) => {
     e.preventDefault();
     await login(e);
@@ -141,7 +118,7 @@ const Login: Component = () => {
               onInput={(e) => setUserStatus({ password: e.target.value })}
             />
 
-            <input type="submit" class="btn btn-primary" value="Log In" />
+            <input type="submit" class="btn-primary btn" value="Log In" />
           </form>
         </div>
       </div>

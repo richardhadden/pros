@@ -9,17 +9,21 @@ import {
 import { Routes, Route } from "@solidjs/router";
 import { groupBy } from "ramda";
 import Cookies from "js-cookie";
-import { schema, BASE_URI } from "./index";
+import { schema, BASE_URI, SERVER } from "./index";
 
 import ViewEntityListView from "./views/ViewEntityListView";
 import ViewEntity from "./views/ViewEntityView";
 import EditEntityView from "./views/EditEntityView";
 import NewEntityView from "./views/NewEntityView";
-import Login, { getSession } from "./components/Login";
 
 import Sidebar from "./components/SideBar";
 
-import { userStatus } from "./components/Login";
+import Login, {
+  userStatus,
+  alreadyLoggedIn,
+  setUserStatus,
+  refreshToken,
+} from "./components/Login";
 import { CUSTOM_ADVANCED_FIELDS } from "../../interface-solid/interface-config.js";
 
 export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
@@ -39,13 +43,55 @@ const groupByRealType = groupBy(
   (item: { label: string; uid: string; real_type: string }) => item.real_type
 );
 
+const fetchOrRefreshToken: (
+  url: string,
+  method?: string,
+  data?: object | undefined
+) => Promise<any> = async (url, method = "GET", data = undefined) => {
+  const fetchOptions: {
+    mode: RequestMode;
+    method: string;
+    credentials: RequestCredentials;
+    headers: HeadersInit | undefined;
+    body?: string | undefined;
+  } = {
+    mode: "cors", // no-cors, *cors, same-origin
+
+    credentials: "same-origin", // include, *same-origin, omit
+    method: method,
+    headers: {
+      Authorization: `Bearer ${Cookies.get("accessToken")}`,
+      "Content-Type": "application/json",
+    },
+  };
+
+  if (data) {
+    console.log("putting data", data);
+    fetchOptions.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(`${BASE_URI}/${url}`, fetchOptions);
+  // Authorised and returns data
+  if (response.status === 200) {
+    const response_json = await response.json();
+    return response_json;
+  }
+  // Unauthorised
+  if (response.status == 401) {
+    const response_json = await response.json();
+    if (response_json.code === "token_not_valid") {
+      await refreshToken();
+      return await fetchOrRefreshToken(url, method, data);
+    }
+  }
+};
+
 const fetchEntityViewAllData: (
   uri: string
 ) => Promise<Record<string, ViewEntityTypeData>> = async (uri) => {
-  //console.log(uri);
-  const response = await fetch(`${BASE_URI}/${uri}`);
-  const response_json: ViewEntityTypeData[] = await response.json();
-  //console.log(response_json);
+  const response_json = await fetchOrRefreshToken(uri);
+
+  console.log(response_json);
   const grouped_response_data = groupByRealType(response_json);
   //console.log(grouped_response_data);
   return grouped_response_data;
@@ -72,15 +118,9 @@ const EntityViewAllData: (
 
 const fetchEntityData = async (uri_end: string) => {
   //console.log("fetch_entity_data called");
-  const response = await fetch(`${BASE_URI}/${uri_end}`);
+  const response_json = await fetchOrRefreshToken(uri_end);
 
-  if (response.status !== 200) {
-    const response_json = await response.json();
-    return { status: "error", data: response_json };
-  }
-
-  const response_json = await response.json();
-  console.log(response_json);
+  //const response_json = await response.json();
   return response_json;
 };
 
@@ -102,10 +142,10 @@ const EntityData: (
 
 export const fetchAutoCompleteData = async (entity_type: string) => {
   //console.log("fetch autocompletedata called", entity_type);
-  const response = await fetch(
-    `${BASE_URI}/${schema[entity_type].app}/autocomplete/${entity_type}/`
+  const response_json = await fetchOrRefreshToken(
+    `${schema[entity_type].app}/autocomplete/${entity_type}/`
   );
-  const response_json = await response.json();
+
   //console.log(response_json);
   return response_json;
 };
@@ -116,47 +156,26 @@ export const putEntityData = async (
   submission_data: object
 ) => {
   //console.log("postEntityData", entity, uid, submission_data);
-  const resp = await fetch(
-    `${BASE_URI}/${schema[entity].app}/${entity}/${uid}`,
-    {
-      method: "PUT", // *GET, POST, PUT, DELETE, etc.
-      mode: "cors", // no-cors, *cors, same-origin
-      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: "include", // include, *same-origin, omit
-      headers: {
-        "Content-Type": "application/json",
-        // 'Content-Type': 'application/x-www-form-urlencoded',
-        //"X-CSRFToken": userStatus.csrf,
-      },
-
-      body: JSON.stringify(submission_data),
-    }
+  const resp = await fetchOrRefreshToken(
+    `${schema[entity].app}/${entity}/${uid}`,
+    "PUT",
+    submission_data
   );
-  const json = await resp.json();
-  return json;
+
+  return resp;
 };
 
 export const postNewEntityData = async (
   entity_type: string,
   submission_data: object
 ) => {
-  const resp = await fetch(
-    `${BASE_URI}/${schema[entity_type].app}/${entity_type}/new/`,
-    {
-      method: "POST", // *GET, POST, PUT, DELETE, etc.
-      mode: "cors", // no-cors, *cors, same-origin
-      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: "same-origin", // include, *same-origin, omit
-      headers: {
-        "Content-Type": "application/json",
-        // 'Content-Type': 'application/x-www-form-urlencoded',
-      },
-
-      body: JSON.stringify(submission_data),
-    }
+  const response_json = await fetchOrRefreshToken(
+    `${schema[entity_type].app}/${entity_type}/new/`,
+    "POST",
+    submission_data
   );
-  const json = await resp.json();
-  return json;
+
+  return response_json;
 };
 
 export const deleteEntity = async (
@@ -164,19 +183,12 @@ export const deleteEntity = async (
   uid: string,
   restore: boolean = false
 ) => {
-  const uri = `${BASE_URI}/${schema[entity_type].app}/${entity_type}/${uid}/${
+  const uri = `${schema[entity_type].app}/${entity_type}/${uid}/${
     restore ? "?restore=true" : ""
   }`;
   console.log(uri);
-  const resp = await fetch(uri, {
-    method: "DELETE", // *GET, POST, PUT, DELETE, etc.
-    mode: "cors", // no-cors, *cors, same-origin
-    cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: "same-origin", // include, *same-origin, omit
-  });
-  const json = await resp.json();
-  console.log(json);
-  return json;
+  const resp = await fetchOrRefreshToken(uri, "DELETE");
+  return resp;
 };
 
 const Home: Component = () => {
@@ -208,7 +220,7 @@ const Home: Component = () => {
                 assumenda excepturi exercitationem quasi. In deleniti eaque aut
                 repudiandae et a id nisi.
               </p>
-              <button class="btn btn-primary">Get Started</button>
+              <button class="btn-primary btn">Get Started</button>
             </div>
           </div>
         </div>
@@ -218,7 +230,7 @@ const Home: Component = () => {
 };
 
 const App: Component = () => {
-  onMount(getSession);
+  onMount(alreadyLoggedIn);
 
   return (
     <>

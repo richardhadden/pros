@@ -204,7 +204,6 @@ def create_update(model_class):
     @db.write_transaction
     def update(self, request, pk=None):
         print("REQ", request.user)
-        # print("REQ", request.data)
 
         (
             property_data,
@@ -370,6 +369,17 @@ def build_url_patterns(model, vs):
     return patterns
 
 
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
+
+def get_permissions(self):
+    if self.request.method == "GET":
+        permission_classes = [AllowAny]
+    else:
+        permission_classes = [IsAuthenticated]
+    return [permission() for permission in permission_classes]
+
+
 for _, model in PROS_MODELS.items():
     if model.meta.get("inline_only"):
         continue
@@ -378,6 +388,8 @@ for _, model in PROS_MODELS.items():
         (viewsets.ViewSet,),
         build_viewset_functions(model),
     )
+
+    vs.get_permissions = get_permissions
 
     urlpatterns += build_url_patterns(model, vs)
 
