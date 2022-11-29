@@ -8,8 +8,6 @@ export const [userStatus, setUserStatus] = createStore({
   password: "",
   error: "",
   isAuthenticated: false,
-  accessToken: "",
-  refreshToken: "",
 });
 import { SERVER } from "../index";
 
@@ -60,8 +58,6 @@ async function login(event: SubmitEvent) {
     Cookies.set("refreshToken", data.refresh, { expires: 1 });
     Cookies.set("username", userStatus.username);
     setUserStatus({
-      accessToken: data.access,
-      refreshToken: data.refresh,
       isAuthenticated: true,
     });
   } else if (resp.status === 401) {
@@ -70,7 +66,7 @@ async function login(event: SubmitEvent) {
 }
 
 export const logout = () => {
-  setUserStatus({ isAuthenticated: false });
+  setUserStatus({ isAuthenticated: false, password: "" });
   Cookies.remove("accessToken");
   Cookies.remove("refreshToken");
 };

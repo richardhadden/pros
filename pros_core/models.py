@@ -9,7 +9,7 @@ from neomodel import (
     ZeroOrMore,
     One,
 )
-from neomodel.properties import BooleanProperty
+from neomodel.properties import BooleanProperty, DateTimeProperty
 from neomodel.relationship_manager import (
     RelationshipDefinition,
     RelationshipManager,
@@ -18,8 +18,7 @@ from neomodel.relationship_manager import (
     OUTGOING,
 )
 from pypher import Pypher, __
-import inspect
-import sys
+import datetime
 
 REVERSE_RELATIONS = defaultdict(lambda: defaultdict(dict))
 
@@ -39,6 +38,10 @@ class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
     real_type = StringProperty(index=True)
     is_deleted = BooleanProperty(default=False)
+    createdBy = StringProperty(index=True)
+    createdWhen = DateTimeProperty()
+    modifiedBy = StringProperty(index=True)
+    modifiedWhen = DateTimeProperty()
 
     @classmethod
     def as_inline_field(cls):
@@ -91,6 +94,7 @@ class ProsNode(StructuredNode):
 
     def save(self):
         self.real_type = type(self).__name__.lower()
+        # self.modifiedWhen = datetime.datetime.now()
         super().save()
 
     def __hash__(self):

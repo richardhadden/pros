@@ -147,7 +147,15 @@ def build_app_model(app_name, model, model_name):
                 *model.__all_relationships__,
             )
             if not isinstance(p, UniqueIdProperty)
-            and n not in ["real_type", "is_deleted"]
+            and n
+            not in [
+                "real_type",
+                "is_deleted",
+                "createdBy",
+                "createdWhen",
+                "modifiedBy",
+                "modifiedWhen",
+            ]
             if build_field(p)
         },
         reverse_relations=get_all_reverse_relations(model, model_name),

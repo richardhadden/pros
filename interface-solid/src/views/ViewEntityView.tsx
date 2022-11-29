@@ -1,4 +1,12 @@
-import { Component, For, Show, createEffect, Switch, Match } from "solid-js";
+import {
+  Component,
+  For,
+  Show,
+  createEffect,
+  Switch,
+  Match,
+  createMemo,
+} from "solid-js";
 import { useParams, useRouteData } from "@solidjs/router";
 
 import UnsavedLink from "../utils/UnsavedLink";
@@ -14,6 +22,9 @@ import {
   AiFillDelete,
   AiFillClockCircle,
   AiFillCheckCircle,
+  AiFillEdit,
+  AiFillFileAdd,
+  AiFillCalendar,
 } from "solid-icons/ai";
 
 import { SchemaEntity, SchemaFieldRelation } from "../types/schemaTypes";
@@ -195,11 +206,43 @@ const InlineRelationView: Component = (props) => {
   );
 };
 
+const buildDateString = (date_as_string) => {
+  const parsedDate = new Date(date_as_string);
+  const time = parsedDate.toTimeString().slice(0, 5);
+  const diff = new Date() - parsedDate;
+  const dd = Math.floor(diff / 1000 / 60 / 60 / 24);
+
+  if (dd == 0) {
+    return `Today  ${time}`;
+  } else if (dd < 7) {
+    const DAYS = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    return `${DAYS[parsedDate.getDay() - 1]}`;
+  } else return date_as_string.split(".")[0].replace("T", " ");
+};
+
 const ViewEntity: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
   const [data, refetchData] = useRouteData();
 
-  createEffect(() => console.log(data()));
+  const modifiedDateString = createMemo(() => {
+    if (data()) {
+      return buildDateString(data().modifiedWhen);
+    }
+  });
+
+  const createdDateString = createMemo(() => {
+    if (data()) {
+      return buildDateString(data().createdWhen);
+    }
+  });
 
   return (
     <>
@@ -216,11 +259,35 @@ const ViewEntity: Component = () => {
               {getEntityDisplayName(params.entity_type)}
             </div>
           }
-          barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
+          barCenter={
+            <>
+              <div class={ViewedItemTopBarStyle}>{data().label}</div>
+            </>
+          }
+          barEnd={
+            <div class="ml-6 flex select-none  flex-col items-start  rounded-sm pb-2 pt-2 pr-3 pl-3 text-xs uppercase text-white">
+              <div>
+                <span class="mr-3 font-semibold text-white">
+                  <AiFillFileAdd class="inline-block" />
+                </span>
+                <span class="mr-3">{data().createdBy || "Auto"}</span>
+                <AiFillCalendar class="relative bottom-0.5 mr-2 inline-block" />
+                {createdDateString()}
+              </div>
+              <div class="mt-[7px] border-t border-gray-500 pt-[6px]">
+                <span class="mr-3  font-semibold text-white">
+                  <AiFillEdit class="relative inline-block" />
+                </span>
+                <span class="mr-3">{data().modifiedBy}</span>
+                <AiFillCalendar class="relative bottom-0.5 mr-2 inline-block" />
+                {modifiedDateString()}
+              </div>
+            </div>
+          }
           refetchData={refetchData}
         />
 
-        <div class="mt-32 ml-6 grid grid-cols-8">
+        <div class="mt-36 ml-6 grid grid-cols-8">
           <Show when={data()["is_deleted"]}>
             <div class="col-span-1" />
             {data().deleted_and_has_dependent_nodes ? (

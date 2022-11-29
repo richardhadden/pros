@@ -113,7 +113,9 @@ const ViewEntityListView: Component = () => {
                               </div>
                             </div>{" "}
                             <div class="relative">
-                              <div class="inline-block">{item.label}</div>
+                              <div class="inline-block font-semibold">
+                                {item.label}
+                              </div>
                             </div>
                             <div class="right-0 ml-auto justify-self-end">
                               {item.is_deleted && (

@@ -156,6 +156,14 @@ def create_create(model_class):
             inline_relation_data,
         ) = get_property_and_relation_data(request, model_class)
 
+        property_data = {
+            **property_data,
+            "createdBy": request.user.username,
+            "createdWhen": datetime.datetime.now(),
+            "modifiedBy": request.user.username,
+            "modifiedWhen": datetime.datetime.now(),
+        }
+
         object = model_class(**property_data)
 
         object.save()
@@ -203,13 +211,17 @@ def create_update(model_class):
     @method_decorator(requires_csrf_token)
     @db.write_transaction
     def update(self, request, pk=None):
-        print("REQ", request.user)
-
         (
             property_data,
             relation_data,
             inline_relation_data,
         ) = get_property_and_relation_data(request, model_class)
+
+        property_data = {
+            **property_data,
+            "modifiedBy": request.user.username,
+            "modifiedWhen": datetime.datetime.now(),
+        }
 
         model_class.create_or_update({"uid": pk, **property_data})
 
