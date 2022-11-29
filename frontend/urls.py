@@ -91,6 +91,7 @@ def create_autocomplete(model_class):
 
 def create_retrieve(model_class: ProsNode):
     def retrieve(self, request, pk=None):
+
         try:
             this = model_class.nodes.get(uid=pk)
         except Exception:
@@ -193,9 +194,16 @@ def get_non_default_fields(node):
     return {k: v for k, v in node_dict.items() if k not in ["uid", "real_type", "id"]}
 
 
+from django.views.decorators.csrf import requires_csrf_token
+
+from django.utils.decorators import method_decorator
+
+
 def create_update(model_class):
+    @method_decorator(requires_csrf_token)
     @db.write_transaction
     def update(self, request, pk=None):
+        print("REQ", request.user)
         # print("REQ", request.data)
 
         (

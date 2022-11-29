@@ -157,7 +157,7 @@ CORS_ORIGIN_WHITELIST = [
 ]"""
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken", "sessionid"]
 CORS_ALLOW_CREDENTIALS = True
 
 """

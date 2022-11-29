@@ -57,14 +57,14 @@ const ViewEntityListView: Component = () => {
     //setSearchParams({ filter: value });
   };
 
-  createEffect(() => debounce(setSearchParams, 300)({ filter: filterValue() }));
+  createEffect(() => debounce(setSearchParams, 1)({ filter: filterValue() }));
 
   return (
     <>
       <TopBar
         params={params}
         barTitle={
-          <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+          <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
             {getEntityNamePlural(params.entity_type)}
           </div>
         }
@@ -74,7 +74,9 @@ const ViewEntityListView: Component = () => {
             placeholder="Filter..."
             class="input w-full max-w-xs text-black"
             value={filterValue()}
-            onInput={(e: InputEvent) => onFilterInput(e.target?.value)}
+            onInput={(e: InputEvent) =>
+              onFilterInput((e.currentTarget as HTMLInputElement).value)
+            }
           />
         }
         newButton={true}
@@ -97,7 +99,7 @@ const ViewEntityListView: Component = () => {
                         <div>
                           <UnsavedLink
                             href={`/entity/${entity_name}/${item.uid}`}
-                            class={`mb-3 flex max-w-4xl cursor-pointer flex-row rounded-md p-3 text-neutral-content  ${
+                            class={`mb-3 flex max-w-4xl cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
                               item.is_deleted
                                 ? "bg-gray-300 hover:bg-gray-500"
                                 : "bg-primary hover:bg-primary-focus"

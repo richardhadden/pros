@@ -379,7 +379,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
           : props.fieldName.replaceAll("_", " ")}
         <div class="mt-1 ml-1 select-none">
           <BsArrowReturnRight class="inline-block" />{" "}
-          <span class="prose-sm rounded-md bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+          <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
             {props.field.relation_to}
           </span>
         </div>
@@ -388,9 +388,9 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
         {Object.keys(props.relationFields).length > 0 ? (
           <For each={props.value || []}>
             {(item: RelationFieldType) => (
-              <div class="card card-compact mr-4 mb-3 inline-block w-96 rounded-md bg-base-300 p-0 shadow-sm">
+              <div class="card card-compact mr-4 mb-3 inline-block w-96 rounded-sm bg-base-300 p-0 shadow-sm">
                 <div
-                  class="prose-md mb-0 flex flex-row  p-3 text-neutral-content"
+                  class="prose-md mb-0 flex flex-row  rounded-t-sm p-3 text-neutral-content"
                   classList={{
                     ["bg-primary"]: !item.is_deleted,
                     ["bg-gray-400"]: item.is_deleted,
@@ -624,7 +624,7 @@ const InlineRelationEditField: Component = (props) => {
           <div class="justify-left ml-1 flex select-none flex-row">
             <CgOptions class="mt-2 mr-2 inline-block" />
             <button
-              class="btn btn-accent btn-sm w-fit"
+              class="btn btn-accent btn-sm w-fit rounded-sm"
               onClick={() => setShowDropdown(!showDropdown())}
             >
               {getEntityDisplayName(selectedType())}

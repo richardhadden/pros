@@ -8,7 +8,7 @@ import {
 } from "solid-js";
 import { Routes, Route } from "@solidjs/router";
 import { groupBy } from "ramda";
-
+import Cookies from "js-cookie";
 import { schema, BASE_URI } from "./index";
 
 import ViewEntityListView from "./views/ViewEntityListView";
@@ -39,7 +39,9 @@ const groupByRealType = groupBy(
   (item: { label: string; uid: string; real_type: string }) => item.real_type
 );
 
-const fetchEntityViewAllData = async (uri: String) => {
+const fetchEntityViewAllData: (
+  uri: string
+) => Promise<Record<string, ViewEntityTypeData>> = async (uri) => {
   //console.log(uri);
   const response = await fetch(`${BASE_URI}/${uri}`);
   const response_json: ViewEntityTypeData[] = await response.json();
@@ -56,12 +58,9 @@ type DataResourceArgs = {
   data: object;
 };
 
-const EntityViewAllData: (p: DataResourceArgs) => object = ({
-  params,
-  location,
-  navigate,
-  data,
-}) => {
+const EntityViewAllData: (
+  p: DataResourceArgs
+) => [object, (info?: unknown) => any] = ({ params, location }) => {
   const [entity_view_data, { mutate, refetch }] = createResource(
     () =>
       `${schema[params.entity_type].app}/${params.entity_type}/` +
@@ -85,7 +84,9 @@ const fetchEntityData = async (uri_end: string) => {
   return response_json;
 };
 
-const EntityData: (p: DataResourceArgs) => object = ({
+const EntityData: (
+  p: DataResourceArgs
+) => [object, (info?: unknown) => any] = ({
   params,
   location,
   navigate,
@@ -121,10 +122,11 @@ export const putEntityData = async (
       method: "PUT", // *GET, POST, PUT, DELETE, etc.
       mode: "cors", // no-cors, *cors, same-origin
       cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: "same-origin", // include, *same-origin, omit
+      credentials: "include", // include, *same-origin, omit
       headers: {
         "Content-Type": "application/json",
         // 'Content-Type': 'application/x-www-form-urlencoded',
+        //"X-CSRFToken": userStatus.csrf,
       },
 
       body: JSON.stringify(submission_data),
@@ -157,7 +159,11 @@ export const postNewEntityData = async (
   return json;
 };
 
-export const deleteEntity = async (entity_type, uid, restore = false) => {
+export const deleteEntity = async (
+  entity_type: string,
+  uid: string,
+  restore: boolean = false
+) => {
   const uri = `${BASE_URI}/${schema[entity_type].app}/${entity_type}/${uid}/${
     restore ? "?restore=true" : ""
   }`;

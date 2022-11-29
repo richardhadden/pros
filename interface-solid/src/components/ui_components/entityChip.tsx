@@ -16,7 +16,7 @@ const EntityChip: Component<{
   deleted_and_has_dependent_nodes?: boolean;
 }> = (props) => {
   const style =
-    "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-md h-12 prose-md relative top-1.5 font-semibold inline-block";
+    "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-sm h-12 prose-md relative top-1.5 font-semibold inline-block ";
   return (
     <Switch>
       <Match when={props.href && props.is_deleted}>

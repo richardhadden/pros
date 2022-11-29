@@ -34,7 +34,7 @@ const SideBarListItems: Component<{
           <>
             <li class={`ml-4 flex`}>
               {schema[entity_name].meta.abstract ? (
-                <div class="btn-group mb-2 grow border-0">
+                <div class="btn-group mb-2 grow rounded-l-none border-0">
                   <UnsavedLink
                     class={`btn btn-sm w-full ${
                       location.pathname.includes("/entity/" + entity_name)

@@ -11,6 +11,7 @@
     "license": "MIT",
     "devDependencies": {
         "@tailwindcss/typography": "^0.5.7",
+        "@types/js-cookie": "^3.0.2",
         "autoprefixer": "^10.4.2",
         "daisyui": "^2.31.0",
         "postcss": "^8.4.7",
@@ -25,6 +26,7 @@
         "@solidjs/router": "^0.4.3",
         "@types/ramda": "^0.28.15",
         "babel-plugin-ramda": "^2.1.1",
+        "js-cookie": "^3.0.1",
         "ramda": "^0.28.0",
         "solid-icons": "^1.0.1",
         "solid-js": "^1.5.1",
