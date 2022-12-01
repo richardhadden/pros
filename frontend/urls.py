@@ -112,7 +112,9 @@ def create_retrieve(model_class: ProsNode):
 
 
 def prepare_data_value(properties, k, v):
+    print(properties, k, v)
     if isinstance(properties[k], DateProperty):
+        print("HERE!!!")
         v = datetime.date.fromisoformat(v)
     if isinstance(properties[k], DateTimeProperty):
         if v:
@@ -137,6 +139,7 @@ def get_property_and_relation_data(request, model_class):
         if k in PROS_MODELS[model_class.__name__.lower()].relations
     }
     # print("RDI", request.data.items())
+
     inline_relations = {
         k: v
         for k, v in request.data.items()
@@ -182,11 +185,18 @@ def create_create(model_class):
                     related_value.get("relData") or {},
                 )
         for inline_related_name, inline_related in inline_relation_data.items():
+            print(inline_related)
+
+            inline_related_type = inline_related.pop("type")
+
+            inline_related = {
+                k: prepare_data_value(PROS_MODELS[inline_related_type].properties, k, v)
+                for k, v in inline_related.items()
+            }
+            print(inline_related)
 
             rel_manager = getattr(object, inline_related_name)
-            related_model = PROS_MODELS[inline_related["type"]].model
-
-            inline_related.pop("type")
+            related_model = PROS_MODELS[inline_related_type].model
 
             new_related_node = related_model(**inline_related)
             new_related_node.save()
@@ -252,6 +262,14 @@ def create_update(model_class):
 
             rel_manager = getattr(object, inline_related_name)
             related_model = PROS_MODELS[inline_related["type"]].model
+
+            inline_related = {
+                k: prepare_data_value(
+                    PROS_MODELS[inline_related["type"]].properties, k, v
+                )
+                for k, v in inline_related.items()
+            }
+            print(inline_related)
 
             new_type = inline_related.pop("type")
 

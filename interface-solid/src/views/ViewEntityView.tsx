@@ -32,7 +32,7 @@ import { SchemaEntity, SchemaFieldRelation } from "../types/schemaTypes";
 import EntityChip from "../components/ui_components/entityChip";
 
 const ViewedItemTopBarStyle =
-  "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
+  "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 w-full mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
 export const TextFieldView: Component<{ fieldName: string; value: string }> = (
   props

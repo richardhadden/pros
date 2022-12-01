@@ -28,7 +28,7 @@ const EditEntityView: Component = (props) => {
   const [data, setData] = createSignal(initialData);
 
   const handleSetData = (data) => {
-    console.log(data);
+    //console.log(data);
     setData(data);
     setHasUnsavedChange(true);
   };

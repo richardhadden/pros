@@ -41,24 +41,24 @@ class DateRange(ComplexDate):
 
 
 class PreciseDate(SingleDate):
-    date = StringProperty()
+    date = DateProperty()
 
 
 class ImpreciseDate(SingleDate):
-    not_before = StringProperty()
-    not_after = StringProperty()
+    not_before = DateProperty()
+    not_after = DateProperty()
 
 
 class PreciseDateRange(DateRange):
-    start = StringProperty()
-    end = StringProperty()
+    start = DateProperty()
+    end = DateProperty()
 
 
 class ImpreciseDateRange(DateRange):
-    start_not_before = StringProperty()
-    start_not_after = StringProperty()
-    end_not_before = StringProperty()
-    end_not_after = StringProperty()
+    start_not_before = DateProperty()
+    start_not_after = DateProperty()
+    end_not_before = DateProperty()
+    end_not_after = DateProperty()
 
 
 class Source(ProsNode):
@@ -99,6 +99,16 @@ class Factoid(ProsNode):
 
 class Event(Factoid):
     pass
+
+
+class Party(Event):
+    attendee = ProsRelationTo("Person", reverse_name="attended_party")
+
+    class Meta:
+        display_name_plural = "Parties"
+        override_labels = {
+            "is_about_person": OverrideLabel("host", "is_host_of"),
+        }
 
 
 class Birth(Event):
