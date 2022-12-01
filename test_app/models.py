@@ -19,46 +19,11 @@ from pros_core.models import (
 )
 from pros_core.filters import icontains
 
+from pros_dating.models import SingleDate, ComplexDate, DateRange
+
 
 class UncertainRelation(ProsRelationBase):
     certainty = StringProperty(default="1")
-
-
-class ComplexDate(ProsNode):
-    class Meta:
-        abstract = True
-        inline_only = True
-
-
-class SingleDate(ComplexDate):
-    class Meta:
-        abstract = True
-
-
-class DateRange(ComplexDate):
-    class Meta:
-        abstract = True
-
-
-class PreciseDate(SingleDate):
-    date = DateProperty()
-
-
-class ImpreciseDate(SingleDate):
-    not_before = DateProperty()
-    not_after = DateProperty()
-
-
-class PreciseDateRange(DateRange):
-    start = DateProperty()
-    end = DateProperty()
-
-
-class ImpreciseDateRange(DateRange):
-    start_not_before = DateProperty()
-    start_not_after = DateProperty()
-    end_not_before = DateProperty()
-    end_not_after = DateProperty()
 
 
 class Source(ProsNode):

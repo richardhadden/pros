@@ -192,12 +192,20 @@ const InlineRelationView: Component = (props) => {
         <div class="mt-3 flex w-full flex-row items-stretch">
           <For each={Object.entries(schema[props.value.type].fields)}>
             {([field_name, field]) => (
-              <div class="mr-12 w-40 flex-none justify-self-stretch">
-                <div class="pros-sm prose w-full select-none font-semibold uppercase">
-                  {field_name.replaceAll("_", " ")}
+              <Show
+                when={
+                  !schema[props.value.type].meta?.internal_fields?.includes(
+                    field_name
+                  )
+                }
+              >
+                <div class="mr-12 w-40 flex-none justify-self-stretch">
+                  <div class="pros-sm prose w-full select-none font-semibold uppercase">
+                    {field_name.replaceAll("_", " ")}
+                  </div>
+                  <div class="mt-3">{props.value[field_name]}</div>
                 </div>
-                <div class="mt-3">{props.value[field_name]}</div>
-              </div>
+              </Show>
             )}
           </For>
         </div>

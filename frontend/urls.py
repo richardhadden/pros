@@ -105,18 +105,16 @@ def create_retrieve(model_class: ProsNode):
             and this.has_dependent_relations(),
             **this.direct_relations_as_data(),
         }
-
         return Response(data)
 
     return retrieve
 
 
 def prepare_data_value(properties, k, v):
-    print(properties, k, v)
-    if isinstance(properties[k], DateProperty):
-        print("HERE!!!")
+
+    if properties[k].__class__ is DateProperty:
         v = datetime.date.fromisoformat(v)
-    if isinstance(properties[k], DateTimeProperty):
+    if properties[k].__class__ is DateTimeProperty:
         if v:
             v = datetime.datetime.fromisoformat(v.replace("Z", ""))
         else:
@@ -185,7 +183,6 @@ def create_create(model_class):
                     related_value.get("relData") or {},
                 )
         for inline_related_name, inline_related in inline_relation_data.items():
-            print(inline_related)
 
             inline_related_type = inline_related.pop("type")
 
@@ -193,7 +190,6 @@ def create_create(model_class):
                 k: prepare_data_value(PROS_MODELS[inline_related_type].properties, k, v)
                 for k, v in inline_related.items()
             }
-            print(inline_related)
 
             rel_manager = getattr(object, inline_related_name)
             related_model = PROS_MODELS[inline_related_type].model
@@ -263,15 +259,11 @@ def create_update(model_class):
             rel_manager = getattr(object, inline_related_name)
             related_model = PROS_MODELS[inline_related["type"]].model
 
+            new_type = inline_related.pop("type")
             inline_related = {
-                k: prepare_data_value(
-                    PROS_MODELS[inline_related["type"]].properties, k, v
-                )
+                k: prepare_data_value(PROS_MODELS[new_type].properties, k, v)
                 for k, v in inline_related.items()
             }
-            print(inline_related)
-
-            new_type = inline_related.pop("type")
 
             try:  # If there is already a node related here...
                 old_related_node = rel_manager.get()  # Get it...
@@ -315,7 +307,7 @@ def create_delete(model_class: ProsNode):
             if instance.is_deleted:
                 instance.is_deleted = False
                 instance.save()
-            print("RESTORED")
+
             return Response(
                 {
                     "result": "success",

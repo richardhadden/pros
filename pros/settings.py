@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "test_app.apps.TestAppConfig",
     "frontend.apps.FrontendConfig",
+    "pros_dating.apps.ProsDatingConfig",
     "django_extensions",
 ]
 
@@ -167,5 +168,9 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "pros_core.renderers.CustomJsonRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }

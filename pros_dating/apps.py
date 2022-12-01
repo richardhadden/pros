@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class FrontendConfig(AppConfig):
+class ProsDatingConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "frontend"
+    name = "pros_dating"
     pros_app = True

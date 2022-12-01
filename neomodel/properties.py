@@ -493,6 +493,7 @@ class DateProperty(Property):
     @validator
     def inflate(self, value):
         if isinstance(value, neo4j.time.DateTime):
+            print("!!! INFLATE DATE")
             value = date(value.year, value.month, value.day)
         elif isinstance(value, str):
             if "T" in value:

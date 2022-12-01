@@ -1,3 +1,5 @@
+import { CUSTOM_PROPERTIES } from "../../interface-config.js";
+
 import {
   Component,
   createEffect,
@@ -12,6 +14,8 @@ import {
   Switch,
   Match,
 } from "solid-js";
+import { Dynamic } from "solid-js/web";
+
 import { schema } from "../index";
 import EntityChip from "./ui_components/entityChip";
 import { BsArrowReturnRight, BsPlus } from "solid-icons/bs";
@@ -234,14 +238,11 @@ const TypedInputField: Component<{
       <Match when={props.propertyType === "DateProperty"}>
         <div class="w-fit">
           <input
-            step="any"
-            class="w-36 appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            type="date"
+            class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
             value={props.value || ""}
-            onInput={setDate}
+            onInput={(e) => props.setValue(e.currentTarget.value)}
           />
-          <div class="prose-sm mt-2 text-center font-semibold uppercase text-gray-300">
-            {displayDate(props.value)}
-          </div>
         </div>
       </Match>
       <Match when={props.propertyType === "DateTimeProperty"}>
@@ -669,7 +670,6 @@ const InlineRelationEditField: Component = (props) => {
           f.toLowerCase() !== selectedType()
       ),
     ];
-    console.log("LL", list);
 
     return list;
   };
@@ -700,6 +700,10 @@ const InlineRelationEditField: Component = (props) => {
       });
     }
     setSelectedType(type);
+  };
+
+  const shouldShowField = (field_name) => {
+    return !field().meta?.internal_fields?.includes(field_name);
   };
 
   return (
@@ -751,20 +755,33 @@ const InlineRelationEditField: Component = (props) => {
         <div class="mt-4 flex w-full flex-row items-stretch justify-start">
           <For each={Object.entries(selectedTypeModel()["fields"])}>
             {([field_name, field]) => (
-              <div class="mr-12  flex-none">
-                <div class="pros-sm prose w-full select-none pl-2 font-semibold uppercase">
-                  <span class="select-none">
-                    {field_name.replaceAll("_", " ")}
-                  </span>
+              <Show when={shouldShowField(field_name)}>
+                <div class="mr-12  flex-none">
+                  <div class="pros-sm prose w-full select-none pl-2 font-semibold uppercase">
+                    <span class="select-none">
+                      {field_name.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                  <div class="mt-2 mb-4 w-44">
+                    <Switch>
+                      <Match when={CUSTOM_PROPERTIES[field.property_type]}>
+                        <Dynamic
+                          component={CUSTOM_PROPERTIES[field.property_type]}
+                          value={props.value[field_name] || ""}
+                          setValue={(value) => setValue(field_name, value)}
+                        />
+                      </Match>
+                      <Match when={true}>
+                        <TypedInputField
+                          value={props.value[field_name] || ""}
+                          setValue={(value) => setValue(field_name, value)}
+                          propertyType={field.property_type}
+                        />
+                      </Match>
+                    </Switch>
+                  </div>
                 </div>
-                <div class="mt-2 mb-4 w-44">
-                  <TypedInputField
-                    value={props.value[field_name] || ""}
-                    setValue={(value) => setValue(field_name, value)}
-                    propertyType={field.property_type}
-                  />
-                </div>
-              </div>
+              </Show>
             )}
           </For>
         </div>

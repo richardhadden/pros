@@ -12,6 +12,7 @@ from django.apps import apps
 PROS_APPS = [
     app for app, conf in apps.app_configs.items() if getattr(conf, "pros_app", False)
 ]
+print(PROS_APPS)
 
 PROS_MODELS = {}
 
@@ -45,7 +46,7 @@ def build_field(p):
         }
 
     if isinstance(p, RelationshipDefinition) and p.definition["direction"] == 1:
-        # print(p.definition["model"], p.definition["model"].__dict__)
+
         return {
             "type": "relation",
             "relation_type": p.__dict__["definition"]["relation_type"],
