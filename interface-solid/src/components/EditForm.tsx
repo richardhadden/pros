@@ -40,6 +40,7 @@ import {
   AiFillClockCircle,
   AiFillCheckCircle,
 } from "solid-icons/ai";
+import { values } from "ramda";
 
 function clickOutside(el, accessor) {
   const onClick = (e) => !el.contains(e.target) && accessor()?.();
@@ -77,6 +78,9 @@ const nested_get = (
   }
 };
 
+const typedInputFieldStyle =
+  "w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none";
+
 const TypedInputField: Component<{
   fieldName: string;
   value: any;
@@ -88,16 +92,15 @@ const TypedInputField: Component<{
     | "FloatProperty"
     | "BooleanProperty"
     | "DateProperty"
-    | "DateTimeProperty";
+    | "DateTimeProperty"
+    | string;
   helpText?: string;
 }> = (props) => {
   const cv = () => props.value;
   const [floatFieldPreviousValue, setFloatFieldPreviousValue] = createSignal(
     props.value ?? ""
   );
-  const [dateFieldPreviousValue, setDateFieldPreviousValue] = createSignal(
-    props.value ?? ""
-  );
+  const [emailIsValid, setEmailIsValid] = createSignal(false);
 
   const setFloat = (e: InputEvent) => {
     const v = (e.currentTarget as HTMLInputElement).value;
@@ -110,29 +113,54 @@ const TypedInputField: Component<{
     }
   };
 
+  const setEmail = (e: InputEvent) => {
+    if ((e.currentTarget as HTMLInputElement).validity.valid) {
+      setEmailIsValid(true);
+    } else {
+      setEmailIsValid(false);
+    }
+    props.setValue((e.currentTarget as HTMLInputElement).value);
+  };
+
   return (
     <Switch>
+      <Match when={CUSTOM_PROPERTIES[props.propertyType]}>
+        <Dynamic
+          component={CUSTOM_PROPERTIES[props.propertyType]}
+          value={props.value || ""}
+          setValue={(value: unknown) => props.setValue(value)}
+        />
+      </Match>
       <Match when={props.propertyType === "StringProperty"}>
         <input
           type="text"
-          class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+          class={typedInputFieldStyle}
           value={props.value || ""}
           onInput={(e) => props.setValue(e.currentTarget.value)}
         />
       </Match>
       <Match when={props.propertyType === "EmailProperty"}>
-        <input
-          type="email"
-          class="w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
-          value={props.value || ""}
-          onInput={(e) => props.setValue(e.currentTarget.value)}
-        />
+        <div>
+          <input
+            type="email"
+            class={typedInputFieldStyle}
+            value={props.value || ""}
+            onInput={setEmail}
+          />
+          <div class="prose-sm mt-2 text-center font-semibold uppercase text-gray-300">
+            <Show when={props.value}>
+              {emailIsValid()
+                ? "Valid e-mail address"
+                : "invalid email address"}
+            </Show>
+          </div>
+        </div>
       </Match>
       <Match when={props.propertyType === "IntegerProperty"}>
         <input
           step="any"
           type="number"
-          class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+          class={typedInputFieldStyle}
           value={props.value}
           onInput={(e) => props.setValue(e.currentTarget.value)}
           id={props.fieldName}
@@ -143,7 +171,7 @@ const TypedInputField: Component<{
           step="any"
           type="text"
           pattern="^\d*\.?\d*$"
-          class="appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+          class={"w-fit " + typedInputFieldStyle}
           value={props.value || ""}
           onInput={setFloat}
         />
@@ -157,7 +185,7 @@ const TypedInputField: Component<{
             onChange={(e) => props.setValue(e.currentTarget.checked)}
           />
           <div class="prose-sm mt-2 text-center font-semibold uppercase text-gray-300">
-            {props.value?.toString()}
+            {props.value?.toString() ?? false.toString()}
           </div>
         </div>
       </Match>
@@ -275,9 +303,12 @@ type RelationFieldType = {
   relData: object;
 };
 
-const ZeroOrMoreSimpleRelationEditField: Component<{
+const RelationEditField: Component<{
   override_labels: object;
-  field: { relation_to: string };
+  field: {
+    relation_to: string;
+    cardinality: "ZeroOrOne" | "One" | "OneOrMore" | "ZeroOrMore";
+  };
   fieldName: string;
   relatedToType: string;
   relationFields: object;
@@ -286,8 +317,7 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
   data: Accessor<RelationFieldType[]>;
   reverseRelation: string;
 }> = (props) => {
-  //createEffect(() => console.log("FIELD", props.field));
-  const [searchFormValue, setSearchFormValue] = createSignal("");
+  const [cardinalityReached, setCardinalityReached] = createSignal(false);
   const [resultsPanelVisible, setResultsPanelVisible] = createSignal(false);
   const [showAddNewEntityModal, setShowAddNewEntityModal] = createSignal(false);
 
@@ -297,6 +327,19 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
     []
   );
   const [autoCompleteTextInput, setAutoCompleteTextInput] = createSignal("");
+
+  createEffect(() => {
+    console.log(props.field.cardinality);
+    if (
+      (props.field.cardinality === "One" ||
+        props.field.cardinality === "ZeroOrOne") &&
+      props.value.length >= 1
+    ) {
+      setCardinalityReached(true);
+    } else {
+      setCardinalityReached(false);
+    }
+  });
 
   const handleKeyEnter = (e) => {
     if (
@@ -499,49 +542,51 @@ const ZeroOrMoreSimpleRelationEditField: Component<{
             )}
           </For>
         )}
-
-        <div class="relative">
-          <div class="relative col-span-6 flex w-full">
-            <input
-              type="text"
-              class={`mb-4 mt-4 
+        <Show when={!cardinalityReached()}>
+          <div class="relative">
+            <div class="relative col-span-6 flex w-full">
+              <input
+                type="text"
+                class={`mb-4 mt-4 
                 w-full rounded-t-md border-b-2 
                 border-t-2 border-l-2 
                 border-r-2 border-primary border-t-transparent border-l-transparent 
                 border-r-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 
                 focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary 
                 focus:bg-base-200 focus:shadow-inner  focus:outline-none`}
-              value={autoCompleteTextInput()}
-              onInput={(e) => setAutoCompleteTextInput(e.target.value)}
-              onFocusIn={handleInputFocusIn}
-              onFocusOut={() => setResultsPanelVisible(false)}
-              onKeyPress={handleKeyEnter}
-            />{" "}
-            <span
-              onClick={() => setShowAddNewEntityModal(true)}
-              class="btn-base btn-sm btn-square btn relative top-6 ml-12"
-            >
-              <BsPlus />
-            </span>
-          </div>
-          <Show when={resultsPanelVisible()}>
-            <div class="dropdown rounded-box relative z-50 max-h-52 w-full overflow-y-scroll bg-base-100 p-2 shadow-xl">
-              <ul class=" menu ">
-                <For each={filteredAutoCompleteData()}>
-                  {(item: RelationFieldType, index) => (
-                    <EntityChip
-                      label={item.label}
-                      leftSlot={getEntityDisplayName(item.real_type)}
-                      color="primary"
-                      onClick={(e: MouseEvent) => handleAddSelection(item)}
-                    />
-                  )}
-                </For>
-              </ul>
+                value={autoCompleteTextInput()}
+                onInput={(e) => setAutoCompleteTextInput(e.target.value)}
+                onFocusIn={handleInputFocusIn}
+                onFocusOut={() => setResultsPanelVisible(false)}
+                onKeyPress={handleKeyEnter}
+              />{" "}
+              <span
+                onClick={() => setShowAddNewEntityModal(true)}
+                class="btn-base btn-sm btn-square btn relative top-6 ml-12"
+              >
+                <BsPlus />
+              </span>
             </div>
-          </Show>
-        </div>
+            <Show when={resultsPanelVisible()}>
+              <div class="dropdown rounded-box relative z-50 max-h-52 w-full overflow-y-scroll bg-base-100 p-2 shadow-xl">
+                <ul class=" menu ">
+                  <For each={filteredAutoCompleteData()}>
+                    {(item: RelationFieldType, index) => (
+                      <EntityChip
+                        label={item.label}
+                        leftSlot={getEntityDisplayName(item.real_type)}
+                        color="primary"
+                        onClick={(e: MouseEvent) => handleAddSelection(item)}
+                      />
+                    )}
+                  </For>
+                </ul>
+              </div>
+            </Show>
+          </div>
+        </Show>
       </div>
+
       <Show when={showAddNewEntityModal()}>
         <div class="modal modal-open pr-96 pl-96">
           <div class="modal-box min-w-full pt-0 pl-0 pr-0">
@@ -617,7 +662,7 @@ const InlineRelationEditField: Component = (props) => {
   };
 
   const changeSelectedType = (type) => {
-    console.log(type, selectedType());
+    //console.log(type, selectedType());
     if (type.toLowerCase() === selectedType()) {
       props.onChange({ ...props.value, type: type.toLowerCase() });
     } else {
@@ -761,7 +806,8 @@ const Form: Component<{
   const build_label = createMemo(() => {
     if (schema[props.entity_type].meta.label_template) {
       return build_label_template(
-        (schema[props.entity_type] as SchemaEntity).meta.label_template
+        (schema[props.entity_type as string] as SchemaEntity).meta
+          .label_template
       );
     } else {
       return props.data()["label"];
@@ -842,7 +888,7 @@ const Form: Component<{
                     !(field as SchemaFieldRelation).inline_relation
                   }
                 >
-                  <ZeroOrMoreSimpleRelationEditField
+                  <RelationEditField
                     override_labels={
                       schema[props.entity_type].meta?.override_labels?.[
                         schema_field_name

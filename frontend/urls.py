@@ -6,6 +6,7 @@ from django.urls import path
 from neomodel.exceptions import DoesNotExist
 from neomodel import db, Q, DateProperty
 from neomodel.properties import DateTimeProperty
+import neomodel
 from .utils import PROS_APPS, PROS_MODELS
 
 from rest_framework import viewsets
@@ -243,16 +244,28 @@ def create_update(model_class):
                 .lower()
             ].model
 
-            # Remove all relations
-            for related in rel_manager.all():
-                rel_manager.disconnect(related_model.nodes.get(uid=related.uid))
+            # If it's a cardinality-One relation, can't simply disconnect all
+            # as it's not allowed... instead, get the old node from the rel_manager,
+            # look up the new node by uid, and then reconnect the rel_manager
+            if isinstance(rel_manager, neomodel.cardinality.One):
+                old_node = rel_manager.get()
+                new_node = related_model.nodes.get(uid=related_values[0]["uid"])
+                rel_manager.reconnect(old_node, new_node)
 
-            # And recreate them again so that the data is updated
-            for related_value in related_values:
-                rel_manager.connect(
-                    related_model.nodes.get(uid=related_value["uid"]),
-                    related_value.get("relData") or {},
-                )
+            # Otherwise, do the nice easy brute-force technique of dropping all connections
+            # and recreating them.
+            # #TODO: Maybe this can be made more efficient on DB?
+            else:
+                # Remove all relations
+                for related in rel_manager.all():
+                    rel_manager.disconnect(related_model.nodes.get(uid=related.uid))
+
+                # And recreate them again so that the data is updated
+                for related_value in related_values:
+                    rel_manager.connect(
+                        related_model.nodes.get(uid=related_value["uid"]),
+                        related_value.get("relData") or {},
+                    )
 
         for inline_related_name, inline_related in inline_relation_data.items():
 
@@ -350,12 +363,12 @@ urlpatterns = []
 def build_viewset_functions(model):
     viewset_functions = {
         "list": create_list(model.model),
+        "autocomplete": create_autocomplete(model.model),
     }
     if not model.meta.get("abstract"):
         viewset_functions["retrieve"] = create_retrieve(model.model)
         viewset_functions["create"] = create_create(model.model)
         viewset_functions["put"] = create_update(model.model)
-        viewset_functions["autocomplete"] = create_autocomplete(model.model)
         viewset_functions["delete"] = create_delete(model.model)
 
     return viewset_functions
@@ -364,13 +377,13 @@ def build_viewset_functions(model):
 def build_url_patterns(model, vs):
     patterns = [
         path(f"{model.app}/{model.model_name.lower()}/", vs.as_view({"get": "list"})),
+        path(
+            f"{model.app}/autocomplete/{model.model_name.lower()}/",
+            vs.as_view({"get": "autocomplete"}),
+        ),
     ]
     if not model.meta.get("abstract"):
         patterns += [
-            path(
-                f"{model.app}/autocomplete/{model.model_name.lower()}/",
-                vs.as_view({"get": "autocomplete"}),
-            ),
             path(
                 f"{model.app}/{model.model_name.lower()}/<str:pk>",
                 vs.as_view({"get": "retrieve"}),

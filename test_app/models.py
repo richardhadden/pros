@@ -1,7 +1,6 @@
-from neomodel import (
-    StringProperty,
-)
+from neomodel import One, ZeroOrOne
 from neomodel.properties import (
+    StringProperty,
     BooleanProperty,
     DateProperty,
     DateTimeProperty,
@@ -15,11 +14,15 @@ from pros_core.models import (
     ProsRelationTo,
     ProsRelationBase,
     OverrideLabel,
-    ProsDateProperty,
 )
 from pros_core.filters import icontains
 
-from pros_dating.models import SingleDate, ComplexDate, DateRange
+from pros_dating.models import (
+    IncompleteDateProperty,
+    SingleDate,
+    ComplexDate,
+    DateRange,
+)
 
 
 class UncertainRelation(ProsRelationBase):
@@ -51,7 +54,7 @@ class Factoid(ProsNode):
     is_about_person = ProsRelationTo(
         "Person", reverse_name="HAS_FACTOID_ABOUT", model=UncertainRelation
     )
-    has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF")
+    has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF", cardinality=One)
 
     text = StringProperty()
 
@@ -60,6 +63,11 @@ class Factoid(ProsNode):
         text_filter_fields = [
             icontains("o", "label"),
         ]
+
+
+class Order(Factoid):
+    person_ordered = ProsRelationTo("Person", "received_order")
+    thing_ordered = ProsRelationTo("Factoid", "ordered_by")
 
 
 class Event(Factoid):
@@ -79,9 +87,15 @@ class Party(Event):
 class Birth(Event):
     date = SingleDate.as_inline_field()
 
+    class Meta:
+        label_template = "Birth of {is_about_person.label}"
+
 
 class Death(Event):
     date = SingleDate.as_inline_field()
+
+    class Meta:
+        label_template = "Death of {is_about_person.label}"
 
 
 class Naming(Event):
@@ -169,4 +183,4 @@ class Test(ProsNode):
     date = DateProperty()
     dateTime = DateTimeProperty()
     email = EmailProperty()
-    prosdate = ProsDateProperty()
+    complex_date = IncompleteDateProperty()

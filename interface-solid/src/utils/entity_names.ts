@@ -14,7 +14,7 @@ const getEntityNamePlural: (entity_name: string) => string = (entity_name) => {
 }
 
 const getEntityDisplayName: (entity_name: string) => string = (entity_name) => {
-    console.log(entity_name)
+   
     const e = schema[entity_name.toLowerCase()];
     if (e) {
         if (e.meta.display_name) {
