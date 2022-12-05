@@ -21,6 +21,10 @@ export async function refreshToken() {
     body: JSON.stringify({ refresh: Cookies.get("refreshToken") }),
   });
   const refresh_data = await refresh.json();
+  if (refresh.status === 403 || refresh.status == 400) {
+    logout();
+    return;
+  }
   Cookies.set("accessToken", refresh_data.access);
   setUserStatus({ isAuthenticated: true });
 }

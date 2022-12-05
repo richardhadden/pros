@@ -66,7 +66,7 @@ def create_list(model_class):
                     "deleted_and_has_dependent_nodes": b.is_deleted
                     and b.has_dependent_relations(),
                 }
-                for b in model_class.nodes.all()
+                for b in model_class.nodes.order_by("label")
             ]
         # print(node_data)
         return Response(node_data)

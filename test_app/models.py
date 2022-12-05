@@ -93,6 +93,7 @@ class Birth(Event):
 
 class Death(Event):
     date = SingleDate.as_inline_field()
+    cause_of_death = StringProperty(default="Tuberculosis")
 
     class Meta:
         label_template = "Death of {is_about_person.label}"
