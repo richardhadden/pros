@@ -175,6 +175,17 @@ class Organisation(Entity):
     pass
 
 
+class TestInlineWithRel(ProsNode):
+    class Meta:
+        inline_only = True
+
+    name = StringProperty()
+    other_name = StringProperty()
+    third_name = StringProperty()
+    source = ProsRelationTo("Source", "has_source")
+    person = ProsRelationTo("Person", "is_about_person")
+
+
 class Test(ProsNode):
     label = StringProperty(index=True, help_text="Short text description")
 
@@ -185,3 +196,5 @@ class Test(ProsNode):
     dateTime = DateTimeProperty()
     email = EmailProperty()
     complex_date = IncompleteDateProperty()
+
+    inline_thing = TestInlineWithRel.as_inline_field()

@@ -1,33 +1,33 @@
+import { useParams, useRouteData } from "@solidjs/router";
 import {
   Component,
-  For,
-  Show,
   createEffect,
-  Switch,
-  Match,
   createMemo,
+  For,
+  Match,
+  Show,
+  Switch,
 } from "solid-js";
-import { useParams, useRouteData } from "@solidjs/router";
-
+import { groupBy } from "ramda";
 import UnsavedLink from "../utils/UnsavedLink";
 
 import TopBar from "../components/TopBar";
-import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
+import { getEntityDisplayName } from "../utils/entity_names";
 
-import { BsArrowReturnRight } from "solid-icons/bs";
-import { CgOptions } from "solid-icons/cg";
 import {
-  AiFillWarning,
-  AiFillDelete,
-  AiFillClockCircle,
+  AiFillCalendar,
   AiFillCheckCircle,
+  AiFillClockCircle,
+  AiFillDelete,
   AiFillEdit,
   AiFillFileAdd,
-  AiFillCalendar,
+  AiFillWarning,
 } from "solid-icons/ai";
+import { BsArrowReturnRight, BsArrowRight } from "solid-icons/bs";
+import { CgOptions } from "solid-icons/cg";
 
-import { SchemaEntity, SchemaFieldRelation } from "../types/schemaTypes";
+import { SchemaFieldRelation } from "../types/schemaTypes";
 
 import EntityChip from "../components/ui_components/entityChip";
 
@@ -49,7 +49,105 @@ export const TextFieldView: Component<{ fieldName: string; value: string }> = (
   );
 };
 
-const ZeroOrMoreRelationFieldView: Component<{
+const RelationViewField: Component<{
+  override_label: string;
+  fieldName: string;
+  reverseRelation: boolean;
+  field: { relation_to: string };
+  value: {
+    label: string;
+    real_type: string;
+    uid: string;
+    relData: object;
+    is_deleted: boolean;
+    deleted_and_has_dependent_nodes?: boolean;
+  }[];
+}> = (props) => {
+  return (
+    <For each={props.value}>
+      {(item) => (
+        <Show
+          when={item.relData && Object.keys(item.relData).length > 0}
+          fallback={
+            <span>
+              <EntityChip
+                label={item.label}
+                leftSlot={getEntityDisplayName(item.real_type)}
+                href={`/entity/${item.real_type}/${item.uid}/`}
+                color={props.reverseRelation ? "primary" : "primary"}
+                isDeleted={item.is_deleted}
+                deletedAndHasDependentNodes={
+                  item.is_deleted && item.deleted_and_has_dependent_nodes
+                }
+              />
+            </span>
+          }
+        >
+          <div class="card card-compact mr-4 mb-3 inline-block rounded-sm bg-base-300 p-0">
+            <Switch>
+              <Match when={item.is_deleted}>
+                <UnsavedLink
+                  href={`/entity/${item.real_type}/${item.uid}`}
+                  class="prose-md mb-0 flex max-w-4xl cursor-pointer rounded-t-sm bg-gray-400 p-3 text-neutral-content hover:bg-gray-500"
+                  //onMouseDown={props.onClick}
+                >
+                  <span class="prose-sm mr-5 font-light uppercase">
+                    {getEntityDisplayName(item.real_type)}{" "}
+                  </span>
+                  <span class="prose-md font-semibold">{item.label}</span>
+                  <span class="ml-auto">
+                    <div class="relative mr-2 flex flex-row">
+                      <AiFillDelete size={20} class="mt-0.5 text-gray-600" />
+                      {item.deleted_and_has_dependent_nodes ? (
+                        <AiFillClockCircle
+                          size={20}
+                          class="mt-0.5 ml-2 rounded-full text-warning"
+                        />
+                      ) : (
+                        <AiFillCheckCircle
+                          size={20}
+                          class="mt-0.5 ml-2 text-success"
+                        />
+                      )}
+                    </div>
+                  </span>
+                </UnsavedLink>
+              </Match>
+              <Match when={true}>
+                <UnsavedLink
+                  href={`/entity/${item.real_type}/${item.uid}`}
+                  class="prose-md mb-0 flex max-w-4xl cursor-pointer rounded-t-sm bg-primary p-3 text-neutral-content hover:bg-primary-focus"
+                  //onMouseDown={props.onClick}
+                >
+                  <span class="prose-sm mr-5 font-light uppercase">
+                    {getEntityDisplayName(item.real_type)}{" "}
+                  </span>
+                  <span class="prose-md font-semibold">{item.label}</span>
+                </UnsavedLink>
+              </Match>
+            </Switch>
+
+            <div class="card-body grid grid-cols-8">
+              <For each={Object.entries(item.relData)}>
+                {([relatedFieldName, relatedFieldValue]) => (
+                  <>
+                    <div class="prose-sm col-span-2 font-semibold uppercase">
+                      {relatedFieldName}
+                    </div>
+                    <div />
+                    <div class="prose-sm col-span-5">{relatedFieldValue}</div>
+                  </>
+                )}
+              </For>
+            </div>
+          </div>
+        </Show>
+      )}
+    </For>
+  );
+};
+
+const RelationViewRow: Component<{
   override_label: string;
   fieldName: string;
   reverseRelation: boolean;
@@ -75,97 +173,26 @@ const ZeroOrMoreRelationFieldView: Component<{
         </div>
       </div>
       <div class="col-span-6 mb-4 mt-4 select-none pt-2">
-        <For each={props.value}>
-          {(item) => (
-            <Show
-              when={Object.keys(item.relData).length > 0}
-              fallback={
-                <span>
-                  <EntityChip
-                    label={item.label}
-                    leftSlot={getEntityDisplayName(item.real_type)}
-                    href={`/entity/${item.real_type}/${item.uid}/`}
-                    color={props.reverseRelation ? "primary" : "primary"}
-                    isDeleted={item.is_deleted}
-                    deletedAndHasDependentNodes={
-                      item.is_deleted && item.deleted_and_has_dependent_nodes
-                    }
-                  />
-                </span>
-              }
-            >
-              <div class="card card-compact mr-4 mb-3 inline-block rounded-sm bg-base-300 p-0">
-                <Switch>
-                  <Match when={item.is_deleted}>
-                    <UnsavedLink
-                      href={`/entity/${item.real_type}/${item.uid}`}
-                      class="prose-md mb-0 flex max-w-4xl cursor-pointer rounded-t-sm bg-gray-400 p-3 text-neutral-content hover:bg-gray-500"
-                      //onMouseDown={props.onClick}
-                    >
-                      <span class="prose-sm mr-5 font-light uppercase">
-                        {getEntityDisplayName(item.real_type)}{" "}
-                      </span>
-                      <span class="prose-md font-semibold">{item.label}</span>
-                      <span class="ml-auto">
-                        <div class="relative mr-2 flex flex-row">
-                          <AiFillDelete
-                            size={20}
-                            class="mt-0.5 text-gray-600"
-                          />
-                          {item.deleted_and_has_dependent_nodes ? (
-                            <AiFillClockCircle
-                              size={20}
-                              class="mt-0.5 ml-2 rounded-full text-warning"
-                            />
-                          ) : (
-                            <AiFillCheckCircle
-                              size={20}
-                              class="mt-0.5 ml-2 text-success"
-                            />
-                          )}
-                        </div>
-                      </span>
-                    </UnsavedLink>
-                  </Match>
-                  <Match when={true}>
-                    <UnsavedLink
-                      href={`/entity/${item.real_type}/${item.uid}`}
-                      class="prose-md mb-0 flex max-w-4xl cursor-pointer rounded-t-sm bg-primary p-3 text-neutral-content hover:bg-primary-focus"
-                      //onMouseDown={props.onClick}
-                    >
-                      <span class="prose-sm mr-5 font-light uppercase">
-                        {getEntityDisplayName(item.real_type)}{" "}
-                      </span>
-                      <span class="prose-md font-semibold">{item.label}</span>
-                    </UnsavedLink>
-                  </Match>
-                </Switch>
-
-                <div class="card-body grid grid-cols-8">
-                  <For each={Object.entries(item.relData)}>
-                    {([relatedFieldName, relatedFieldValue]) => (
-                      <>
-                        <div class="prose-sm col-span-2 font-semibold uppercase">
-                          {relatedFieldName}
-                        </div>
-                        <div />
-                        <div class="prose-sm col-span-5">
-                          {relatedFieldValue}
-                        </div>
-                      </>
-                    )}
-                  </For>
-                </div>
-              </div>
-            </Show>
-          )}
-        </For>
+        <RelationViewField
+          value={props.value}
+          fieldName={props.fieldName}
+          reverseRelation={props.reverseRelation}
+          field={props.field}
+        />
       </div>
     </>
   );
 };
 
+const groupByType = groupBy(([field_name, field]) => field.type);
+
 const InlineRelationView: Component = (props) => {
+  const grouped_fields = () => {
+    const groups = groupByType(Object.entries(schema[props.value.type].fields));
+    console.log(groups);
+    return groups;
+  };
+
   return (
     <Show
       when={props.value}
@@ -188,10 +215,32 @@ const InlineRelationView: Component = (props) => {
           </span>
         </div>
       </div>
-      <div class="flex-none">
-        <div class="mt-3 flex w-full flex-row items-stretch">
-          <For each={Object.entries(schema[props.value.type].fields)}>
-            {([field_name, field]) => (
+
+      <div class="col-span-5 mt-3 mb-24 grid grid-cols-8 rounded-sm  p-4 ">
+        <For each={grouped_fields().property}>
+          {([field_name, field], index) => (
+            <Show
+              when={
+                !schema[props.value.type].meta?.internal_fields?.includes(
+                  field_name
+                )
+              }
+            >
+              <div class="col-span-2">
+                <div class="prose prose-sm select-none font-semibold uppercase">
+                  {field_name.replaceAll("_", " ")}
+                </div>
+                <div class=" mt-3">{props.value[field_name]}</div>
+              </div>
+            </Show>
+          )}
+        </For>
+        <Show when={grouped_fields().relation}>
+          <div class="divider col-span-8 mt-8 mb-8" />
+        </Show>
+        <div class="col-span-8 ">
+          <For each={grouped_fields().relation}>
+            {([field_name, field], index) => (
               <Show
                 when={
                   !schema[props.value.type].meta?.internal_fields?.includes(
@@ -199,12 +248,26 @@ const InlineRelationView: Component = (props) => {
                   )
                 }
               >
-                <div class="mr-12 w-40 flex-none justify-self-stretch">
-                  <div class="pros-sm prose w-full select-none font-semibold uppercase">
-                    {field_name.replaceAll("_", " ")}
-                  </div>
-                  <div class="mt-3">{props.value[field_name]}</div>
+                <div class="prose prose-sm mb-4 flex select-none font-semibold uppercase">
+                  <span class="mt-0.5">
+                    {props.override_label || field_name.replaceAll("_", " ")}
+                  </span>
+                  <BsArrowRight class="mt-2 ml-2 mr-2" />
+                  <span class="mt-0.5 rounded-sm bg-neutral pt-[5px] pb-1 pl-2 pr-2 text-xs text-neutral-content">
+                    {field.relation_to}
+                  </span>
                 </div>
+
+                <div class="mb-4">
+                  <RelationViewField
+                    value={props.value[field_name]}
+                    field={field}
+                    fieldName={field_name}
+                  />
+                </div>
+                <Show when={index() < grouped_fields().relation.length - 1}>
+                  <div class="divider col-span-8 mt-8 mb-8" />
+                </Show>
               </Show>
             )}
           </For>
@@ -332,7 +395,7 @@ const ViewEntity: Component = () => {
                   <Match
                     when={field.type === "relation" && !field.inline_relation}
                   >
-                    <ZeroOrMoreRelationFieldView
+                    <RelationViewRow
                       override_label={
                         schema[params.entity_type].meta.override_labels?.[
                           schema_field_name.toLowerCase()
@@ -372,7 +435,7 @@ const ViewEntity: Component = () => {
           >
             {([schema_field_name, field], index) => (
               <Show when={data()[schema_field_name]?.length > 0}>
-                <ZeroOrMoreRelationFieldView
+                <RelationViewRow
                   fieldName={schema_field_name}
                   value={data()[schema_field_name]}
                   field={field}

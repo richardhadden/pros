@@ -15,10 +15,11 @@ import {
   Match,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import { groupBy } from "ramda";
 
 import { schema } from "../index";
 import EntityChip from "./ui_components/entityChip";
-import { BsArrowReturnRight, BsPlus } from "solid-icons/bs";
+import { BsArrowReturnRight, BsArrowRight, BsPlus } from "solid-icons/bs";
 import { CgClose } from "solid-icons/cg";
 
 import { getEntityDisplayName } from "../utils/entity_names";
@@ -40,7 +41,6 @@ import {
   AiFillClockCircle,
   AiFillCheckCircle,
 } from "solid-icons/ai";
-import { values } from "ramda";
 
 function clickOutside(el, accessor) {
   const onClick = (e) => !el.contains(e.target) && accessor()?.();
@@ -309,12 +309,11 @@ const RelationEditField: Component<{
     relation_to: string;
     cardinality: "ZeroOrOne" | "One" | "OneOrMore" | "ZeroOrMore";
   };
-  fieldName: string;
   relatedToType: string;
   relationFields: object;
   value: any;
   onChange: Setter<RelationFieldType[]>;
-  data: Accessor<RelationFieldType[]>;
+  //data: Accessor<RelationFieldType[]>;
   reverseRelation: string;
 }> = (props) => {
   const [cardinalityReached, setCardinalityReached] = createSignal(false);
@@ -435,158 +434,142 @@ const RelationEditField: Component<{
       setEmbeddedType(props.relatedToType);
     }
   };
-
   return (
     <>
-      <div class="col-span-2 mb-4 mt-4 select-none font-semibold uppercase">
-        {props.override_labels
-          ? props.override_labels[0]
-          : props.fieldName.replaceAll("_", " ")}
-        <div class="mt-1 ml-1 select-none">
-          <BsArrowReturnRight class="inline-block" />{" "}
-          <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
-            {props.field.relation_to}
-          </span>
-        </div>
-      </div>
-      <div class="col-span-5 mb-4 mt-4 pt-2">
-        {Object.keys(props.relationFields).length > 0 ? (
-          <For each={props.value || []}>
-            {(item: RelationFieldType) => (
-              <div class="card card-compact mr-4 mb-3 inline-block w-96 rounded-sm bg-base-300 p-0 shadow-sm">
-                <div
-                  class="prose-md mb-0 flex flex-row  rounded-t-sm p-3 text-neutral-content"
-                  classList={{
-                    ["bg-primary"]: !item.is_deleted,
-                    ["bg-gray-400"]: item.is_deleted,
-                    ["hover:bg-primary-focus"]: !item.is_deleted,
-                    ["hover:bg-gray-500"]: item.is_deleted,
-                  }}
-                >
-                  <span class="prose-sm mr-5 select-none font-light uppercase">
-                    <a
-                      onClick={() => handleRemoveSelection(item.uid)}
-                      class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
-                    >
-                      <CgClose />
-                    </a>{" "}
-                    {getEntityDisplayName(item.real_type)}{" "}
-                  </span>
-                  <span class="prose-md select-none font-semibold">
-                    {item.label}
-                  </span>
-                  <Show when={item.is_deleted}>
-                    <span class="ml-auto select-none">
-                      <div class="relative mr-2 flex flex-row">
-                        <AiFillDelete size={20} class="mt-0.5 text-gray-600" />
-                        {item.deleted_and_has_dependent_nodes ? (
-                          <AiFillClockCircle
-                            size={20}
-                            class="mt-0.5 ml-2 rounded-full text-warning"
-                          />
-                        ) : (
-                          <AiFillCheckCircle
-                            size={20}
-                            class="mt-0.5 ml-2 text-success"
-                          />
-                        )}
-                      </div>
-                    </span>
-                  </Show>
-                </div>
-                <div class="card-body grid grid-cols-7">
-                  <For each={Object.entries(props.relationFields)}>
-                    {([relationFieldName, relationField]) => (
-                      <TypedInputRow
-                        helpText={relationField.help_text}
-                        propertyType={relationField.property_type}
-                        fieldName={relationFieldName}
-                        value={
-                          item.relData &&
-                          item.relData[relationFieldName] !== null
-                            ? item.relData[relationFieldName]
-                            : relationField.default_value || ""
-                        }
-                        setValue={(value) =>
-                          handleModifyRelationField(
-                            item,
-                            relationFieldName,
-                            value
-                          )
-                        }
-                      />
-                    )}
-                  </For>
-                </div>
-              </div>
-            )}
-          </For>
-        ) : (
-          <For each={props.value || []}>
-            {(item: RelationFieldType) => (
-              <EntityChip
-                label={item.label}
-                leftSlot={
-                  <>
-                    <a
-                      onClick={() => handleRemoveSelection(item.uid)}
-                      class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
-                    >
-                      <CgClose />
-                    </a>{" "}
-                    {getEntityDisplayName(item.real_type)}
-                  </>
-                }
-                color={props.reverseRelation ? "primary" : "primary"}
-              />
-            )}
-          </For>
-        )}
-        <Show when={!cardinalityReached()}>
-          <div class="relative">
-            <div class="relative col-span-6 flex w-full">
-              <input
-                type="text"
-                class={`mb-4 mt-4 
-                w-full rounded-t-md border-b-2 
-                border-t-2 border-l-2 
-                border-r-2 border-primary border-t-transparent border-l-transparent 
-                border-r-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 
-                focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary 
-                focus:bg-base-200 focus:shadow-inner  focus:outline-none`}
-                value={autoCompleteTextInput()}
-                onInput={(e) => setAutoCompleteTextInput(e.target.value)}
-                onFocusIn={handleInputFocusIn}
-                onFocusOut={() => setResultsPanelVisible(false)}
-                onKeyPress={handleKeyEnter}
-              />{" "}
-              <span
-                onClick={() => setShowAddNewEntityModal(true)}
-                class="btn-base btn-sm btn-square btn relative top-6 ml-12"
+      {Object.keys(props.relationFields).length > 0 ? (
+        <For each={props.value || []}>
+          {(item: RelationFieldType) => (
+            <div class="card card-compact mr-4 mb-3 inline-block w-96 rounded-sm bg-base-300 p-0 shadow-sm">
+              <div
+                class="prose-md mb-0 flex flex-row  rounded-t-sm p-3 text-neutral-content"
+                classList={{
+                  ["bg-primary"]: !item.is_deleted,
+                  ["bg-gray-400"]: item.is_deleted,
+                  ["hover:bg-primary-focus"]: !item.is_deleted,
+                  ["hover:bg-gray-500"]: item.is_deleted,
+                }}
               >
-                <BsPlus />
-              </span>
-            </div>
-            <Show when={resultsPanelVisible()}>
-              <div class="dropdown rounded-box relative z-50 max-h-52 w-full overflow-y-scroll bg-base-100 p-2 shadow-xl">
-                <ul class=" menu ">
-                  <For each={filteredAutoCompleteData()}>
-                    {(item: RelationFieldType, index) => (
-                      <EntityChip
-                        label={item.label}
-                        leftSlot={getEntityDisplayName(item.real_type)}
-                        color="primary"
-                        onClick={(e: MouseEvent) => handleAddSelection(item)}
-                      />
-                    )}
-                  </For>
-                </ul>
+                <span class="prose-sm mr-5 select-none font-light uppercase">
+                  <a
+                    onClick={() => handleRemoveSelection(item.uid)}
+                    class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
+                  >
+                    <CgClose />
+                  </a>{" "}
+                  {getEntityDisplayName(item.real_type)}{" "}
+                </span>
+                <span class="prose-md select-none font-semibold">
+                  {item.label}
+                </span>
+                <Show when={item.is_deleted}>
+                  <span class="ml-auto select-none">
+                    <div class="relative mr-2 flex flex-row">
+                      <AiFillDelete size={20} class="mt-0.5 text-gray-600" />
+                      {item.deleted_and_has_dependent_nodes ? (
+                        <AiFillClockCircle
+                          size={20}
+                          class="mt-0.5 ml-2 rounded-full text-warning"
+                        />
+                      ) : (
+                        <AiFillCheckCircle
+                          size={20}
+                          class="mt-0.5 ml-2 text-success"
+                        />
+                      )}
+                    </div>
+                  </span>
+                </Show>
               </div>
-            </Show>
+              <div class="card-body grid grid-cols-7">
+                <For each={Object.entries(props.relationFields)}>
+                  {([relationFieldName, relationField]) => (
+                    <TypedInputRow
+                      helpText={relationField.help_text}
+                      propertyType={relationField.property_type}
+                      fieldName={relationFieldName}
+                      value={
+                        item.relData && item.relData[relationFieldName] !== null
+                          ? item.relData[relationFieldName]
+                          : relationField.default_value || ""
+                      }
+                      setValue={(value) =>
+                        handleModifyRelationField(
+                          item,
+                          relationFieldName,
+                          value
+                        )
+                      }
+                    />
+                  )}
+                </For>
+              </div>
+            </div>
+          )}
+        </For>
+      ) : (
+        <For each={props.value || []}>
+          {(item: RelationFieldType) => (
+            <EntityChip
+              label={item.label}
+              leftSlot={
+                <>
+                  <a
+                    onClick={() => handleRemoveSelection(item.uid)}
+                    class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
+                  >
+                    <CgClose />
+                  </a>{" "}
+                  {getEntityDisplayName(item.real_type)}
+                </>
+              }
+              color={props.reverseRelation ? "primary" : "primary"}
+            />
+          )}
+        </For>
+      )}
+      <Show when={!cardinalityReached()}>
+        <div class="relative">
+          <div class="relative col-span-6 flex w-full">
+            <input
+              type="text"
+              class={`mb-4 mt-4 
+          w-full rounded-t-md border-b-2 
+          border-t-2 border-l-2 
+          border-r-2 border-primary border-t-transparent border-l-transparent 
+          border-r-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 
+          focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary 
+          focus:bg-base-200 focus:shadow-inner  focus:outline-none`}
+              value={autoCompleteTextInput()}
+              onInput={(e) => setAutoCompleteTextInput(e.target.value)}
+              onFocusIn={handleInputFocusIn}
+              onFocusOut={() => setResultsPanelVisible(false)}
+              onKeyPress={handleKeyEnter}
+            />{" "}
+            <span
+              onClick={() => setShowAddNewEntityModal(true)}
+              class="btn-base btn-sm btn-square btn relative top-6 ml-12"
+            >
+              <BsPlus />
+            </span>
           </div>
-        </Show>
-      </div>
-
+          <Show when={resultsPanelVisible()}>
+            <div class="dropdown rounded-box relative z-50 max-h-52 w-full overflow-y-scroll bg-base-100 p-2 shadow-xl">
+              <ul class=" menu ">
+                <For each={filteredAutoCompleteData()}>
+                  {(item: RelationFieldType, index) => (
+                    <EntityChip
+                      label={item.label}
+                      leftSlot={getEntityDisplayName(item.real_type)}
+                      color="primary"
+                      onClick={(e: MouseEvent) => handleAddSelection(item)}
+                    />
+                  )}
+                </For>
+              </ul>
+            </div>
+          </Show>
+        </div>
+      </Show>
       <Show when={showAddNewEntityModal()}>
         <div class="modal modal-open pr-96 pl-96">
           <div class="modal-box min-w-full pt-0 pl-0 pr-0">
@@ -618,7 +601,59 @@ const RelationEditField: Component<{
   );
 };
 
+const RelationEditRow: Component<{
+  override_labels: object;
+  field: {
+    relation_to: string;
+    cardinality: "ZeroOrOne" | "One" | "OneOrMore" | "ZeroOrMore";
+  };
+  fieldName: string;
+  relatedToType: string;
+  relationFields: object;
+  value: any;
+  onChange: Setter<RelationFieldType[]>;
+  data: Accessor<RelationFieldType[]>;
+  reverseRelation: string;
+}> = (props) => {
+  return (
+    <>
+      {/* LEFT COLUMN */}
+      <div class="col-span-2 mb-4 mt-4 select-none font-semibold uppercase">
+        {props.override_labels
+          ? props.override_labels[0]
+          : props.fieldName.replaceAll("_", " ")}
+        <div class="mt-1 ml-1 select-none">
+          <BsArrowReturnRight class="inline-block" />{" "}
+          <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+            {props.field.relation_to}
+          </span>
+        </div>
+      </div>
+      <div class="col-span-5 mb-4 mt-4 pt-2">
+        <RelationEditField
+          override_labels={props.override_labels}
+          field={props.field}
+          relatedToType={props.relatedToType}
+          relationFields={props.relationFields}
+          value={props.value}
+          onChange={props.onChange}
+          data={props.data}
+          reverseRelation={props.reverseRelation}
+        />
+      </div>
+    </>
+  );
+};
+
+const groupByType = groupBy(([field_name, field]) => field.type);
+
 const InlineRelationEditField: Component = (props) => {
+  const grouped_fields = () => {
+    const groups = groupByType(Object.entries(selectedTypeModel().fields));
+    console.log(groups);
+    return groups;
+  };
+
   const [selectedType, setSelectedType] = createSignal(
     props.inlineRelationFieldName
   );
@@ -722,40 +757,69 @@ const InlineRelationEditField: Component = (props) => {
         </div>
       </div>
       {/* HERE START THE FIELDS */}
-      <div class="flex-none">
-        <div class="mt-4 flex w-full flex-row items-stretch justify-start">
-          <For each={Object.entries(selectedTypeModel()["fields"])}>
-            {([field_name, field]) => (
-              <Show when={shouldShowField(field_name)}>
-                <div class="mr-12  flex-none">
-                  <div class="pros-sm prose w-full select-none pl-2 font-semibold uppercase">
-                    <span class="select-none">
-                      {field_name.replaceAll("_", " ")}
-                    </span>
-                  </div>
-                  <div class="mt-2 mb-4 w-44">
-                    <Switch>
-                      <Match when={CUSTOM_PROPERTIES[field.property_type]}>
-                        <Dynamic
-                          component={CUSTOM_PROPERTIES[field.property_type]}
-                          value={props.value[field_name] || ""}
-                          setValue={(value) => setValue(field_name, value)}
-                        />
-                      </Match>
-                      <Match when={true}>
-                        <TypedInputField
-                          value={props.value[field_name] || ""}
-                          setValue={(value) => setValue(field_name, value)}
-                          propertyType={field.property_type}
-                        />
-                      </Match>
-                    </Switch>
-                  </div>
+
+      <div class=" col-span-5 mt-4 grid flex-none grid-cols-8 gap-x-12">
+        <For each={grouped_fields().property}>
+          {([field_name, field]) => (
+            <Show when={shouldShowField(field_name)}>
+              <div class="col-span-2">
+                <div class="prose prose-sm col-span-1 mb-4 w-full select-none pl-2 font-semibold uppercase">
+                  {field_name.replaceAll("_", " ")}
                 </div>
-              </Show>
-            )}
-          </For>
-        </div>
+                <Switch>
+                  <Match when={CUSTOM_PROPERTIES[field.property_type]}>
+                    <Dynamic
+                      component={CUSTOM_PROPERTIES[field.property_type]}
+                      value={props.value[field_name] || ""}
+                      setValue={(value) => setValue(field_name, value)}
+                    />
+                  </Match>
+                  <Match when={true}>
+                    <TypedInputField
+                      value={props.value[field_name] || ""}
+                      setValue={(value) => setValue(field_name, value)}
+                      propertyType={field.property_type}
+                    />
+                  </Match>
+                </Switch>
+              </div>
+            </Show>
+          )}
+        </For>
+        <Show when={grouped_fields().relation}>
+          <div class="divider col-span-8 mt-4 mb-8" />
+        </Show>
+        <For each={grouped_fields().relation}>
+          {([field_name, field], index) => (
+            <Show when={shouldShowField(field_name)}>
+              <div class="col-span-8">
+                <div class="prose prose-sm mb-4 flex select-none font-semibold uppercase">
+                  <span class="mt-0.5">
+                    {props.override_label || field_name.replaceAll("_", " ")}
+                  </span>
+                  <BsArrowRight class="mt-2 ml-2 mr-2" />
+                  <span class="mt-0.5 rounded-sm bg-neutral pt-[5px] pb-1 pl-2 pr-2 text-xs text-neutral-content">
+                    {field.relation_to}
+                  </span>
+                </div>
+                <div class="">
+                  <RelationEditField
+                    override_labels={props.override_labels}
+                    field={field}
+                    relatedToType={field.relation_to}
+                    relationFields={field.relation_fields}
+                    value={props.value[field_name] || []}
+                    onChange={(value) => setValue(field_name, value)}
+                    reverseRelation={selectedTypeModel().reverseRelation}
+                  />
+                </div>
+                <Show when={index() < grouped_fields().relation.length - 1}>
+                  <div class="divider col-span-8 mb-8" />
+                </Show>
+              </div>
+            </Show>
+          )}
+        </For>
       </div>
     </>
   );
@@ -888,7 +952,7 @@ const Form: Component<{
                     !(field as SchemaFieldRelation).inline_relation
                   }
                 >
-                  <RelationEditField
+                  <RelationEditRow
                     override_labels={
                       schema[props.entity_type].meta?.override_labels?.[
                         schema_field_name

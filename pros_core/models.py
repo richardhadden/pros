@@ -110,22 +110,55 @@ class ProsNode(StructuredNode):
 
     def direct_relations_as_data(self):
         q = Pypher()
-        q.Match.node("s").rel("p").node("o")
-        q.WHERE.s.property("uid") == self.uid
-        q.RETURN(__.s, __.p, __.o)
+        q.MATCH.node("s", uid=self.uid).rel("p").node("o")
+        q.OPTIONAL.MATCH("x = ").node("o").rel_out("p2").node("o2")
+        q.WHERE.p.property("inline").operator("=", True)
+        q.RETURN(__.s, __.p, __.o, __.p2, __.COLLECT(__.x))
 
         db_results, meta = db.cypher_query(str(q), q.bound_params)
 
         results = defaultdict(list)
 
         for r in db_results:
-            subj, rel, obj = r
+            subj, rel, obj, p2, inline = r
 
-            if rel.get("inline"):
+            if inline:
+                if not results[rel.type.lower()]:
+                    results[rel.type.lower()] = defaultdict(list)
+                for i in inline:
+
+                    results[rel.type.lower()] = {
+                        **results[rel.type.lower()],
+                        **i.start_node,
+                    }
+                    results[rel.type.lower()]["type"] = results[rel.type.lower()].pop(
+                        "real_type"
+                    )
+
+                    if not results[rel.type.lower()].get(p2.type.lower()):
+                        results[rel.type.lower()][p2.type.lower()] = []
+                    results[rel.type.lower()][p2.type.lower()].append(i.end_node)
+                """
+                for i in x:
+                    print(p2.type, i)
+                    print("------")
+                """
+                """
+                if rel2:
+                    for r2 in rel2:
+                        res[r2.type.lower()] = []
+                # if rel2:
+                #    res[rel2.type.lower()] = dict(obj2)
+                res.pop("uid")
+                res["type"] = res.pop("real_type")
+                results[rel.type.lower()] = res
+                """
+            elif rel.get("inline"):
                 res = dict(obj)
                 res.pop("uid")
                 res["type"] = res.pop("real_type")
                 results[rel.type.lower()] = res
+
             elif (
                 # TODO: thought of a problem with this, but can't remember what it was
                 rel.start_node.__dict__["_properties"]["real_type"]
