@@ -175,15 +175,12 @@ class Organisation(Entity):
     pass
 
 
-class TestInlineWithRel(ProsNode):
+class Citation(ProsNode):
     class Meta:
         inline_only = True
 
-    name = StringProperty()
-    other_name = StringProperty()
-    third_name = StringProperty()
+    page = IntegerProperty()
     source = ProsRelationTo("Source", "has_source")
-    person = ProsRelationTo("Person", "is_about_person")
 
 
 class Test(ProsNode):
@@ -197,4 +194,4 @@ class Test(ProsNode):
     email = EmailProperty()
     complex_date = IncompleteDateProperty()
 
-    inline_thing = TestInlineWithRel.as_inline_field()
+    inline_thing = Citation.as_inline_field()

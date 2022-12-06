@@ -120,7 +120,7 @@ class ProsNode(StructuredNode):
         results = defaultdict(list)
 
         for r in db_results:
-            subj, rel, obj, p2, inline = r
+            subj, rel, obj, rel2, inline = r
 
             if inline:
                 if not results[rel.type.lower()]:
@@ -135,9 +135,9 @@ class ProsNode(StructuredNode):
                         "real_type"
                     )
 
-                    if not results[rel.type.lower()].get(p2.type.lower()):
-                        results[rel.type.lower()][p2.type.lower()] = []
-                    results[rel.type.lower()][p2.type.lower()].append(i.end_node)
+                    if not results[rel.type.lower()].get(rel2.type.lower()):
+                        results[rel.type.lower()][rel2.type.lower()] = []
+                    results[rel.type.lower()][rel2.type.lower()].append(i.end_node)
                 """
                 for i in x:
                     print(p2.type, i)
@@ -177,6 +177,7 @@ class ProsNode(StructuredNode):
                 )
             else:
                 reverse_name = rel["reverse_name"]
+
                 results[reverse_name.lower()].append(
                     {
                         **dict(obj),

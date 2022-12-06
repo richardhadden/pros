@@ -272,27 +272,29 @@ def update_inline_related_nodes(instance, data):
             old_related_node = rel_manager.all()[0]  # Get it...
             # (there should only be one node to get, due to One cardinality)
 
-            # If the data sent by the update is the same as the old node,
-            # and they are the same type, no need to replace or delete
-            if (
-                old_related_node.real_type != new_type
-                or get_non_default_fields(old_related_node) != property_data
-            ):
-                # But if the types differ, or the data differs...
+            # Create a new node with the data
+            new_related_node = related_model(**property_data)
+            new_related_node.save()
 
-                # Create a new node with the data
-                new_related_node = related_model(**property_data)
-                new_related_node.save()
+            # Reconnect from the old node to the new node
+            rel_manager.reconnect(old_related_node, new_related_node)
 
-                # Reconnect from the old node to the new node
-                rel_manager.reconnect(old_related_node, new_related_node)
+            # Disconnect the old inline related node from its
+            # current outbound relations
+            for k, v in relation_data.items():
+                old_node_rel_manager = getattr(old_related_node, k)
+                for i in v:
+                    i_related_model = PROS_MODELS[i["real_type"]].model
+                    i_node = i_related_model.nodes.get(uid=i["uid"])
+                    old_node_rel_manager.disconnect(i_node)
 
-                update_related_nodes(related_model, new_related_node, relation_data)
+            # Add the relation to the new node
+            update_related_nodes(related_model, new_related_node, relation_data)
 
-                # If the old node is not related to anything else
-                # delete it
-                if not old_related_node.has_relations():
-                    old_related_node.delete()
+            # If the old node is not related to anything else
+            # delete it
+            if not old_related_node.has_relations():
+                old_related_node.delete()
 
         except DoesNotExist:
             # Otherwise, this node does not exist
