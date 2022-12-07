@@ -144,14 +144,16 @@ class ProsNode(StructuredNode):
                 if p2:  # If the inline has any related nodes, get those too...
                     if p2.type.lower() not in R[p.type.lower()]:
                         R[p.type.lower()][p2.type.lower()] = []
-                    ic(p2._properties, o2.get("label"))
+
                     R[p.type.lower()][p2.type.lower()].append(
                         {
                             **dict(o2),
                             # TODO: This is only necessary if actually deleted!!
                             "deleted_and_has_dependent_nodes": self.has_dependent_relations(
                                 dict(o2)["uid"]
-                            ),
+                            )
+                            if o2.get("is_deleted")
+                            else False,
                             "relData": {
                                 k: v for k, v in p2.items() if k != "reverse_name"
                             },
@@ -175,7 +177,9 @@ class ProsNode(StructuredNode):
                             # TODO: This is only necessary if actually deleted!!
                             "deleted_and_has_dependent_nodes": self.has_dependent_relations(
                                 dict(o2)["uid"]
-                            ),
+                            )
+                            if o2.get("is_deleted")
+                            else False,
                             "relData": {
                                 k: v for k, v in p.items() if k != "reverse_name"
                             },
@@ -195,10 +199,11 @@ class ProsNode(StructuredNode):
                     R[dict_key].append(
                         {
                             **dict(o),
-                            # TODO: This is only necessary if actually deleted!!
                             "deleted_and_has_dependent_nodes": self.has_dependent_relations(
                                 dict(o)["uid"]
-                            ),
+                            )
+                            if o.get("is_deleted")
+                            else False,
                             "relData": {
                                 k: v for k, v in p.items() if k != "reverse_name"
                             },
