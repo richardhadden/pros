@@ -253,8 +253,9 @@ const EmbeddedNewEntity: Component<{
   initialType: string;
   fieldName?: string;
 }> = (props) => {
+  onMount(() => console.log("EE initialType", props.initialType));
   return (
-    <>
+    <Show when={schema[props.initialType.toLowerCase()]}>
       <div class="bg-neutral bg-opacity-80 p-6">
         <span class="select-none font-semibold uppercase text-neutral-content">
           Create new
@@ -270,11 +271,12 @@ const EmbeddedNewEntity: Component<{
         >
           {getEntityDisplayName(props.initialType)}
         </span>
-        <For each={schema[props.initialType].subclasses_list}>
+
+        <For each={schema[props.initialType.toLowerCase()].subclasses_list}>
           {(item) => (
             <span
               onClick={() => props.setEntityType(item.toLowerCase())}
-              class={`btn-sm btn prose-sm ml-3 rounded-md font-semibold uppercase ${
+              class={`btn-sm btn prose-sm ml-3 rounded-sm font-semibold uppercase ${
                 item.toLowerCase() === props.entityType()
                   ? "btn-accent"
                   : "btn-neutral"
@@ -292,7 +294,7 @@ const EmbeddedNewEntity: Component<{
           entity_type={props.entityType()}
         />
       </div>
-    </>
+    </Show>
   );
 };
 
@@ -316,6 +318,8 @@ const RelationEditField: Component<{
   //data: Accessor<RelationFieldType[]>;
   reverseRelation: string;
 }> = (props) => {
+  createEffect(() => console.log("RELATED_TO_TYPE", props.relatedToType));
+
   const [cardinalityReached, setCardinalityReached] = createSignal(false);
   const [resultsPanelVisible, setResultsPanelVisible] = createSignal(false);
   const [showAddNewEntityModal, setShowAddNewEntityModal] = createSignal(false);
@@ -328,7 +332,6 @@ const RelationEditField: Component<{
   const [autoCompleteTextInput, setAutoCompleteTextInput] = createSignal("");
 
   createEffect(() => {
-    console.log(props.field.cardinality);
     if (
       (props.field.cardinality === "One" ||
         props.field.cardinality === "ZeroOrOne") &&
@@ -572,7 +575,7 @@ const RelationEditField: Component<{
       </Show>
       <Show when={showAddNewEntityModal()}>
         <div class="modal modal-open pr-96 pl-96">
-          <div class="modal-box min-w-full pt-0 pl-0 pr-0">
+          <div class="modal-box min-w-full pt-0 pl-0 pr-0 transition-all">
             <EmbeddedNewEntity
               initialType={props.relatedToType}
               entityType={embeddedType}
@@ -650,7 +653,7 @@ const groupByType = groupBy(([field_name, field]) => field.type);
 const InlineRelationEditField: Component = (props) => {
   const grouped_fields = () => {
     const groups = groupByType(Object.entries(selectedTypeModel().fields));
-    console.log(groups);
+
     return groups;
   };
 
@@ -806,7 +809,7 @@ const InlineRelationEditField: Component = (props) => {
                   <RelationEditField
                     override_labels={props.override_labels}
                     field={field}
-                    relatedToType={field.relation_to}
+                    relatedToType={field.relation_to?.toLowerCase()}
                     relationFields={field.relation_fields}
                     value={props.value[field_name] || []}
                     onChange={(value) => setValue(field_name, value)}
@@ -868,7 +871,7 @@ const Form: Component<{
   };
 
   const build_label = createMemo(() => {
-    if (schema[props.entity_type].meta.label_template) {
+    if (schema[props.entity_type]?.meta?.label_template) {
       return build_label_template(
         (schema[props.entity_type as string] as SchemaEntity).meta
           .label_template
