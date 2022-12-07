@@ -17,7 +17,7 @@ TEST = "ee86e37f01f84acd8332cefcfa3dc30f"
 from pypher import Pypher, __
 
 q = Pypher()
-q.MATCH.node("s", uid=BIRTH).rel("p").node("o")
+q.MATCH.node("s", uid=BOOK).rel("p").node("o")
 q.OPTIONAL.MATCH.node("o").rel("p2").node("o2")
 q.WHERE.CONDITIONALOR(
     __.p.property("inline").operator("=", True),
@@ -32,7 +32,7 @@ db_results, meta = db.cypher_query(str(q), q.bound_params)
 
 R = defaultdict(list)
 
-CCN = "Birth"
+CCN = "Book"
 
 
 for i, result in enumerate(db_results):
