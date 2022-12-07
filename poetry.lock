@@ -404,6 +404,20 @@ dev = ["Jinja2", "flake8", "flake8-comprehensions", "flake8-deprecated", "flake8
 test = ["pytest", "pytest-httpbin (>=0.0.6)", "pytest-lazy-fixture (>=0.0.6)", "pytest-mock", "responses", "werkzeug (<2.1.0)"]
 
 [[package]]
+name = "icecream"
+version = "2.1.3"
+description = "Never use print() to debug again; inspect variables, expressions, and program execution with a single, simple function call."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+asttokens = ">=2.0.1"
+colorama = ">=0.3.9"
+executing = ">=0.3.1"
+pygments = ">=2.2.0"
+
+[[package]]
 name = "idna"
 version = "3.4"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -1512,7 +1526,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "5fd9cf99a81ba83a7a8f36a37a88f87a0158344ffaa610941a8c72d1b86a0df5"
+content-hash = "13fd963ee843f352baf962122a0065306cda219e5069c4b373b1a0fa3e23923e"
 
 [metadata.files]
 anyio = [
@@ -1763,6 +1777,10 @@ flexidate = [
 httpie = [
     {file = "httpie-3.2.1-py3-none-any.whl", hash = "sha256:34dd03abdab7651eef2bca967b6aa5c73e8c24f32bd8784d19ac1b0f212bfd79"},
     {file = "httpie-3.2.1.tar.gz", hash = "sha256:c9c0032ca3a8d62492b7231b2dd83d94becf3b71baf8a4bbcd9ed1038537e3ec"},
+]
+icecream = [
+    {file = "icecream-2.1.3-py2.py3-none-any.whl", hash = "sha256:757aec31ad4488b949bc4f499d18e6e5973c40cc4d4fc607229e78cfaec94c34"},
+    {file = "icecream-2.1.3.tar.gz", hash = "sha256:0aa4a7c3374ec36153a1d08f81e3080e83d8ac1eefd97d2f4fe9544e8f9b49de"},
 ]
 idna = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},

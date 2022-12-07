@@ -180,7 +180,7 @@ class Citation(ProsNode):
         inline_only = True
 
     page = IntegerProperty()
-    source = ProsRelationTo("Source", "has_source")
+    source = ProsRelationTo("Source", "is_source_of")
 
 
 class Test(ProsNode):
@@ -194,4 +194,4 @@ class Test(ProsNode):
     email = EmailProperty()
     complex_date = IncompleteDateProperty()
 
-    inline_thing = Citation.as_inline_field()
+    citation = Citation.as_inline_field()

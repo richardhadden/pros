@@ -113,46 +113,48 @@ class ProsNode(StructuredNode):
         q.MATCH.node("s", uid=self.uid).rel("p").node("o")
         q.OPTIONAL.MATCH("x = ").node("o").rel_out("p2").node("o2")
         q.WHERE.p.property("inline").operator("=", True)
-        q.RETURN(__.s, __.p, __.o, __.p2, __.COLLECT(__.x))
+        q.OR.p2.property("inline").operator("=", True)
+        q.RETURN(__.s, __.p, __.o, __.p2, __.o2, __.COLLECT(__.x))
 
         db_results, meta = db.cypher_query(str(q), q.bound_params)
 
         results = defaultdict(list)
 
         for r in db_results:
-            subj, rel, obj, rel2, inline = r
+            subj, rel, obj, rel2, obj2, inline = r
 
             if inline:
-                if not results[rel.type.lower()]:
-                    results[rel.type.lower()] = defaultdict(list)
-                for i in inline:
+                try:
+                    if not results[rel.type.lower()]:
+                        results[rel.type.lower()] = defaultdict(list)
+                    for i in inline:
 
-                    results[rel.type.lower()] = {
-                        **results[rel.type.lower()],
-                        **i.start_node,
-                    }
-                    results[rel.type.lower()]["type"] = results[rel.type.lower()].pop(
-                        "real_type"
+                        results[rel.type.lower()] = {
+                            **results[rel.type.lower()],
+                            **i.start_node,
+                        }
+                        results[rel.type.lower()]["type"] = results[
+                            rel.type.lower()
+                        ].pop("real_type")
+
+                        if not results[rel.type.lower()].get(rel2.type.lower()):
+                            results[rel.type.lower()][rel2.type.lower()] = []
+                        results[rel.type.lower()][rel2.type.lower()].append(i.end_node)
+                except TypeError:  # This is thrown if not proper inline... in which case
+                    # it's actually a normal reverse name
+                    reverse_name = rel["reverse_name"]
+                    results[reverse_name.lower()].append(
+                        {
+                            **dict(obj),
+                            "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                                dict(obj)["uid"]
+                            ),
+                            "relData": {
+                                k: v for k, v in rel.items() if k != "reverse_name"
+                            },
+                        }
                     )
 
-                    if not results[rel.type.lower()].get(rel2.type.lower()):
-                        results[rel.type.lower()][rel2.type.lower()] = []
-                    results[rel.type.lower()][rel2.type.lower()].append(i.end_node)
-                """
-                for i in x:
-                    print(p2.type, i)
-                    print("------")
-                """
-                """
-                if rel2:
-                    for r2 in rel2:
-                        res[r2.type.lower()] = []
-                # if rel2:
-                #    res[rel2.type.lower()] = dict(obj2)
-                res.pop("uid")
-                res["type"] = res.pop("real_type")
-                results[rel.type.lower()] = res
-                """
             elif rel.get("inline"):
                 res = dict(obj)
                 res.pop("uid")
@@ -176,6 +178,7 @@ class ProsNode(StructuredNode):
                     }
                 )
             else:
+
                 reverse_name = rel["reverse_name"]
 
                 results[reverse_name.lower()].append(
