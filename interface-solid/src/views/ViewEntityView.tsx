@@ -184,12 +184,66 @@ const RelationViewRow: Component<{
   );
 };
 
+const groupByEntityType = groupBy((item) => item.real_type);
+
+const TypeGroupedRelationViewRow: Component<{
+  override_label: string;
+  fieldName: string;
+  reverseRelation: boolean;
+  field: { relation_to: string };
+  value: {
+    label: string;
+    real_type: string;
+    uid: string;
+    relData: object;
+    is_deleted: boolean;
+    deleted_and_has_dependent_nodes?: boolean;
+  }[];
+}> = (props) => {
+  const itemGroups = createMemo(() => groupByEntityType(props.value));
+  createEffect(() => console.log(itemGroups()));
+  return (
+    <>
+      <For each={Object.entries(itemGroups())}>
+        {([relatedType, items], index) => (
+          <>
+            <div
+              class={`col-span-2 mb-4 mt-4 select-none pt-2 font-semibold uppercase`}
+            >
+              <Show when={index() === 0}>
+                {props.override_label || props.fieldName.replaceAll("_", " ")}
+              </Show>
+
+              <div
+                class={`${index() === 0 ? "mt-1" : "mt-5"} ml-1 select-none`}
+              >
+                <BsArrowReturnRight class="inline-block" />{" "}
+                <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+                  {relatedType}
+                </span>
+              </div>
+            </div>
+            <div class="col-span-6 mb-4 mt-4 select-none pt-2">
+              <RelationViewField
+                value={items}
+                fieldName={props.fieldName}
+                reverseRelation={props.reverseRelation}
+                field={props.field}
+              />
+            </div>
+          </>
+        )}
+      </For>
+    </>
+  );
+};
+
 const groupByType = groupBy(([field_name, field]) => field.type);
 
 const InlineRelationView: Component = (props) => {
   const grouped_fields = () => {
     const groups = groupByType(Object.entries(schema[props.value.type].fields));
-    console.log(groups);
+
     return groups;
   };
 
@@ -216,7 +270,7 @@ const InlineRelationView: Component = (props) => {
         </div>
       </div>
 
-      <div class="col-span-5 mt-3 mb-24 grid grid-cols-8 rounded-sm  p-4 ">
+      <div class="col-span-5 mt-3 mb-2 grid grid-cols-8 rounded-sm  p-4 ">
         <For each={grouped_fields().property}>
           {([field_name, field], index) => (
             <Show
@@ -315,6 +369,24 @@ const ViewEntity: Component = () => {
     }
   });
 
+  const anyRelatedItemsDeleted = () => {
+    if (data() && params) {
+      const any = Object.entries(schema[params.entity_type].fields)
+        .filter(
+          ([field_name, field]) =>
+            field.type === "relation" && !field.inline_relation
+        )
+        .map(([field_name, field]) =>
+          data() ? data()[field_name]?.some((item) => item.is_deleted) : false
+        )
+        .some((has_deleted) => has_deleted);
+      console.log("any deleted", any);
+      return any;
+    }
+    console.log("any deleted fails");
+    return false;
+  };
+
   return (
     <>
       <Show when={data() && data()["status"] !== "error"}>
@@ -382,6 +454,19 @@ const ViewEntity: Component = () => {
 
             <div class="col-span-1" />
           </Show>
+
+          <Show when={data() && anyRelatedItemsDeleted()}>
+            <div class="col-span-1" />
+            <div class=" col-span-6 mb-16 flex flex-row rounded-sm bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
+              <AiFillWarning class="mt-1 mr-3" /> References a deleted entity{" "}
+              <span class="ml-6 normal-case">
+                This {getEntityDisplayName(params.entity_type)} references an
+                entity that has been marked for deletion
+              </span>
+            </div>
+            <div class="col-span-1" />
+          </Show>
+
           <For each={Object.entries(schema[params.entity_type].fields)}>
             {([schema_field_name, field], index) => (
               <Show when={schema_field_name !== "is_deleted"}>
@@ -435,7 +520,7 @@ const ViewEntity: Component = () => {
           >
             {([schema_field_name, field], index) => (
               <Show when={data()[schema_field_name]?.length > 0}>
-                <RelationViewRow
+                <TypeGroupedRelationViewRow
                   fieldName={schema_field_name}
                   value={data()[schema_field_name]}
                   field={field}

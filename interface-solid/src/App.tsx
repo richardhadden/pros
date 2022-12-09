@@ -5,6 +5,8 @@ import {
   onMount,
   createSignal,
   lazy,
+  Suspense,
+  ErrorBoundary,
 } from "solid-js";
 import { Routes, Route } from "@solidjs/router";
 
@@ -49,7 +51,7 @@ const Home: Component = () => {
                 assumenda excepturi exercitationem quasi. In deleniti eaque aut
                 repudiandae et a id nisi.
               </p>
-              <button class="btn-primary btn">Get Started</button>
+              <button class="btn btn-primary">Get Started</button>
             </div>
           </div>
         </div>
@@ -70,27 +72,31 @@ const App: Component = () => {
           </div>
           <div class="flex-grow pl-5 pr-10">
             <Routes>
-              <Route
-                path="/entity/:entity_type/new/"
-                component={NewEntityView}
-              />
-              <Route
-                path="/entity/:entity_type/:uid/"
-                component={ViewEntity}
-                data={EntityData}
-              />
-              <Route
-                path="/entity/:entity_type/"
-                component={ViewEntityListView}
-                data={EntityViewAllData}
-              />
-              <Route
-                path="/entity/:entity_type/:uid/edit/"
-                component={EditEntityView}
-                data={EntityData}
-              />
-              <Route path="/login" component={Login} />
-              <Route path="/" component={Home} />
+              <Suspense>
+                <ErrorBoundary fallback={<div>Something went wrong...</div>}>
+                  <Route
+                    path="/entity/:entity_type/new/"
+                    component={NewEntityView}
+                  />
+                  <Route
+                    path="/entity/:entity_type/:uid/"
+                    component={ViewEntity}
+                    data={EntityData}
+                  />
+                  <Route
+                    path="/entity/:entity_type/"
+                    component={ViewEntityListView}
+                    data={EntityViewAllData}
+                  />
+                  <Route
+                    path="/entity/:entity_type/:uid/edit/"
+                    component={EditEntityView}
+                    data={EntityData}
+                  />
+                  <Route path="/login" component={Login} />
+                  <Route path="/" component={Home} />
+                </ErrorBoundary>
+              </Suspense>
             </Routes>
           </div>
         </div>

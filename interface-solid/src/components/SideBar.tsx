@@ -48,7 +48,7 @@ const SideBarListItems: Component<{
 
                   <UnsavedLink
                     href={`/entity/${entity_name}/new/`}
-                    class="btn btn-disabled btn-square btn-sm"
+                    class="btn btn-disabled btn-sm btn-square"
                   >
                     <CgAbstract />
                   </UnsavedLink>
@@ -68,7 +68,7 @@ const SideBarListItems: Component<{
 
                   <UnsavedLink
                     href={`/entity/${entity_name}/new/`}
-                    class="btn btn-accent btn-square btn-sm"
+                    class="btn btn-accent btn-sm btn-square"
                   >
                     <BsPlus size={18} />
                   </UnsavedLink>
@@ -100,7 +100,7 @@ const Sidebar: Component = () => {
   );
 
   return (
-    <div class="drawer drawer-mobile h-full">
+    <div class="drawer-mobile drawer h-full">
       <div class="relative h-full min-h-screen min-w-fit bg-base-300 shadow-inner">
         <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner shadow-2xl">
           <UnsavedLink
@@ -121,7 +121,7 @@ const Sidebar: Component = () => {
             </UnsavedLink>
           </div>
         </div>
-        <ul class="overflow-y-scroll p-4 pr-10 text-base-content ">
+        <ul class="mr-2 overflow-y-scroll p-4 pr-10 text-base-content">
           <For each={topLevelEntities()}>
             {([entity_name, entity], index) => (
               <Show when={!schema[entity_name].meta.inline_only}>
@@ -141,7 +141,7 @@ const Sidebar: Component = () => {
 
                       <UnsavedLink
                         href={`/entity/${entity_name}/new/`}
-                        class="btn btn-disabled btn-square btn-sm"
+                        class="btn btn-disabled btn-sm btn-square"
                       >
                         <CgAbstract />
                       </UnsavedLink>
@@ -162,7 +162,7 @@ const Sidebar: Component = () => {
                       </UnsavedLink>
                       <UnsavedLink
                         href={`/entity/${entity_name}/new/`}
-                        class="btn btn-accent  btn-square btn-sm"
+                        class="btn btn-accent  btn-sm btn-square"
                       >
                         <BsPlus size={18} />
                       </UnsavedLink>

@@ -29,6 +29,15 @@ class UncertainRelation(ProsRelationBase):
     certainty = StringProperty(default="1")
 
 
+class Citation(ProsNode):
+    class Meta:
+        inline_only = True
+
+    page = IntegerProperty()
+    line = IntegerProperty()
+    source = ProsRelationTo("Source", "is_source_of")
+
+
 class Source(ProsNode):
     label = StringProperty(index=True, help_text="Short text description")
 
@@ -54,7 +63,7 @@ class Factoid(ProsNode):
     is_about_person = ProsRelationTo(
         "Person", reverse_name="HAS_FACTOID_ABOUT", model=UncertainRelation
     )
-    has_source = ProsRelationTo("Source", reverse_name="IS_SOURCE_OF", cardinality=One)
+    citation = Citation.as_inline_field()
 
     text = StringProperty()
 
@@ -97,6 +106,7 @@ class Death(Event):
 
     class Meta:
         label_template = "Death of {is_about_person.label}"
+        text_filter_fields = ["cause_of_death", icontains("o", "label")]
 
 
 class Naming(Event):
@@ -173,14 +183,6 @@ class Person(Entity):
 
 class Organisation(Entity):
     pass
-
-
-class Citation(ProsNode):
-    class Meta:
-        inline_only = True
-
-    page = IntegerProperty()
-    source = ProsRelationTo("Source", "is_source_of")
 
 
 class Test(ProsNode):

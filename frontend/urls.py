@@ -1,3 +1,5 @@
+from typing import Callable
+
 from django.urls import path
 
 from .utils import PROS_MODELS
@@ -15,6 +17,7 @@ from frontend.views import (
     list_view_factory,
     update_view_factory,
     delete_view_factory,
+    BaseViewSet,
 )
 
 urlpatterns = []
@@ -67,7 +70,7 @@ def build_url_patterns(model, vs):
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
-def get_permissions(self):
+def get_permissions(self: type[BaseViewSet]):
     if self.request.method == "GET":
         permission_classes = [AllowAny]
     else:
@@ -78,7 +81,7 @@ def get_permissions(self):
 for _, model in PROS_MODELS.items():
     if model.meta.get("inline_only"):
         continue
-    vs = type(
+    vs: type[BaseViewSet] = type(
         f"{model.model_name}ViewSet",
         (viewsets.ViewSet,),
         build_viewset_functions(model),

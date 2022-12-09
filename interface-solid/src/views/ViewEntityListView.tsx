@@ -101,7 +101,7 @@ const ViewEntityListView: Component = () => {
                             href={`/entity/${entity_name}/${item.uid}`}
                             class={`mb-3 flex max-w-4xl cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
                               item.is_deleted
-                                ? "bg-gray-300 hover:bg-gray-500"
+                                ? "bg-gray-400 hover:bg-gray-500"
                                 : "bg-primary hover:bg-primary-focus"
                             }`}
                           >

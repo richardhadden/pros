@@ -1,6 +1,6 @@
 import datetime
 
-from typing import Type
+from typing import Type, Callable
 
 from django.urls import path
 
@@ -10,15 +10,28 @@ from neomodel.properties import DateTimeProperty, DateProperty
 import neomodel
 from .utils import PROS_MODELS
 
+from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
+from rest_framework.request import Request
 from pros_core.models import ProsNode
 from pros_core.filters import icontains
 
 from pypher import Pypher, __
 
 
-def list_view_factory(model_class):
-    def list(self, request):
+class BaseViewSet(ViewSet):
+    list: Callable[[ViewSet, Request], Response]
+    autocomplete: Callable[[ViewSet, Request], Response]
+    retrieve: Callable[[ViewSet, Request, str | None], Response]
+    create: Callable[[ViewSet, Request], Response]
+    update: Callable[[ViewSet, Request, str | None], Response]
+    delete: Callable[[ViewSet, Request, str | None], Response]
+
+
+def list_view_factory(
+    model_class: type[ProsNode],
+) -> Callable[[BaseViewSet, Request], Response]:
+    def list(self, request: Request) -> Response:
 
         # If a text filter is set...
         filter = request.query_params.get("filter")
@@ -47,7 +60,6 @@ def list_view_factory(model_class):
             q.WHERE(y)
             q.RETURN(__.DISTINCT(__.s))
 
-            # print(q)
             results, meta = db.cypher_query(str(q), q.bound_params)
 
             node_data = [r[0] for r in results]
@@ -65,7 +77,6 @@ def list_view_factory(model_class):
                 }
                 for b in model_class.nodes.order_by("label")
             ]
-        # print(node_data)
         return Response(node_data)
 
     return list
@@ -269,6 +280,7 @@ def update_inline_related_nodes(instance, data):
             inline_relation_data,
         ) = get_property_and_relation_data(inline_field_data, related_model)
         try:  # If there is already a node related here...
+
             old_related_node = rel_manager.all()[0]  # Get it...
             # (there should only be one node to get, due to One cardinality)
 
@@ -296,7 +308,7 @@ def update_inline_related_nodes(instance, data):
             if not old_related_node.has_relations():
                 old_related_node.delete()
 
-        except DoesNotExist:
+        except IndexError:
             # Otherwise, this node does not exist
             new_related_node = related_model(**property_data)
             new_related_node.save()

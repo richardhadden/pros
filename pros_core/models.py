@@ -8,6 +8,7 @@ from neomodel import (
     StructuredRel,
     ZeroOrMore,
     One,
+    ZeroOrOne,
 )
 from neomodel.properties import BooleanProperty, DateTimeProperty
 from neomodel.relationship_manager import (
@@ -52,7 +53,10 @@ class ProsNode(StructuredNode):
         Use with caution. Changing a related field inline will create a new instance,
         not modify the original."""
         return RelationshipTo(
-            cls.__name__, f"has_{cls.__name__}", cardinality=One, model=InlineRelation
+            cls.__name__,
+            f"has_{cls.__name__}",
+            cardinality=ZeroOrOne,
+            model=InlineRelation,
         )
 
     class Meta:

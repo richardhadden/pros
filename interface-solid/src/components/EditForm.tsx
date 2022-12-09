@@ -318,8 +318,6 @@ const RelationEditField: Component<{
   //data: Accessor<RelationFieldType[]>;
   reverseRelation: string;
 }> = (props) => {
-  createEffect(() => console.log("RELATED_TO_TYPE", props.relatedToType));
-
   const [cardinalityReached, setCardinalityReached] = createSignal(false);
   const [resultsPanelVisible, setResultsPanelVisible] = createSignal(false);
   const [showAddNewEntityModal, setShowAddNewEntityModal] = createSignal(false);
@@ -513,6 +511,8 @@ const RelationEditField: Component<{
         <For each={props.value || []}>
           {(item: RelationFieldType) => (
             <EntityChip
+              isDeleted={item.is_deleted}
+              deletedAndHasDependentNodes={item.deleted_and_has_dependent_nodes}
               label={item.label}
               leftSlot={
                 <>
