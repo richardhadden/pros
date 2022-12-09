@@ -16,7 +16,6 @@ import EditEntityView from "./views/EditEntityView";
 import NewEntityView from "./views/NewEntityView";
 
 import Sidebar from "./components/SideBar";
-
 import Login, { userStatus, alreadyLoggedIn } from "./components/Login";
 import { EntityData, EntityViewAllData } from "./data/DataEndpoints";
 

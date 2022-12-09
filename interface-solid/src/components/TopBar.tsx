@@ -53,7 +53,7 @@ const TopBar: Component<{
               props.newButton && (
                 <UnsavedLink
                   href={`/entity/${props.params.entity_type}/new/`}
-                  class="btn-accent btn-square  btn-lg btn h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
+                  class="btn btn-accent  btn-square btn-lg h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
                 >
                   <BsPlus size={32} />
                 </UnsavedLink>
@@ -61,7 +61,7 @@ const TopBar: Component<{
             {props.deleteButton && (
               <button
                 onClick={onClickDelete}
-                class="btn-accent btn-square btn-lg btn mr-px h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none text-neutral"
+                class="btn btn-accent btn-square btn-lg mr-px h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none text-neutral"
               >
                 <AiFillDelete size={27} class="relative bottom-0.5 " />
               </button>
@@ -70,7 +70,7 @@ const TopBar: Component<{
             {props.editButton && !props.editButtonDeactivated && (
               <UnsavedLink
                 href={`/entity/${props.params.entity_type}/${props.params.uid}/edit/`}
-                class="btn-accent btn-square  btn-lg btn h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
+                class="btn btn-accent  btn-square btn-lg h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
               >
                 <BiSolidEditAlt size={32} />
               </UnsavedLink>
@@ -79,7 +79,7 @@ const TopBar: Component<{
             {props.editButton && props.editButtonDeactivated && (
               <button
                 onClick={() => setRestoreModalVisible(true)}
-                class="btn-accent btn-square  btn-lg btn h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
+                class="btn btn-accent  btn-square btn-lg h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
               >
                 <AiOutlineReload size={32} />
               </button>
@@ -88,7 +88,7 @@ const TopBar: Component<{
             {props.viewButton && !props.hasUnsavedChange && (
               <UnsavedLink
                 href={`/entity/${props.params.entity_type}/${props.params.uid}/`}
-                class="btn-accent btn-square btn-lg  btn mr-px h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none text-neutral"
+                class="btn btn-accent btn-square  btn-lg mr-px h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none text-neutral"
               >
                 <BiRegularExit class="rotate-180" size={28} />
               </UnsavedLink>
@@ -96,14 +96,14 @@ const TopBar: Component<{
             {props.viewButton && props.hasUnsavedChange && (
               <UnsavedLink
                 href={`/entity/${props.params.entity_type}/${props.params.uid}/`}
-                class="btn-accent btn-square btn-lg  btn mr-px h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none text-neutral"
+                class="btn btn-accent btn-square  btn-lg mr-px h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none text-neutral"
               >
                 <BiRegularExit class="rotate-180" size={28} />
               </UnsavedLink>
             )}
             {props.saveButton && (
               <span
-                class="btn-accent btn-square  btn-lg btn h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
+                class="btn btn-accent  btn-square btn-lg h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none text-neutral"
                 onClick={props.onClickSaveButton}
               >
                 <BiRegularSave size={28} />
