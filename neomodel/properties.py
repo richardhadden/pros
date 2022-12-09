@@ -562,6 +562,7 @@ class DateTimeProperty(Property):
 
     @validator
     def inflate(self, value):
+        return value
         try:
             epoch = float(value)
         except ValueError:

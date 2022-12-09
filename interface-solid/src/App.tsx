@@ -18,6 +18,7 @@ import NewEntityView from "./views/NewEntityView";
 import Sidebar from "./components/SideBar";
 import Login, { userStatus, alreadyLoggedIn } from "./components/Login";
 import { EntityData, EntityViewAllData } from "./data/DataEndpoints";
+import Testing from "./views/Testing";
 
 export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
 
@@ -72,29 +73,28 @@ const App: Component = () => {
           <div class="flex-grow pl-5 pr-10">
             <Routes>
               <Suspense>
-                <ErrorBoundary fallback={<div>Something went wrong...</div>}>
-                  <Route
-                    path="/entity/:entity_type/new/"
-                    component={NewEntityView}
-                  />
-                  <Route
-                    path="/entity/:entity_type/:uid/"
-                    component={ViewEntity}
-                    data={EntityData}
-                  />
-                  <Route
-                    path="/entity/:entity_type/"
-                    component={ViewEntityListView}
-                    data={EntityViewAllData}
-                  />
-                  <Route
-                    path="/entity/:entity_type/:uid/edit/"
-                    component={EditEntityView}
-                    data={EntityData}
-                  />
-                  <Route path="/login" component={Login} />
-                  <Route path="/" component={Home} />
-                </ErrorBoundary>
+                <Route
+                  path="/entity/:entity_type/new/"
+                  component={NewEntityView}
+                />
+                <Route
+                  path="/entity/:entity_type/:uid/"
+                  component={ViewEntity}
+                  data={EntityData}
+                />
+                <Route
+                  path="/entity/:entity_type/"
+                  component={ViewEntityListView}
+                  data={EntityViewAllData}
+                />
+                <Route
+                  path="/entity/:entity_type/:uid/edit/"
+                  component={EditEntityView}
+                  data={EntityData}
+                />
+                <Route path="/login" component={Login} />
+                <Route path="/testing" component={Testing} />
+                <Route path="/" component={Home} />
               </Suspense>
             </Routes>
           </div>

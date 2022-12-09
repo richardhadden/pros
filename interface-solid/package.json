@@ -24,13 +24,16 @@
     },
     "dependencies": {
         "@solidjs/router": "^0.4.3",
+        "@tiptap/starter-kit": "^2.0.0-beta.207",
         "@types/ramda": "^0.28.15",
         "babel-plugin-ramda": "^2.1.1",
+        "diff": "^5.1.0",
         "js-cookie": "^3.0.1",
         "json-schema-library": "^7.3.6",
         "ramda": "^0.28.0",
         "solid-icons": "^1.0.1",
         "solid-js": "^1.5.1",
-        "solid-transition-group": "^0.0.11"
+        "solid-transition-group": "^0.0.11",
+        "tiptap-solid": "^0.1.2"
     }
 }

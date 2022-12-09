@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "svelte-select": "^4.4.7"
-  },
-  "devDependencies": {
-    "svelte-keydown": "^0.5.0"
-  }
-}
