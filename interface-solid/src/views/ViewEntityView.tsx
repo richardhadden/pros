@@ -350,7 +350,7 @@ const buildDateString = (date_as_string) => {
       "Sunday",
     ];
     return `${DAYS[parsedDate.getDay() - 1]}`;
-  } else return date_as_string.split(".")[0].replace("T", " ");
+  } else return date_as_string;
 };
 
 const ViewEntity: Component = () => {

@@ -161,27 +161,43 @@ const Testing: Component = (props) => {
     const uls = underlineSlots();
     uls[uls.indexOf(id)] = null;
     setUnderlineSlots(uls);
+    console.log(underlineSlots());
+  }
+
+  function getAnnotations(char_count: number) {
+    const anns = [];
+    for (const ann of annotations()) {
+      if (char_count >= ann.start && char_count + 1 <= ann.end) {
+        anns.push(ann);
+      }
+    }
+    return anns;
   }
 
   function node_content_to_frag(nodeList, char_count) {
     const frag = document.createDocumentFragment();
-
+    setUnderlineSlots([]);
     for (const node of nodeList) {
       if (node.nodeName === "#text") {
         const node_text = node.textContent;
-
+        let accumulated_chars = "";
         for (const [i, char] of Array.from(node_text).entries()) {
-          const span = document.createElement("span");
-          span.textContent = char;
-          span.style = "position: relative";
+          // Clean up annotations that have already ended
+          //if (char_count == ann.end) {
+          //  remove_from_underline_slots(ann.id);
+          //}
+          const anns = getAnnotations(char_count);
 
-          for (const ann of annotations()) {
-            // Clean up annotations that have already ended
-            if (char_count == ann.end) {
-              remove_from_underline_slots(ann.id);
-            }
-
-            if ((char_count >= ann.start) & (char_count + 1 <= ann.end)) {
+          if (anns.length > 0) {
+            const span = document.createElement("span");
+            span.textContent = char;
+            span.style = "position: relative";
+            for (const ann of anns) {
+              console.log(char_count, ann.end);
+              if (char_count == ann.end - 1) {
+                console.log("removing from underline slot", ann.id);
+                remove_from_underline_slots(ann.id);
+              }
               const underline_slot = get_underline_slot(ann.id);
 
               const underline_offset = 1 - underline_slot * 3;
@@ -200,12 +216,20 @@ const Testing: Component = (props) => {
 
               span.appendChild(inner_span);
             }
+            if (accumulated_chars.length > 0) {
+              frag.appendChild(document.createTextNode(accumulated_chars));
+              accumulated_chars = "";
+            }
+            frag.appendChild(span);
+          } else {
+            accumulated_chars += char;
           }
-          frag.appendChild(span);
+
           if (char !== "\t" && char !== "\n") {
             char_count += 1;
           }
         }
+        frag.appendChild(document.createTextNode(accumulated_chars));
       } else {
         const elem = document.createElement(node.nodeName);
         const [f, cc] = node_content_to_frag(node.childNodes, char_count);
@@ -263,7 +287,7 @@ const Testing: Component = (props) => {
     }
 
     e.preventDefault();
-    //console.log(Editor.childNodes);
+    console.log(Editor.childNodes);
     render_annotations(Editor.childNodes, e);
     Cursor.setCurrentCursorPosition(offset, Editor);
     Editor.focus();
@@ -372,7 +396,7 @@ const Testing: Component = (props) => {
   onMount(() => {
     document.addEventListener("selectionchange", () => {
       const selection = document.getSelection();
-      //console.log(selection?.toString());
+      console.log(selection?.toString());
       try {
         if (
           selection.anchorNode === Editor ||
@@ -406,7 +430,7 @@ const Testing: Component = (props) => {
   });
 
   function doSetHoveredAnnotationId(id) {
-    //console.log("hovered", id);
+    console.log("hovered", id);
     setHoveredAnnotationId(id);
     render_annotations(Editor.childNodes, 0);
   }

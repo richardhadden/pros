@@ -107,7 +107,7 @@ def retrieve_view_factory(model_class: ProsNode):
             return Response(
                 status=404, data=f"<{model_class.__name__} uid={pk}> not found"
             )
-
+        # TODO: duplicating results ??? PROBABLY... the query when there are two inline-reversejob relations is duplicating...
         data = {
             **this.properties,
             "deleted_and_has_dependent_nodes": this.is_deleted

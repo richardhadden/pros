@@ -23,6 +23,8 @@ import datetime
 
 from icecream import ic
 
+from frozendict import frozendict
+
 REVERSE_RELATIONS = defaultdict(lambda: defaultdict(dict))
 
 OverrideLabel = namedtuple("OverrideLabel", ["label", "reverse_label"])
@@ -128,7 +130,7 @@ class ProsNode(StructuredNode):
 
         db_results, meta = db.cypher_query(str(q), q.bound_params)
 
-        R = defaultdict(list)
+        R = defaultdict(set)
 
         for i, result in enumerate(db_results):
             s, p, o, p2, o2 = result
@@ -147,21 +149,23 @@ class ProsNode(StructuredNode):
                     R[p.type.lower()] = d
                 if p2:  # If the inline has any related nodes, get those too...
                     if p2.type.lower() not in R[p.type.lower()]:
-                        R[p.type.lower()][p2.type.lower()] = []
+                        R[p.type.lower()][p2.type.lower()] = set()
 
-                    R[p.type.lower()][p2.type.lower()].append(
-                        {
-                            **dict(o2),
-                            # TODO: This is only necessary if actually deleted!!
-                            "deleted_and_has_dependent_nodes": self.has_dependent_relations(
-                                dict(o2)["uid"]
-                            )
-                            if o2.get("is_deleted")
-                            else False,
-                            "relData": {
-                                k: v for k, v in p2.items() if k != "reverse_name"
-                            },
-                        }
+                    R[p.type.lower()][p2.type.lower()].add(
+                        frozendict(
+                            {
+                                **dict(o2),
+                                # TODO: This is only necessary if actually deleted!!
+                                "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                                    dict(o2)["uid"]
+                                )
+                                if o2.get("is_deleted")
+                                else False,
+                                "relData": frozendict(
+                                    {k: v for k, v in p2.items() if k != "reverse_name"}
+                                ),
+                            }
+                        )
                     )
 
             else:
@@ -174,20 +178,22 @@ class ProsNode(StructuredNode):
                     if (
                         dict_key not in R
                     ):  # If we have already found it, don't replace it
-                        R[dict_key] = []
-                    R[dict_key].append(
-                        {
-                            **dict(o2),
-                            # TODO: This is only necessary if actually deleted!!
-                            "deleted_and_has_dependent_nodes": self.has_dependent_relations(
-                                dict(o2)["uid"]
-                            )
-                            if o2.get("is_deleted")
-                            else False,
-                            "relData": {
-                                k: v for k, v in p.items() if k != "reverse_name"
-                            },
-                        }
+                        R[dict_key] = set()
+                    R[dict_key].add(
+                        frozendict(
+                            {
+                                **dict(o2),
+                                # TODO: This is only necessary if actually deleted!!
+                                "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                                    dict(o2)["uid"]
+                                )
+                                if o2.get("is_deleted")
+                                else False,
+                                "relData": frozendict(
+                                    {k: v for k, v in p.items() if k != "reverse_name"}
+                                ),
+                            }
+                        )
                     )
 
                 else:
@@ -199,19 +205,21 @@ class ProsNode(StructuredNode):
                     if (
                         dict_key not in R
                     ):  # If we have already found it, don't replace it
-                        R[dict_key] = []
-                    R[dict_key].append(
-                        {
-                            **dict(o),
-                            "deleted_and_has_dependent_nodes": self.has_dependent_relations(
-                                dict(o)["uid"]
-                            )
-                            if o.get("is_deleted")
-                            else False,
-                            "relData": {
-                                k: v for k, v in p.items() if k != "reverse_name"
-                            },
-                        }
+                        R[dict_key] = set()
+                    R[dict_key].add(
+                        frozendict(
+                            {
+                                **dict(o),
+                                "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                                    dict(o)["uid"]
+                                )
+                                if o.get("is_deleted")
+                                else False,
+                                "relData": frozendict(
+                                    {k: v for k, v in p.items() if k != "reverse_name"}
+                                ),
+                            }
+                        )
                     )
         return R
 
