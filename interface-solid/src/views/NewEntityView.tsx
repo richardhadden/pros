@@ -18,7 +18,7 @@ import Form from "../components/EditForm";
 import { postNewEntityData } from "../data/DataEndpoints";
 
 const ViewedItemTopBarStyle =
-  "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-md h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
+  "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
 const NewEntityView: Component = (props) => {
   const params = useParams();
@@ -61,7 +61,7 @@ const NewEntityView: Component = (props) => {
           saveButton={true}
           onClickSaveButton={onSave}
           barTitle={
-            <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+            <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
               <BsPlusCircleFill class="relative bottom-0.5 mr-2 inline-block" />
               {getEntityDisplayName(params.entity_type)}
             </div>

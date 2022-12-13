@@ -7,6 +7,7 @@ import {
   Match,
   Show,
   Switch,
+  Suspense,
 } from "solid-js";
 import { groupBy } from "ramda";
 import UnsavedLink from "../utils/UnsavedLink";
@@ -14,6 +15,10 @@ import UnsavedLink from "../utils/UnsavedLink";
 import TopBar from "../components/TopBar";
 import { schema } from "../index";
 import { getEntityDisplayName } from "../utils/entity_names";
+
+import { format, formatDistance, formatRelative, subDays } from "date-fns";
+
+import { utcToZonedTime } from "date-fns-tz";
 
 import {
   AiFillCalendar,
@@ -24,7 +29,12 @@ import {
   AiFillFileAdd,
   AiFillWarning,
 } from "solid-icons/ai";
-import { BsArrowReturnRight, BsArrowRight } from "solid-icons/bs";
+import {
+  BsArrowReturnRight,
+  BsArrowRight,
+  BsClock,
+  BsClockFill,
+} from "solid-icons/bs";
 import { CgOptions } from "solid-icons/cg";
 
 import { SchemaFieldRelation } from "../types/schemaTypes";
@@ -219,7 +229,7 @@ const TypeGroupedRelationViewRow: Component<{
               >
                 <BsArrowReturnRight class="inline-block" />{" "}
                 <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
-                  {relatedType}
+                  {getEntityDisplayName(relatedType)}
                 </span>
               </div>
             </div>
@@ -229,6 +239,7 @@ const TypeGroupedRelationViewRow: Component<{
                 fieldName={props.fieldName}
                 reverseRelation={props.reverseRelation}
                 field={props.field}
+                override_label={props.override_label}
               />
             </div>
           </>
@@ -264,13 +275,13 @@ const InlineRelationView: Component = (props) => {
         {props.fieldName.replaceAll("_", " ")}
         <div class="mt-2 ml-1 select-none">
           <CgOptions class="mt-0 mr-2 inline-block" />{" "}
-          <span class="prose-sm rounded-md rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+          <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
             {getEntityDisplayName(props.value.type)}
           </span>
         </div>
       </div>
 
-      <div class="col-span-5 mt-3 mb-2 grid grid-cols-8 rounded-sm  p-4 ">
+      <div class="col-span-5 mt-3 mb-2 grid grid-cols-8 rounded-sm ">
         <For each={grouped_fields().property}>
           {([field_name, field], index) => (
             <Show
@@ -332,25 +343,16 @@ const InlineRelationView: Component = (props) => {
 };
 
 const buildDateString = (date_as_string) => {
+  console.log(date_as_string);
   const parsedDate = new Date(date_as_string);
-  const time = parsedDate.toTimeString().slice(0, 5);
-  const diff = new Date() - parsedDate;
-  const dd = Math.floor(diff / 1000 / 60 / 60 / 24);
 
-  if (dd == 0) {
-    return `Today  ${time}`;
-  } else if (dd < 7) {
-    const DAYS = [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-      "Sunday",
-    ];
-    return `${DAYS[parsedDate.getDay() - 1]}`;
-  } else return date_as_string;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const timeZoneDate = utcToZonedTime(new Date(parsedDate.toUTCString()), tz);
+  const time = parsedDate.toTimeString().slice(0, 5);
+
+  return formatDistance(timeZoneDate, new Date(), {
+    addSuffix: true,
+  });
 };
 
 const ViewEntity: Component = () => {
@@ -390,153 +392,168 @@ const ViewEntity: Component = () => {
   return (
     <>
       <Show when={data() && data()["status"] !== "error"}>
-        <TopBar
-          data={data}
-          params={params}
-          newButton={false}
-          editButton={true}
-          editButtonDeactivated={data().is_deleted}
-          deleteButton={true}
-          barTitle={
-            <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
-              {getEntityDisplayName(params.entity_type)}
-            </div>
-          }
-          barCenter={
-            <>
-              <div class={ViewedItemTopBarStyle}>{data().label}</div>
-            </>
-          }
-          barEnd={
-            <div class="ml-6 flex select-none  flex-col items-start  rounded-sm pb-2 pt-2 pr-3 pl-3 text-xs uppercase text-white">
-              <div>
-                <span class="mr-3 font-semibold text-white">
-                  <AiFillFileAdd class="inline-block" />
-                </span>
-                <span class="mr-3">{data().createdBy || "Auto"}</span>
-                <AiFillCalendar class="relative bottom-0.5 mr-2 inline-block" />
-                {createdDateString()}
+        <Suspense>
+          <TopBar
+            data={data}
+            params={params}
+            newButton={false}
+            editButton={true}
+            editButtonDeactivated={data().is_deleted}
+            deleteButton={true}
+            barTitle={
+              <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+                {getEntityDisplayName(params.entity_type)}
               </div>
-              <div class="mt-[7px] border-t border-gray-500 pt-[6px]">
-                <span class="mr-3  font-semibold text-white">
-                  <AiFillEdit class="relative inline-block" />
-                </span>
-                <span class="mr-3">{data().modifiedBy}</span>
-                <AiFillCalendar class="relative bottom-0.5 mr-2 inline-block" />
-                {modifiedDateString()}
+            }
+            barCenter={
+              <>
+                <div class={ViewedItemTopBarStyle}>{data().label}</div>
+              </>
+            }
+            barEnd={
+              <div class="ml-6 flex select-none  flex-col items-start  rounded-sm pb-2 pt-2 pr-3 pl-3 text-xs uppercase text-white">
+                <div>
+                  <span class="mr-3 font-semibold text-white">
+                    <AiFillFileAdd
+                      class="relative bottom-[1.5px] inline-block"
+                      size={14}
+                    />
+                  </span>
+                  <span class="mr-3">{data().createdBy || "Auto"}</span>
+                  <BsClockFill class="relative bottom-[1.5px] mr-2 inline-block" />
+                  {createdDateString()}
+                </div>
+                <div class="mt-[7px] border-t border-gray-500 pt-[6px]">
+                  <span class="mr-3  font-semibold text-white">
+                    <AiFillEdit
+                      class="relative bottom-[1.5px] inline-block"
+                      size={14}
+                    />
+                  </span>
+                  <span class="mr-3">{data().modifiedBy}</span>
+                  <BsClockFill class="relative bottom-[1.5px] mr-2 inline-block" />
+                  {modifiedDateString()}
+                </div>
               </div>
-            </div>
-          }
-          refetchData={refetchData}
-        />
+            }
+            refetchData={refetchData}
+          />
 
-        <div class="mt-36 ml-6 grid grid-cols-8">
-          <Show when={data()["is_deleted"]}>
-            <div class="col-span-1" />
-            {data().deleted_and_has_dependent_nodes ? (
+          <div class="mt-36 ml-6 grid grid-cols-8">
+            <Show when={data()["is_deleted"]}>
+              <div class="col-span-1" />
+              {data().deleted_and_has_dependent_nodes ? (
+                <div class=" col-span-6 mb-16 flex flex-row rounded-sm bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
+                  <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                  <span class="ml-6 normal-case">
+                    Remove as a {getEntityDisplayName(params.entity_type)}{" "}
+                    referenced by the items below before trying to delete again
+                  </span>
+                </div>
+              ) : (
+                <div class=" col-span-6 mb-16 flex flex-row rounded-sm bg-success p-3 font-semibold uppercase text-success-content shadow-lg">
+                  <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                  <span class="ml-6 normal-case">
+                    No more references to this{" "}
+                    {getEntityDisplayName(params.entity_type)}, so it can be
+                    safely deleted
+                  </span>
+                </div>
+              )}
+
+              <div class="col-span-1" />
+            </Show>
+
+            <Show when={data() && anyRelatedItemsDeleted()}>
+              <div class="col-span-1" />
               <div class=" col-span-6 mb-16 flex flex-row rounded-sm bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
-                <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                <AiFillWarning class="mt-1 mr-3" /> References a deleted entity{" "}
                 <span class="ml-6 normal-case">
-                  Remove as a {getEntityDisplayName(params.entity_type)}{" "}
-                  referenced by the items below before trying to delete again
+                  This {getEntityDisplayName(params.entity_type)} references an
+                  entity that has been marked for deletion
                 </span>
               </div>
-            ) : (
-              <div class=" col-span-6 mb-16 flex flex-row rounded-sm bg-success p-3 font-semibold uppercase text-success-content shadow-lg">
-                <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
-                <span class="ml-6 normal-case">
-                  No more references to this{" "}
-                  {getEntityDisplayName(params.entity_type)}, so it can be
-                  safely deleted
-                </span>
-              </div>
-            )}
+              <div class="col-span-1" />
+            </Show>
 
-            <div class="col-span-1" />
-          </Show>
+            <For each={Object.entries(schema[params.entity_type].fields)}>
+              {([schema_field_name, field], index) => (
+                <Show when={schema_field_name !== "is_deleted"}>
+                  <Switch>
+                    <Match when={field.type === "property"}>
+                      <TextFieldView
+                        fieldName={schema_field_name}
+                        value={data()[schema_field_name]}
+                      />
+                    </Match>
+                    <Match
+                      when={field.type === "relation" && !field.inline_relation}
+                    >
+                      <RelationViewRow
+                        override_label={
+                          schema[params.entity_type].meta.override_labels?.[
+                            schema_field_name.toLowerCase()
+                          ]?.[0]
+                        }
+                        fieldName={schema_field_name}
+                        value={data()[schema_field_name]}
+                        field={field as SchemaFieldRelation}
+                      />
+                    </Match>
+                    <Match
+                      when={field.type === "relation" && field.inline_relation}
+                    >
+                      <InlineRelationView
+                        fieldName={schema_field_name}
+                        value={data()[schema_field_name]}
+                        field={field}
+                      />
+                    </Match>
+                  </Switch>
 
-          <Show when={data() && anyRelatedItemsDeleted()}>
-            <div class="col-span-1" />
-            <div class=" col-span-6 mb-16 flex flex-row rounded-sm bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
-              <AiFillWarning class="mt-1 mr-3" /> References a deleted entity{" "}
-              <span class="ml-6 normal-case">
-                This {getEntityDisplayName(params.entity_type)} references an
-                entity that has been marked for deletion
-              </span>
-            </div>
-            <div class="col-span-1" />
-          </Show>
-
-          <For each={Object.entries(schema[params.entity_type].fields)}>
-            {([schema_field_name, field], index) => (
-              <Show when={schema_field_name !== "is_deleted"}>
-                <Switch>
-                  <Match when={field.type === "property"}>
-                    <TextFieldView
-                      fieldName={schema_field_name}
-                      value={data()[schema_field_name]}
-                    />
-                  </Match>
-                  <Match
-                    when={field.type === "relation" && !field.inline_relation}
+                  <Show
+                    when={
+                      Object.entries(schema[params.entity_type].fields).length >
+                      index() + 1
+                    }
                   >
-                    <RelationViewRow
-                      override_label={
-                        schema[params.entity_type].meta.override_labels?.[
-                          schema_field_name.toLowerCase()
-                        ]?.[0]
-                      }
-                      fieldName={schema_field_name}
-                      value={data()[schema_field_name]}
-                      field={field as SchemaFieldRelation}
-                    />
-                  </Match>
-                  <Match
-                    when={field.type === "relation" && field.inline_relation}
-                  >
-                    <InlineRelationView
-                      fieldName={schema_field_name}
-                      value={data()[schema_field_name]}
-                      field={field}
-                    />
-                  </Match>
-                </Switch>
-
-                <Show
-                  when={
-                    Object.entries(schema[params.entity_type].fields).length >
-                    index() + 1
-                  }
-                >
-                  <div class="divider col-span-8" />
+                    <div class="divider col-span-8" />
+                  </Show>
                 </Show>
-              </Show>
-            )}
-          </For>
-          {Object.keys(schema[params.entity_type].reverse_relations).length >
-            0 && <div class="col-span-8 mt-32" />}
-          <For
-            each={Object.entries(schema[params.entity_type].reverse_relations)}
-          >
-            {([schema_field_name, field], index) => (
-              <Show when={data()[schema_field_name]?.length > 0}>
-                <TypeGroupedRelationViewRow
-                  fieldName={schema_field_name}
-                  value={data()[schema_field_name]}
-                  field={field}
-                  reverseRelation={true}
-                />
+              )}
+            </For>
+            {Object.keys(schema[params.entity_type].reverse_relations).length >
+              0 && <div class="col-span-8 mt-32" />}
+            <For
+              each={Object.entries(
+                schema[params.entity_type].reverse_relations
+              )}
+            >
+              {([schema_field_name, field], index) => (
+                <Show when={data()[schema_field_name]?.length > 0}>
+                  <TypeGroupedRelationViewRow
+                    override_label={
+                      schema[params.entity_type].meta.override_labels?.[
+                        schema_field_name.toLowerCase()
+                      ]?.[1]
+                    }
+                    fieldName={schema_field_name}
+                    value={data()[schema_field_name]}
+                    field={field}
+                    reverseRelation={true}
+                  />
 
-                <Show
-                  when={
-                    Object.entries(schema[params.entity_type].fields).length >
-                    index() + 1
-                  }
-                ></Show>
-              </Show>
-            )}
-          </For>
-        </div>
+                  <Show
+                    when={
+                      Object.entries(schema[params.entity_type].fields).length >
+                      index() + 1
+                    }
+                  ></Show>
+                </Show>
+              )}
+            </For>
+          </div>
+        </Suspense>
       </Show>
       <Show when={data() && data()["status"] === "error"}>
         <TopBar params={params} barCenter={data()["data"]} />

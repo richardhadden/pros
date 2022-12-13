@@ -211,9 +211,9 @@ def create_view_factory(model_class):
         property_data = {
             **property_data,
             "createdBy": request.user.username,
-            "createdWhen": datetime.datetime.now(),
+            "createdWhen": datetime.datetime.now(datetime.timezone.utc),
             "modifiedBy": request.user.username,
-            "modifiedWhen": datetime.datetime.now(),
+            "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
         }
 
         instance = model_class(**property_data)
@@ -332,7 +332,7 @@ def update_view_factory(model_class):
         property_data = {
             **property_data,
             "modifiedBy": request.user.username,
-            "modifiedWhen": datetime.datetime.now(),
+            "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
         }
 
         model_class.create_or_update({"uid": pk, **property_data})
