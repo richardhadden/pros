@@ -364,7 +364,7 @@ def delete_view_factory(model_class: ProsNode):
         try:
             instance: ProsNode = model_class.nodes.get(uid=pk)
             if instance.has_dependent_relations():
-
+                # TODO: leaves dangling inline node that needs to be deleted
                 instance.is_deleted = True
                 instance.save()
                 return Response(

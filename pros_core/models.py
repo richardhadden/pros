@@ -178,7 +178,7 @@ class ProsNode(StructuredNode):
                     if (
                         dict_key not in R
                     ):  # If we have already found it, don't replace it
-                        R[dict_key] = set()
+                        R[dict_key] = set()  # Make these a set to deduplicate
                     R[dict_key].add(
                         frozendict(
                             {
