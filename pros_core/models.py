@@ -246,6 +246,15 @@ class ProsNode(StructuredNode):
         return db_results[0][0]
 
 
+class ProsInlineOnlyNode(ProsNode):
+    """Node type intended to be used for inline node. Will be deleted automatically
+    when owner node is deleted."""
+
+    class Meta:
+        inline_only = True
+        abstract = True
+
+
 class ProsRelationBase(StructuredRel):
     reverse_name = StringProperty(required=True)
 

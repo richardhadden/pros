@@ -1,5 +1,5 @@
 from neomodel import DateProperty, StringProperty
-from pros_core.models import ProsNode
+from pros_core.models import ProsNode, ProsInlineOnlyNode
 
 import datetime
 from dateutil.parser import parse as parse_date
@@ -16,7 +16,7 @@ class IncompleteDateProperty(StringProperty):
     pass
 
 
-class ComplexDate(ProsNode):
+class ComplexDate(ProsInlineOnlyNode):
     class Meta:
         abstract = True
         inline_only = True

@@ -14,6 +14,7 @@ from pros_core.models import (
     ProsRelationTo,
     ProsRelationBase,
     OverrideLabel,
+    ProsInlineOnlyNode,
 )
 from pros_core.filters import icontains
 
@@ -29,9 +30,7 @@ class UncertainRelation(ProsRelationBase):
     certainty = StringProperty(default="1")
 
 
-class Citation(ProsNode):
-    class Meta:
-        inline_only = True
+class Citation(ProsInlineOnlyNode):
 
     page = IntegerProperty()
     line = IntegerProperty()
@@ -141,6 +140,15 @@ class Relation(Factoid):
 
     class Meta:
         abstract = True
+
+
+class Marriage(Relation):
+    class Meta:
+        label_template = "{is_about_person.label} married to {subject_related_to.label}"
+        override_labels = {
+            "is_about_person": OverrideLabel("person", "married"),
+            "subject_related_to": OverrideLabel("married to", "married"),
+        }
 
 
 class ParentChildRelation(Relation):

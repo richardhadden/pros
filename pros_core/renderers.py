@@ -4,13 +4,15 @@ from rest_framework.compat import INDENT_SEPARATORS, LONG_SEPARATORS, SHORT_SEPA
 
 import json
 
-from neo4j.time import Date as Neo4jDate
+from neo4j.time import Date as Neo4jDate, DateTime as Neo4jDateTime
 import datetime
 
 
 class ComplexEncoder(encoders.JSONEncoder):
     def default(self, z):
         if isinstance(z, Neo4jDate):
+            return str(z.to_native())
+        elif isinstance(z, Neo4jDateTime):
             return str(z.to_native())
         else:
             return super().default(z)

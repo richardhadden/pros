@@ -17,9 +17,10 @@ import { schema } from "../index";
 import Form from "../components/EditForm";
 import { putEntityData } from "../data/DataEndpoints";
 import { AiFillWarning } from "solid-icons/ai";
+import { BiSolidEditAlt } from "solid-icons/bi";
 
 const ViewedItemTopBarStyle =
-  "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-md h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
+  "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
 const EditEntityView: Component = (props) => {
   const params = useParams();
@@ -63,12 +64,16 @@ const EditEntityView: Component = (props) => {
           saveButton={true}
           onClickSaveButton={onSave}
           barTitle={
-            <>
-              Editing{" "}
-              <div class="prose-sm ml-3 inline-block rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
-                {getEntityDisplayName(params.entity_type)}
-              </div>
-            </>
+            <div
+              class={`prose-sm ml-3 inline-block rounded-sm  pl-3 pr-3 pt-1 pb-1 ${
+                hasUnsavedChange()
+                  ? "bg-warning text-warning-content"
+                  : "bg-neutral-focus"
+              }`}
+            >
+              <BiSolidEditAlt class="relative bottom-0.5 mr-2 inline-block " />
+              {getEntityDisplayName(params.entity_type)}
+            </div>
           }
           barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
         />

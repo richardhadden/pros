@@ -562,7 +562,11 @@ class DateTimeProperty(Property):
 
     @validator
     def inflate(self, value):
-        return value
+        # Stored value is neo4j.datetime, which is not serializable
+        # Convert to native Python datetime
+        return value.to_native()
+
+        # Below is the old version for when Neo4J had no native date types...
         try:
             epoch = float(value)
         except ValueError:
@@ -582,6 +586,10 @@ class DateTimeProperty(Property):
     def deflate(self, value):
         if not isinstance(value, datetime):
             raise ValueError("datetime object expected, got {0}.".format(type(value)))
+        return value
+
+        # Old version, from when neo4j stored dates as oddball strings...
+        # now we can just fling datetime objects at it!
         if value.tzinfo:
             value = value.astimezone(pytz.utc)
             epoch_date = datetime(1970, 1, 1, tzinfo=pytz.utc)

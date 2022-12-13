@@ -10,7 +10,7 @@ import {
 import { useParams, useRouteData, useNavigate } from "@solidjs/router";
 
 import { hasUnsavedChange, setHasUnsavedChange } from "../App";
-
+import { BsPlusCircleFill } from "solid-icons/bs";
 import TopBar from "../components/TopBar";
 import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
@@ -61,11 +61,9 @@ const NewEntityView: Component = (props) => {
           saveButton={true}
           onClickSaveButton={onSave}
           barTitle={
-            <div class="select-none">
-              New{" "}
-              <div class="prose-sm ml-3 inline-block rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
-                {getEntityDisplayName(params.entity_type)}
-              </div>
+            <div class="prose-sm ml-3 inline-block select-none rounded-md bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+              <BsPlusCircleFill class="relative bottom-0.5 mr-2 inline-block" />
+              {getEntityDisplayName(params.entity_type)}
             </div>
           }
           barCenter={

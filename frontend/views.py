@@ -18,6 +18,8 @@ from pros_core.filters import icontains
 
 from pypher import Pypher, __
 
+from icecream import ic
+
 
 class BaseViewSet(ViewSet):
     list: Callable[[ViewSet, Request], Response]
@@ -107,13 +109,13 @@ def retrieve_view_factory(model_class: ProsNode):
             return Response(
                 status=404, data=f"<{model_class.__name__} uid={pk}> not found"
             )
-        # TODO: duplicating results ??? PROBABLY... the query when there are two inline-reversejob relations is duplicating...
         data = {
             **this.properties,
             "deleted_and_has_dependent_nodes": this.is_deleted
             and this.has_dependent_relations(),
             **this.direct_relations_as_data(),
         }
+        ic(data)
         return Response(data)
 
     return retrieve
@@ -125,7 +127,7 @@ def prepare_data_value(properties, k, v):
         v = datetime.date.fromisoformat(v)
     if properties[k].__class__ is DateTimeProperty:
         if v:
-            v = datetime.datetime.fromisoformat(v.replace("Z", ""))
+            return v
         else:
             None
 
@@ -325,7 +327,8 @@ def update_view_factory(model_class):
             relation_data,
             inline_relation_data,
         ) = get_property_and_relation_data(request.data, model_class)
-
+        property_data.pop("createdWhen")
+        property_data.pop("createdBy")
         property_data = {
             **property_data,
             "modifiedBy": request.user.username,
@@ -342,6 +345,15 @@ def update_view_factory(model_class):
         return Response({"uid": pk, "saved": True})
 
     return update
+
+
+def delete_all_inline_nodes(instance):
+    q = Pypher()
+    q.MATCH.node("s", uid=instance.uid).rel_out("p").node(
+        "o", labels="ProsInlineOnlyNode"
+    )
+    q.DETACH.DELETE(__.o)
+    results, meta = db.cypher_query(str(q), q.bound_params)
 
 
 def delete_view_factory(model_class: ProsNode):
@@ -364,7 +376,7 @@ def delete_view_factory(model_class: ProsNode):
         try:
             instance: ProsNode = model_class.nodes.get(uid=pk)
             if instance.has_dependent_relations():
-                # TODO: leaves dangling inline node that needs to be deleted
+
                 instance.is_deleted = True
                 instance.save()
                 return Response(
@@ -377,6 +389,7 @@ def delete_view_factory(model_class: ProsNode):
                     }
                 )
             else:
+                delete_all_inline_nodes(instance)
                 instance.delete()
                 return Response(
                     {

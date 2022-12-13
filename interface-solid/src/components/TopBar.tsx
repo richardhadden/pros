@@ -41,14 +41,14 @@ const TopBar: Component<{
     <>
       <div class="mr-16">
         <div class="navbar fixed z-50 ml-32 flex h-20 w-4/6 flex-row justify-evenly rounded-b-sm bg-neutral pr-0 pt-0 pb-0 text-neutral-content shadow-2xl">
-          <div class="prose-xl ml-3 w-64 font-semibold uppercase">
+          <div class="prose-md ml-3 w-fit  font-semibold uppercase">
             {props.barTitle}
           </div>
-          <div class="justify-left m-auto flex">
+          <div class="justify-left m-auto flex justify-self-start">
             <div class="">{props.barCenter}</div>
           </div>
           <div class="w-max min-w-max">
-            <div class="mr-4">{props.barEnd}</div>
+            <div class="mr-4 ">{props.barEnd}</div>
             {!schema[props.params.entity_type].meta.abstract &&
               props.newButton && (
                 <UnsavedLink
