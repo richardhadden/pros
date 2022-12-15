@@ -19,6 +19,7 @@ import Sidebar from "./components/SideBar";
 import Login, { userStatus, alreadyLoggedIn } from "./components/Login";
 import { EntityData, EntityViewAllData } from "./data/DataEndpoints";
 import Testing from "./views/Testing";
+import TestingSchema from "./views/TestingSchema";
 
 export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
 
@@ -94,6 +95,7 @@ const App: Component = () => {
                 />
                 <Route path="/login" component={Login} />
                 <Route path="/testing" component={Testing} />
+                <Route path="testingSchema" component={TestingSchema} />
                 <Route path="/" component={Home} />
               </Suspense>
             </Routes>

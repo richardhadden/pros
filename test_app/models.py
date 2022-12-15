@@ -179,7 +179,9 @@ class Membership(Factoid):
 
 
 class Entity(ProsNode):
-    label = StringProperty(index=True, help_text="Short text description")
+    label = StringProperty(
+        index=True, required=True, help_text="Short text description"
+    )
 
     class Meta:
         display_name_plural = "Entities"
