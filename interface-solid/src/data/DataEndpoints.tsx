@@ -1,4 +1,4 @@
-import { groupBy } from "ramda";
+import { groupBy, sort } from "ramda";
 import Cookies from "js-cookie";
 import { createResource } from "solid-js";
 
@@ -15,6 +15,8 @@ export type ViewEntityTypeData = {
   real_type: string;
   uid: string;
   label: string;
+  is_deleted: boolean;
+  deleted_and_has_dependent_nodes: boolean;
 }[];
 
 export type RequestParams = {
@@ -72,7 +74,6 @@ async function fetchOrRefreshToken(
 
 async function fetchEntityViewAllData(uri: string) {
   const response_json = await fetchOrRefreshToken(uri);
-
   const grouped_response_data = groupByRealType(response_json);
   //console.log(grouped_response_data);
   return grouped_response_data;

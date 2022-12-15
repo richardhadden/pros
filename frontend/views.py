@@ -77,7 +77,7 @@ def list_view_factory(
                     "deleted_and_has_dependent_nodes": b.is_deleted
                     and b.has_dependent_relations(),
                 }
-                for b in model_class.nodes.order_by("label")
+                for b in model_class.nodes.order_by("real_type", "label")
             ]
         return Response(node_data)
 
