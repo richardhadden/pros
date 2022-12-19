@@ -125,13 +125,24 @@ def build_rel(rel):
 
 def build_inline_rel(rel):
     # ic(rel.__dict__)
-    inline_model = PROS_MODELS[rel.__dict__["_raw_class"].lower()].model
-    s = {"type": rel.__dict__["_raw_class"].lower(), "properties": {}}
-    ic(s)
-    s = build_properties_from_model(inline_model, s)
-    ic(s)
-    return s
-    # TODO: Need to make all the different subtypes as options...
+    model_field = PROS_MODELS[rel.__dict__["_raw_class"].lower()]
+    inline_model = model_field.model
+
+    subclasses_as_list = PROS_MODELS[
+        rel.__dict__["_raw_class"].lower()
+    ].subclasses_as_list
+
+    if not model_field.meta.get("abstract"):
+        options = [
+            build_properties_from_model(
+                inline_model,
+                {"type": rel.__dict__["_raw_class"].lower(), "properties": {}},
+            )
+        ]
+    else:
+        options = []
+    ic(options)
+    return
 
 
 def build_properties_from_model(model, schema):
@@ -163,4 +174,4 @@ def build_json_schema(model):
 
 
 schema = build_json_schema(Birth)
-ic(schema)
+# ic(schema)

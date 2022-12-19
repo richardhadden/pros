@@ -23,6 +23,7 @@
         "vite-plugin-solid": "^2.3.0"
     },
     "dependencies": {
+        "@cfworker/json-schema": "^1.12.5",
         "@solidjs/router": "^0.4.3",
         "@tiptap/starter-kit": "^2.0.0-beta.207",
         "@types/ramda": "^0.28.15",

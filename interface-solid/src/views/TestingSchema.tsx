@@ -8,6 +8,8 @@ import {
   JSONError,
 } from "json-schema-library";
 
+import { Validator } from "@cfworker/json-schema";
+
 const myData = {
   is_about_person: [
     {
@@ -32,8 +34,9 @@ const myData = {
     ],
   },
   date: {
-    type: "precisedate",
-    date: "2022-01-0",
+    type: "imprecisedate",
+    not_before: "2022-01-01",
+    not_after: "2022-01-0",
   },
 };
 
@@ -64,21 +67,57 @@ const myJsonSchema = {
       relData: { certainty: { type: "string" } },
       type: "array",
     },
-    label: { type: "string", minLength: 1 },
+    label: {
+      type: "string",
+      minLength: 1,
+      message: { minLength: "A label must be provided" },
+    },
     text: { type: "string" },
+    date: {
+      type: "object",
+      oneOf: [
+        {
+          type: "object",
+          properties: {
+            type: { type: "string", const: "precisedate" },
+            date: {
+              type: "string",
+              pattern:
+                "^\\d*(?:-(?:0[1-9]|1[012])(?:-(?:0[1-9]|[12][0-9]|3[01]))?)?$",
+            },
+          },
+        },
+        {
+          type: "object",
+          properties: {
+            type: { type: "string", const: "imprecisedate" },
+            not_before: {
+              type: "string",
+              pattern:
+                "^\\d*(?:-(?:0[1-9]|1[012])(?:-(?:0[1-9]|[12][0-9]|3[01]))?)?$",
+            },
+            not_after: {
+              type: "string",
+              pattern:
+                "^\\d*(?:-(?:0[1-9]|1[012])(?:-(?:0[1-9]|[12][0-9]|3[01]))?)?$",
+            },
+          },
+          required: ["not_before", "not_after"],
+        },
+      ],
+    },
   },
   title: "Validate Factoid",
   type: "object",
   required: ["date"],
 };
 
+const validator = new Validator(myJsonSchema);
 const jsonSchema: Draft = new Draft07(myJsonSchema);
 
 const TestingSchema: Component = (props) => {
   createEffect(() => {
-    for (let err of jsonSchema.validate(myData)) {
-      console.log(err);
-    }
+    console.log(jsonSchema.validate(myData));
   });
 
   return <div>testingschema</div>;

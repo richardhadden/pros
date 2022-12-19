@@ -263,7 +263,7 @@ const EmbeddedNewEntity: Component<{
 
         <span
           onClick={() => props.setEntityType(props.initialType)}
-          class={`btn btn-sm prose-sm ml-3 font-semibold uppercase ${
+          class={`btn-sm btn prose-sm ml-3 font-semibold uppercase ${
             props.initialType === props.entityType()
               ? "btn-accent"
               : "btn-neutral"
@@ -276,7 +276,7 @@ const EmbeddedNewEntity: Component<{
           {(item) => (
             <span
               onClick={() => props.setEntityType(item.toLowerCase())}
-              class={`btn btn-sm prose-sm ml-3 rounded-sm font-semibold uppercase ${
+              class={`btn-sm btn prose-sm ml-3 rounded-sm font-semibold uppercase ${
                 item.toLowerCase() === props.entityType()
                   ? "btn-accent"
                   : "btn-neutral"
@@ -453,7 +453,7 @@ const RelationEditField: Component<{
                 <span class="prose-sm mr-5 select-none font-light uppercase">
                   <a
                     onClick={() => handleRemoveSelection(item.uid)}
-                    class="btn btn-primary btn-xs btn-circle mr-3 border-primary-content"
+                    class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
                   >
                     <CgClose />
                   </a>{" "}
@@ -518,7 +518,7 @@ const RelationEditField: Component<{
                 <>
                   <a
                     onClick={() => handleRemoveSelection(item.uid)}
-                    class="btn btn-primary btn-xs btn-circle mr-3 border-primary-content"
+                    class="btn-primary btn-xs btn-circle btn mr-3 border-primary-content"
                   >
                     <CgClose />
                   </a>{" "}
@@ -550,7 +550,7 @@ const RelationEditField: Component<{
             />{" "}
             <span
               onClick={() => setShowAddNewEntityModal(true)}
-              class="btn-base btn btn-sm btn-square relative top-6 ml-12"
+              class="btn-base btn-sm btn-square btn relative top-6 ml-12"
             >
               <BsPlus />
             </span>
@@ -586,13 +586,13 @@ const RelationEditField: Component<{
             <div class="modal-action mr-5">
               <span
                 onClick={() => saveAddedEntity()}
-                class="btn btn-warning btn-sm"
+                class="btn-warning btn-sm btn"
               >
                 Add
               </span>
               <span
                 onClick={() => setShowAddNewEntityModal(false)}
-                class="btn btn-success btn-sm"
+                class="btn-success btn-sm btn"
               >
                 Cancel
               </span>
@@ -732,7 +732,7 @@ const InlineRelationEditField: Component = (props) => {
           <div class="justify-left ml-1 flex select-none flex-row">
             <CgOptions class="mt-2 mr-2 inline-block" />
             <button
-              class="btn btn-accent btn-sm w-fit rounded-sm"
+              class="btn-accent btn-sm btn w-fit rounded-sm"
               onClick={() => setShowDropdown(!showDropdown())}
             >
               {getEntityDisplayName(selectedType())}
@@ -744,7 +744,7 @@ const InlineRelationEditField: Component = (props) => {
                 {(subclass) =>
                   subclass !== selectedType() && (
                     <li
-                      class="btn btn-active btn-sm  mb-1"
+                      class="btn-active btn-sm btn  mb-1"
                       onClick={() => {
                         changeSelectedType(subclass);
                         setShowDropdown(false);
@@ -761,12 +761,12 @@ const InlineRelationEditField: Component = (props) => {
       </div>
       {/* HERE START THE FIELDS */}
 
-      <div class=" col-span-5 mt-4 grid flex-none grid-cols-8 gap-x-12">
+      <div class=" col-span-5 mt-4 grid flex-none grid-cols-8 gap-x-16">
         <For each={grouped_fields().property}>
           {([field_name, field]) => (
             <Show when={shouldShowField(field_name)}>
-              <div class="col-span-2">
-                <div class="prose prose-sm col-span-1 mb-4 w-full select-none pl-2 font-semibold uppercase">
+              <div class="col-span-3">
+                <div class="prose prose-sm mb-4 w-full select-none pl-2 font-semibold uppercase">
                   {field_name.replaceAll("_", " ")}
                 </div>
                 <Switch>
