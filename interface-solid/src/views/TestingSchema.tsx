@@ -1,5 +1,5 @@
-import { Component, createEffect } from "solid-js";
-
+import { Component, createEffect, onMount } from "solid-js";
+import Dexie from "dexie";
 import {
   Draft04,
   Draft06,
@@ -9,6 +9,7 @@ import {
 } from "json-schema-library";
 
 import { Validator } from "@cfworker/json-schema";
+import { createDexieArrayQuery } from "solid-dexie";
 
 const myData = {
   is_about_person: [
@@ -116,9 +117,7 @@ const validator = new Validator(myJsonSchema);
 const jsonSchema: Draft = new Draft07(myJsonSchema);
 
 const TestingSchema: Component = (props) => {
-  createEffect(() => {
-    console.log(jsonSchema.validate(myData));
-  });
+  //const persons = createDexieArrayQuery(() => db.persons.toArray());
 
   return <div>testingschema</div>;
 };

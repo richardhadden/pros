@@ -137,7 +137,7 @@ class ProsNode(StructuredNode):
             print("R", i)
 
             if p.get("inline"):  # Get the inline data of this node
-                ic("p inline")
+                # ic("p inline")
 
                 # this is just inline and has no relations... just unpack
                 if (
@@ -169,7 +169,7 @@ class ProsNode(StructuredNode):
                     )
 
             else:
-                ic("p not inline")
+                # ic("p not inline")
                 # This result should be treated as an associated inline
                 # and redirected
 

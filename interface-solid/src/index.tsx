@@ -6,6 +6,7 @@ import App from "./App";
 import { createEffect, createSignal, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Router } from "@solidjs/router";
+import { db } from "./data/db";
 
 const SERVER: string = "http://127.0.0.1:8000";
 const BASE_URI: string = "http://127.0.0.1:8000/api";
@@ -18,12 +19,31 @@ interface SchemaWrapperProps {
   children: any;
 }
 
+var resolveDbReady, promiseReject;
+
+export const dbReady = new Promise(function (resolve, reject) {
+  resolveDbReady = resolve;
+  promiseReject = reject;
+});
+
 function SchemaWrapper(props: SchemaWrapperProps) {
   createEffect(async () => {
     const res = await fetch(BASE_URI + "/schema");
     const json: SchemaObject = await res.json();
     console.log("get_schema_json", json);
     setSchema(json);
+
+    const stores = Object.entries(json).reduce((acc, [entity_name, entity]) => {
+      if (!entity.meta?.inline_only) {
+        acc[entity_name] = "id,uid,[real_type+label]";
+      }
+      return acc;
+    }, {});
+
+    db.version(2).stores(stores);
+    db.open();
+    console.log("setting up db");
+    resolveDbReady();
   });
 
   return (
@@ -45,11 +65,11 @@ function SchemaWrapper(props: SchemaWrapperProps) {
 
 render(
   () => (
-    <Router>
-      <SchemaWrapper>
+    <SchemaWrapper>
+      <Router>
         <App />
-      </SchemaWrapper>
-    </Router>
+      </Router>
+    </SchemaWrapper>
   ),
   document.getElementById("root") as HTMLElement
 );

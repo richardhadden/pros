@@ -121,7 +121,7 @@ def install_labels(cls, quiet=True, stdout=None):
 
     for name, property in cls.defined_properties(aliases=False, rels=False).items():
         db_property = property.db_property or name
-        print(cls.__label__, db_property, name, property)
+        # print(cls.__label__, db_property, name, property)
         if property.index:
             if not quiet:
                 stdout.write(
@@ -503,6 +503,7 @@ class StructuredNode(NodeBase):
         self._pre_action_check("cypher")
         params = params or {}
         params.update({"self": self.id})
+
         return db.cypher_query(query, params)
 
     @hooks

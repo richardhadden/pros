@@ -8,6 +8,8 @@ from neomodel.exceptions import DoesNotExist
 from neomodel import db
 from neomodel.properties import DateTimeProperty, DateProperty
 import neomodel
+from neo4j.time import DateTime as neo4jDateTime
+
 from .utils import PROS_MODELS
 
 from rest_framework.viewsets import ViewSet
@@ -67,18 +69,54 @@ def list_view_factory(
             node_data = [r[0] for r in results]
 
         else:
-            # TODO: fix as this is a lot of DB thrashing!!
-            node_data = [
-                {
-                    "real_type": b.real_type,
-                    "uid": b.uid,
-                    "label": b.label,
-                    "is_deleted": b.is_deleted,
-                    "deleted_and_has_dependent_nodes": b.is_deleted
-                    and b.has_dependent_relations(),
-                }
-                for b in model_class.nodes.order_by("real_type", "label")
-            ]
+            last_refreshed_timestamp_string = request.query_params.get(
+                "lastRefreshedTimestamp"
+            )
+
+            if last_refreshed_timestamp_string:
+                d = datetime.datetime.fromisoformat(
+                    last_refreshed_timestamp_string.replace("Z", "")
+                )
+
+                """q = Pypher()
+                q.Match.node("s", labels=model_class.__name__)
+                q.raw(
+                    f"WHERE s.modifiedWhen > datetime('{last_refreshed_timestamp_string}')"
+                )
+                q.RETURN("s")
+                results, meta = db.cypher_query(str(q), q.bound_params)
+
+                r_list = (r[0] for r in results)
+                response = {"created_modified": [{**r._properties} for r in r_list]}
+                """
+
+                node_data = [
+                    {
+                        "real_type": b.real_type,
+                        "uid": b.uid,
+                        "label": b.label,
+                        "is_deleted": b.is_deleted,
+                        "deleted_and_has_dependent_nodes": b.is_deleted
+                        and b.has_dependent_relations(),
+                    }
+                    for b in model_class.nodes.filter(modifiedWhen__gt=d).order_by(
+                        "real_type", "label"
+                    )
+                ]
+
+                return Response(node_data)
+            else:
+                node_data = [
+                    {
+                        "real_type": b.real_type,
+                        "uid": b.uid,
+                        "label": b.label,
+                        "is_deleted": b.is_deleted,
+                        "deleted_and_has_dependent_nodes": b.is_deleted
+                        and b.has_dependent_relations(),
+                    }
+                    for b in model_class.nodes.order_by("real_type", "label")
+                ]
         return Response(node_data)
 
     return list
@@ -115,7 +153,7 @@ def retrieve_view_factory(model_class: ProsNode):
             and this.has_dependent_relations(),
             **this.direct_relations_as_data(),
         }
-        ic(data)
+        # ic(data)
         return Response(data)
 
     return retrieve
@@ -337,7 +375,7 @@ def update_view_factory(model_class):
 
         model_class.create_or_update({"uid": pk, **property_data})
 
-        instance = model_class.nodes.get(uid=pk)
+        instance: ProsNode = model_class.nodes.get(uid=pk)
 
         update_related_nodes(model_class, instance, relation_data)
         update_inline_related_nodes(instance, inline_relation_data)
