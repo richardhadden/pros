@@ -15,7 +15,7 @@ from .utils import PROS_MODELS
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.request import Request
-from pros_core.models import ProsNode
+from pros_core.models import ProsNode, DeletedNode
 from pros_core.filters import icontains
 
 from pypher import Pypher, __
@@ -90,21 +90,27 @@ def list_view_factory(
                 response = {"created_modified": [{**r._properties} for r in r_list]}
                 """
 
-                node_data = [
-                    {
-                        "real_type": b.real_type,
-                        "uid": b.uid,
-                        "label": b.label,
-                        "is_deleted": b.is_deleted,
-                        "deleted_and_has_dependent_nodes": b.is_deleted
-                        and b.has_dependent_relations(),
-                    }
-                    for b in model_class.nodes.filter(modifiedWhen__gt=d).order_by(
-                        "real_type", "label"
-                    )
-                ]
+                resp_data = {
+                    "created_modified": [
+                        {
+                            "real_type": b.real_type,
+                            "uid": b.uid,
+                            "label": b.label,
+                            "is_deleted": b.is_deleted,
+                            "deleted_and_has_dependent_nodes": b.is_deleted
+                            and b.has_dependent_relations(),
+                        }
+                        for b in model_class.nodes.filter(modifiedWhen__gt=d)
+                    ],
+                    "deleted": [
+                        {"uid": b.uid}
+                        for b in DeletedNode.nodes.filter(
+                            deletedWhen__gt=d, type=model_class.__name__
+                        )
+                    ],
+                }
 
-                return Response(node_data)
+                return Response(resp_data)
             else:
                 node_data = [
                     {
@@ -428,7 +434,14 @@ def delete_view_factory(model_class: ProsNode):
                 )
             else:
                 delete_all_inline_nodes(instance)
+                d = DeletedNode(
+                    uid=instance.uid,
+                    type=model_class.__name__,
+                    deletedWhen=datetime.datetime.now(datetime.timezone.utc),
+                )
+                d.save()
                 instance.delete()
+
                 return Response(
                     {
                         "detail": f"Deleted {model_class.__name__} {pk} as it has no dependencies",

@@ -40,10 +40,44 @@ async function storeDataToIndexedDB(
     label: item.label,
     real_type: item.real_type,
     deleted: item.deleted,
+    deleted_and_has_dependent_nodes: item.deleted_and_has_dependent_nodes,
   }));
   db[entityType].bulkPut(dataToStore);
   const timestamp = new Date();
   setDbRequests(entityType, timestamp.toISOString());
+}
+
+async function updateDataInIndexedDB(
+  entityType: string,
+  data: ViewEntityTypeData[]
+) {
+  db.open();
+  const dataToStore = data.map((item) => ({
+    id: item.uid,
+    uid: item.uid,
+    label: item.label,
+    real_type: item.real_type,
+    deleted: item.deleted,
+    deleted_and_has_dependent_nodes: item.deleted_and_has_dependent_nodes,
+  }));
+  for (let item of dataToStore) {
+    const itemInDB = await db[entityType].get(item.id);
+    if (itemInDB) {
+      console.log("Patching in IndexedDB", item);
+      await db[entityType].update(item.id, item);
+    } else {
+      console.log("Adding to IndexedDB", item);
+      await db[entityType].add(item, item.id);
+    }
+  }
+}
+
+async function deleteDataFromIndexedDB(entityType: string, items) {
+  db.open();
+
+  for (let item of items) {
+    await db[entityType].delete(item.uid);
+  }
 }
 
 async function getDataAndPatchIndexedDB(uri: string, entityType: string) {
@@ -81,8 +115,11 @@ async function getDataAndPatchIndexedDB(uri: string, entityType: string) {
   // Authorised and returns data
   if (response.status === 200) {
     const response_json = await response.json();
-
-    return response_json;
+    await updateDataInIndexedDB(entityType, response_json.created_modified);
+    await deleteDataFromIndexedDB(entityType, response_json.deleted);
+    const timestamp = new Date();
+    setDbRequests(entityType, timestamp.toISOString());
+    return;
   }
 }
 
@@ -118,7 +155,7 @@ async function fetchOrRefreshToken(
   // localstorage), retrieve the data directly from the indexeddb
   if (entityTypeForDb && method === "GET" && dbRequests[entityTypeForDb]) {
     // Do a request to server for updated data... get, and index...
-    getDataAndPatchIndexedDB(url, entityTypeForDb);
+    await getDataAndPatchIndexedDB(url, entityTypeForDb);
     await dbReady;
     const response = await db[entityTypeForDb]
       .orderBy("[real_type+label]")

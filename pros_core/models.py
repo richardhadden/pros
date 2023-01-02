@@ -39,6 +39,12 @@ class InlineRelation(StructuredRel):
     inline = BooleanProperty(default=True)
 
 
+class DeletedNode(StructuredNode):
+    uid = UniqueIdProperty()
+    type = StringProperty(index=True)
+    deletedWhen = DateTimeProperty()
+
+
 class ProsNode(StructuredNode):
     uid = UniqueIdProperty()
     real_type = StringProperty(index=True)
@@ -134,7 +140,6 @@ class ProsNode(StructuredNode):
 
         for i, result in enumerate(db_results):
             s, p, o, p2, o2 = result
-            print("R", i)
 
             if p.get("inline"):  # Get the inline data of this node
                 # ic("p inline")
