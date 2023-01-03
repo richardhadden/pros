@@ -271,10 +271,14 @@ export async function putEntityData(
   return resp;
 }
 
+type SaveResponseType = Promise<
+  { uid: string; label: string; saved: boolean } | undefined
+>;
+
 export async function postNewEntityData(
   entity_type: string,
   submission_data: object
-) {
+): SaveResponseType {
   const response_json = await fetchOrRefreshToken(
     `${schema[entity_type].app}/${entity_type}/new/`,
     "POST",
