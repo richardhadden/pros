@@ -14,9 +14,6 @@ const EntityChip: Component<{
   isDeleted?: boolean;
   deletedAndHasDependentNodes?: boolean;
 }> = (props) => {
-  createEffect(() =>
-    console.log(props.label, props.isDeleted, props.deletedAndHasDependentNodes)
-  );
   const style =
     "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-sm h-12 prose-md relative top-1.5 font-semibold inline-block ";
   return (
