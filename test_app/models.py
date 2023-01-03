@@ -27,7 +27,7 @@ from pros_dating.models import (
 
 
 class UncertainRelation(ProsRelationBase):
-    certainty = StringProperty(default="1")
+    certainty = IntegerProperty(default=1)
 
 
 class TypedFactoidToFactoidRelation(ProsRelationBase):

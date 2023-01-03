@@ -1,0 +1,17 @@
+Vocabularies
+ -- figure out how the hell this will work
+
+Importing from endpoints
+-- see APIS for how to do this
+
+Validation
+-- Finish jsonschema validation
+
+General fixes/improvements
+-- IndexedDB - assemble entity subtypes from separate tables (i.e. no higher-level requests/tables)
+-- dropdowns should use IndexedDB, not fetch request...
+
+
+
+Problems
+-- for some reason, cannot change label of Entity??
