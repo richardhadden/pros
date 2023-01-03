@@ -153,6 +153,14 @@ class Naming(Event):
             icontains("o", "label"),
         ]
 
+        order_fields = [
+            "is_about_person",
+            "title",
+            "first_name",
+            "last_name",
+            "text",
+        ]
+
         # Overrides the `label` field with template derived from other fields
         # (dotted notation indicates access via relationship -- limited to one rel)
         label_template = (
