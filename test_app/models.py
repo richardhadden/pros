@@ -102,7 +102,7 @@ class Order(Factoid):
 
 
 class Event(Factoid):
-    pass
+    location = ProsRelationTo("Location", reverse_name="location_of_event")
 
 
 class Party(Event):
@@ -114,7 +114,7 @@ class Party(Event):
         override_labels = {
             "is_about_person": OverrideLabel("host", "is_host_of"),
         }
-        order_fields = ["text", "is_about_person", "attendee", "date"]
+        order_fields = ["text", "is_about_person", "attendee", "date", "location"]
 
 
 class Birth(Event):
@@ -122,7 +122,7 @@ class Birth(Event):
 
     class Meta:
         label_template = "Birth of {is_about_person.label}"
-        order_fields = ["text", "is_about_person", "date"]
+        order_fields = ["text", "is_about_person", "date", "location"]
 
 
 class Death(Event):
@@ -132,7 +132,7 @@ class Death(Event):
     class Meta:
         label_template = "Death of {is_about_person.label}"
         text_filter_fields = ["cause_of_death", icontains("o", "label")]
-        order_fields = ["text", "is_about_person", "cause_of_death", "date"]
+        order_fields = ["text", "is_about_person", "cause_of_death", "date", "location"]
 
 
 class Naming(Event):

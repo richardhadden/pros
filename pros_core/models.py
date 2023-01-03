@@ -132,17 +132,19 @@ class ProsNode(StructuredNode):
         )
         q.AND(__.s).property("uid").operator("<>", __.o2.property("uid"))
 
-        q.RETURN(__.s, __.p, __.o, __.p2, __.o2)
+        q.OPTIONAL.MATCH.node("o").rel_out("dp", labels="DATE").node("odate")
+        q.OPTIONAL.MATCH.node("o2").rel_out("dp2", labels="DATE").node("o2date")
+
+        q.RETURN(__.s, __.p, __.o, __.p2, __.o2, __.odate, __.o2date)
 
         db_results, meta = db.cypher_query(str(q), q.bound_params)
 
         R = defaultdict(set)
 
         for i, result in enumerate(db_results):
-            s, p, o, p2, o2 = result
+            s, p, o, p2, o2, odate, o2date = result
 
             if p.get("inline"):  # Get the inline data of this node
-                # ic("p inline")
 
                 # this is just inline and has no relations... just unpack
                 if (
@@ -150,8 +152,10 @@ class ProsNode(StructuredNode):
                 ):  # If we have already found it, don't replace it
                     # Should not have any relData
                     d = dict(o)
+                    d["sort_date"] = odate.get("earliest_possible") if odate else ""
                     d["type"] = d["real_type"]
                     R[p.type.lower()] = d
+
                 if p2:  # If the inline has any related nodes, get those too...
                     if p2.type.lower() not in R[p.type.lower()]:
                         R[p.type.lower()][p2.type.lower()] = set()
@@ -160,6 +164,11 @@ class ProsNode(StructuredNode):
                         frozendict(
                             {
                                 **dict(o2),
+                                "sort_date": o2date.get(
+                                    "earliest_possible_conservative"
+                                )
+                                if o2date
+                                else "",
                                 # TODO: This is only necessary if actually deleted!!
                                 "deleted_and_has_dependent_nodes": self.has_dependent_relations(
                                     dict(o2)["uid"]
@@ -174,7 +183,6 @@ class ProsNode(StructuredNode):
                     )
 
             else:
-                # ic("p not inline")
                 # This result should be treated as an associated inline
                 # and redirected
 
@@ -188,6 +196,11 @@ class ProsNode(StructuredNode):
                         frozendict(
                             {
                                 **dict(o2),
+                                "sort_date": o2date.get(
+                                    "earliest_possible_conservative"
+                                )
+                                if o2date
+                                else "",
                                 # TODO: This is only necessary if actually deleted!!
                                 "deleted_and_has_dependent_nodes": self.has_dependent_relations(
                                     dict(o2)["uid"]
@@ -202,9 +215,11 @@ class ProsNode(StructuredNode):
                     )
 
                 else:
-                    ic("this")
-                    if self.__class__.__name__.lower() == p.start_node.get("real_type"):
-                        ic(s, p.start_node)
+                    # This method of determining direction of relation originally
+                    # used the types, but this caused problems for relations to same type.
+                    # Instead, use the uid of the nodes to determine directionality
+                    if s.get("uid") == p.start_node.get("uid"):
+
                         dict_key = p.type.lower()
                     else:
                         dict_key = p["reverse_name"].lower()
@@ -217,6 +232,9 @@ class ProsNode(StructuredNode):
                         frozendict(
                             {
                                 **dict(o),
+                                "sort_date": odate.get("earliest_possible_conservative")
+                                if odate
+                                else "",
                                 "deleted_and_has_dependent_nodes": self.has_dependent_relations(
                                     dict(o)["uid"]
                                 )
