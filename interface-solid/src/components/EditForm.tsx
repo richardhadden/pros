@@ -15,7 +15,7 @@ import {
   Match,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { groupBy } from "ramda";
+import { groupBy, sortBy } from "ramda";
 
 import { schema } from "../index";
 import EntityChip from "./ui_components/entityChip";
@@ -789,7 +789,7 @@ const InlineRelationEditField: Component = (props) => {
             </Show>
           )}
         </For>
-        <Show when={grouped_fields().relation}>
+        <Show when={grouped_fields().relation && grouped_fields().property}>
           <div class="divider col-span-8 mt-4 mb-8" />
         </Show>
         <For each={grouped_fields().relation}>
@@ -881,10 +881,29 @@ const Form: Component<{
     }
   });
 
+  const sorted_fields = createMemo(() => {
+    let sorted_fields = Object.entries(schema[props.entity_type]?.fields);
+    const field_orderings = schema[props.entity_type]?.meta?.order_fields;
+    if (field_orderings) {
+      console.log("orderfields");
+      sorted_fields = sortBy(([field_name, field]) => {
+        if (field_name === "label") {
+          return -1;
+        }
+        const o = field_orderings.indexOf(field_name);
+        if (o === -1) {
+          return 1000;
+        }
+        return o;
+      }, sorted_fields);
+    }
+    return sorted_fields;
+  });
+
   return (
     <div class="ml-6 grid grid-cols-8">
       <Show when={schema[props.entity_type]}>
-        <For each={Object.entries(schema[props.entity_type]?.fields)}>
+        <For each={sorted_fields()}>
           {(
             [schema_field_name, field]: [string, unknown],
             index: Accessor<number>

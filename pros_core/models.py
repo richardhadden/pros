@@ -202,7 +202,9 @@ class ProsNode(StructuredNode):
                     )
 
                 else:
+                    ic("this")
                     if self.__class__.__name__.lower() == p.start_node.get("real_type"):
+                        ic(s, p.start_node)
                         dict_key = p.type.lower()
                     else:
                         dict_key = p["reverse_name"].lower()

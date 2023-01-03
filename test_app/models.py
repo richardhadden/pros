@@ -30,11 +30,24 @@ class UncertainRelation(ProsRelationBase):
     certainty = StringProperty(default="1")
 
 
-class Citation(ProsInlineOnlyNode):
+class TypedFactoidToFactoidRelation(ProsRelationBase):
+    note = StringProperty()
+
+
+class Reference(ProsInlineOnlyNode):
+    class Meta:
+        abstract = True
+
+
+class Citation(Reference):
 
     page = IntegerProperty()
     line = IntegerProperty()
     source = ProsRelationTo("Source", "is_source_of")
+
+
+class ImpliedByFactoid(Reference):
+    implied_by_factoid = ProsRelationTo("Factoid", reverse_name="implies")
 
 
 class Source(ProsNode):
@@ -54,17 +67,27 @@ class Letter(Source):
     class Meta:
         # __all__ can be used in label_template to add label of all related nodes
         label_template = "Letter from {sender.__all__.label} to {recipient.label}"
+        order_fields = ["sender", "recipient", "date", "text"]
 
 
 class Factoid(ProsNode):
     label = StringProperty(index=True, help_text="Short text description")
 
     is_about_person = ProsRelationTo(
-        "Person", reverse_name="HAS_FACTOID_ABOUT", model=UncertainRelation
+        "Person",
+        reverse_name="HAS_FACTOID_ABOUT",
+        model=UncertainRelation,
+        cardinality=ZeroOrOne,
     )
-    citation = Citation.as_inline_field()
+    citation = Reference.as_inline_field()
 
     text = StringProperty()
+
+    related_factoids = ProsRelationTo(
+        "Factoid",
+        reverse_name="related_to_factoid",
+        model=TypedFactoidToFactoidRelation,
+    )
 
     class Meta:
         abstract = True
@@ -84,12 +107,14 @@ class Event(Factoid):
 
 class Party(Event):
     attendee = ProsRelationTo("Person", reverse_name="attended_party")
+    date = SingleDate.as_inline_field()
 
     class Meta:
         display_name_plural = "Parties"
         override_labels = {
             "is_about_person": OverrideLabel("host", "is_host_of"),
         }
+        order_fields = ["text", "is_about_person", "attendee", "date"]
 
 
 class Birth(Event):
@@ -97,6 +122,7 @@ class Birth(Event):
 
     class Meta:
         label_template = "Birth of {is_about_person.label}"
+        order_fields = ["text", "is_about_person", "date"]
 
 
 class Death(Event):
@@ -106,6 +132,7 @@ class Death(Event):
     class Meta:
         label_template = "Death of {is_about_person.label}"
         text_filter_fields = ["cause_of_death", icontains("o", "label")]
+        order_fields = ["text", "is_about_person", "cause_of_death", "date"]
 
 
 class Naming(Event):
@@ -168,6 +195,7 @@ class Acquaintanceship(Relation):
 
     class Meta:
         label_template = "{is_about_person.label} knows {subject_related_to.label}"
+        order_fields = ["text", "is_about_person", "subject_related_to", "date"]
 
 
 class Membership(Factoid):
@@ -176,12 +204,11 @@ class Membership(Factoid):
 
     class Meta:
         label_template = "{is_about_person.label} is member of {member_of.label}"
+        order_fields = ["text", "is_about_person", "member_of", "date"]
 
 
 class Entity(ProsNode):
-    label = StringProperty(
-        index=True, required=True, help_text="Short text description"
-    )
+    label = StringProperty(required=True, help_text="Short text description")
 
     class Meta:
         display_name_plural = "Entities"
@@ -192,7 +219,17 @@ class Person(Entity):
 
 
 class Organisation(Entity):
-    pass
+    has_location = ProsRelationTo(
+        "Location", reverse_name="location_of", cardinality=ZeroOrOne
+    )
+
+
+class Location(ProsNode):
+    label = StringProperty()
+    location_type = StringProperty()
+    located_within = ProsRelationTo(
+        "Location", reverse_name="location_of", cardinality=ZeroOrOne
+    )
 
 
 class Test(ProsNode):

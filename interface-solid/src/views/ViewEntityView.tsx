@@ -41,6 +41,8 @@ import { SchemaFieldRelation } from "../types/schemaTypes";
 
 import EntityChip from "../components/ui_components/entityChip";
 
+import { sortBy } from "ramda";
+
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 w-full mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
@@ -300,7 +302,7 @@ const InlineRelationView: Component = (props) => {
             </Show>
           )}
         </For>
-        <Show when={grouped_fields().relation}>
+        <Show when={grouped_fields().relation && grouped_fields().property}>
           <div class="divider col-span-8 mt-8 mb-8" />
         </Show>
         <div class="col-span-8 ">
@@ -389,6 +391,25 @@ const ViewEntity: Component = () => {
     return false;
   };
 
+  const sorted_fields = createMemo(() => {
+    let sorted_fields = Object.entries(schema[params.entity_type]?.fields);
+    const field_orderings = schema[params.entity_type]?.meta?.order_fields;
+    if (field_orderings) {
+      console.log("orderfields");
+      sorted_fields = sortBy(([field_name, field]) => {
+        if (field_name === "label") {
+          return -1;
+        }
+        const o = field_orderings.indexOf(field_name);
+        if (o === -1) {
+          return 1000;
+        }
+        return o;
+      }, sorted_fields);
+    }
+    return sorted_fields;
+  });
+
   return (
     <>
       <Show when={data() && data()["status"] !== "error"}>
@@ -476,7 +497,7 @@ const ViewEntity: Component = () => {
               <div class="col-span-1" />
             </Show>
 
-            <For each={Object.entries(schema[params.entity_type].fields)}>
+            <For each={sorted_fields()}>
               {([schema_field_name, field], index) => (
                 <Show when={schema_field_name !== "is_deleted"}>
                   <Switch>

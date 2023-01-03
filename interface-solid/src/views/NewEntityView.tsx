@@ -45,7 +45,7 @@ const NewEntityView: Component = (props) => {
       setShowSaveToast(true);
       setInterval(() => setShowSaveToast(false), 3000);
       console.log("response", response);
-      navigate(`/entity/${params.entity_type}/${response.uid}/edit/`, {
+      navigate(`/entity/${params.entity_type}/${response.uid}/`, {
         replace: false,
       });
     }
