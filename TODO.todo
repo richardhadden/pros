@@ -9,7 +9,8 @@ Validation
 
 General fixes/improvements
 -- IndexedDB - assemble entity subtypes from separate tables (i.e. no higher-level requests/tables)
--- dropdowns should use IndexedDB, not fetch request...
+## dropdowns should use IndexedDB, not fetch request... 
+-- failed request toast
 
 
 

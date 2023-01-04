@@ -20,9 +20,7 @@ async function fetchEntityViewAllData(uri: string) {
     : undefined;
 
   const response_json = await dataRequest(uri, "GET", undefined, entityType);
-
   const grouped_response_data = groupByRealType(response_json);
-  //console.log(grouped_response_data);
   return grouped_response_data;
 }
 

@@ -196,6 +196,7 @@ class ParentChildRelation(Relation):
             "is_about_person": OverrideLabel("parent", "is_identified_as_parent"),
             "subject_related_to": OverrideLabel("child", "identified_as_child"),
         }
+        order_fields = ["text", "is_about_person", "subject_related_to"]
 
 
 class Acquaintanceship(Relation):

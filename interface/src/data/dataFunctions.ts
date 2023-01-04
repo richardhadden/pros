@@ -1,11 +1,12 @@
 import Cookies from "js-cookie";
 
 import {
-    refreshToken
+  refreshToken
 } from "../components/Login";
 
 import { BASE_URI, dbReady } from "../index";
 import { db, dbRequests, setDbRequests } from "./db";
+
 
 export type ViewEntityTypeData = {
   real_type: string;
@@ -37,6 +38,7 @@ async function storeDataToIndexedDB(
   db[entityType].bulkPut(dataToStore);
   const timestamp = new Date();
   setDbRequests(entityType, timestamp.toISOString());
+
 }
 
 async function updateDataInIndexedDB(
@@ -141,13 +143,13 @@ async function dataRequest(
       "Content-Type": "application/json",
     },
   };
-  console.log("fetch");
+
   // If we provide the entity type for db lookup, it's a GET request,
   // and a request for that endpoint has already been made (using lookup to
   // localstorage), retrieve the data directly from the indexeddb
   if (entityTypeForDb && method === "GET" && dbRequests[entityTypeForDb]) {
     // Do a request to server for updated data... get, and index...
-    console.log("from db", entityTypeForDb);
+
     await getDataAndPatchIndexedDB(url, entityTypeForDb);
     await dbReady;
     const response = await db[entityTypeForDb]
@@ -171,15 +173,17 @@ async function dataRequest(
   if (response.status === 401) {
     const response_json = await response.json();
     if (response_json.code === "token_not_valid") {
-      await refreshToken();
+      
+      const refreshStatus = await refreshToken();
+      if (refreshStatus === "FAIL") {
+        return;
+      }
       return await dataRequest(url, method, data);
     } else return;
   }
   // Authorised and returns data
   if (response.status === 200) {
-    console.log("from api", entityTypeForDb);
     const response_json = await response.json();
-
     if (entityTypeForDb && method === "GET") {
       storeDataToIndexedDB(entityTypeForDb, response_json);
     }

@@ -23,7 +23,7 @@ export async function refreshToken() {
   const refresh_data = await refresh.json();
   if (refresh.status === 403 || refresh.status == 400) {
     logout();
-    return;
+    return "FAIL";
   }
   Cookies.set("accessToken", refresh_data.access);
   setUserStatus({ isAuthenticated: true });
