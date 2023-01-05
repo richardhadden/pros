@@ -16,3 +16,10 @@ General fixes/improvements
 
 Problems
 -- for some reason, cannot change label of Entity??
+
+
+
+IDEAS!!
+
+-- distinguish InlineNode and EmbeddedNode (or something)... so can unpack the fields (or specified fields) from EmbeddedNode directly into parent...?
+-- in subclassing ViewSet, use (maybe?) data injecting decorator @with_default_data instead of request?? -- maybe use this by default?

@@ -1,23 +1,23 @@
-from typing import Callable
-
 from django.urls import path
 
-from .utils import PROS_MODELS
+from pros_core.setup_app import PROS_MODELS
 
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from pros_core.models import ProsNode
 
 
-from frontend.views import (
+from pros_core.viewsets import (
     create_view_factory,
     autocomplete_view_factory,
     retrieve_view_factory,
     list_view_factory,
     update_view_factory,
     delete_view_factory,
-    BaseViewSet,
+    DefaultViewSet,
+    AbstractViewSet,
 )
 
 urlpatterns = []
@@ -26,7 +26,7 @@ urlpatterns = []
 def build_viewset_functions(model):
     viewset_functions = {
         "list": list_view_factory(model.model),
-        "autocomplete": autocomplete_view_factory(model.model),
+        # "autocomplete": autocomplete_view_factory(model.model),
     }
     if not model.meta.get("abstract"):
         viewset_functions["retrieve"] = retrieve_view_factory(model.model)
@@ -40,10 +40,6 @@ def build_viewset_functions(model):
 def build_url_patterns(model, vs):
     patterns = [
         path(f"{model.app}/{model.model_name.lower()}/", vs.as_view({"get": "list"})),
-        path(
-            f"{model.app}/autocomplete/{model.model_name.lower()}/",
-            vs.as_view({"get": "autocomplete"}),
-        ),
     ]
     if not model.meta.get("abstract"):
         patterns += [
@@ -65,30 +61,6 @@ def build_url_patterns(model, vs):
             ),
         ]
     return patterns
-
-
-from rest_framework.permissions import IsAuthenticated, AllowAny
-
-
-def get_permissions(self: type[BaseViewSet]):
-    if self.request.method == "GET":
-        permission_classes = [AllowAny]
-    else:
-        permission_classes = [IsAuthenticated]
-    return [permission() for permission in permission_classes]
-
-
-for _, model in PROS_MODELS.items():
-    if model.meta.get("inline_only"):
-        continue
-    vs: type[BaseViewSet] = type(
-        f"{model.model_name}ViewSet",
-        (viewsets.ViewSet,),
-        build_viewset_functions(model),
-    )
-
-    vs.get_permissions = get_permissions
-    urlpatterns += build_url_patterns(model, vs)
 
 
 def construct_subclass_hierarchy(model):
@@ -118,6 +90,27 @@ def build_schema_from_pros_model(models, schema):
         }
 
     return schema
+
+
+def get_permissions(self: type[AbstractViewSet]):
+    if self.request.method == "GET":
+        permission_classes = [AllowAny]
+    else:
+        permission_classes = [IsAuthenticated]
+    return [permission() for permission in permission_classes]
+
+
+for _, model in PROS_MODELS.items():
+    if model.meta.get("inline_only"):
+        continue
+    vs: type[DefaultViewSet] = type(
+        f"{model.model_name}ViewSet",
+        (DefaultViewSet,),
+        build_viewset_functions(model),
+    )
+
+    vs.get_permissions = get_permissions
+    urlpatterns += build_url_patterns(model, vs)
 
 
 @api_view(["GET"])

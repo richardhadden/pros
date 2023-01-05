@@ -10,7 +10,7 @@ from neomodel.properties import DateTimeProperty, DateProperty
 import neomodel
 from neo4j.time import DateTime as neo4jDateTime
 
-from .utils import PROS_MODELS
+from pros_core.setup_app import PROS_MODELS
 
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -23,18 +23,30 @@ from pypher import Pypher, __
 from icecream import ic
 
 
-class BaseViewSet(ViewSet):
-    list: Callable[[ViewSet, Request], Response]
-    autocomplete: Callable[[ViewSet, Request], Response]
-    retrieve: Callable[[ViewSet, Request, str | None], Response]
-    create: Callable[[ViewSet, Request], Response]
-    update: Callable[[ViewSet, Request, str | None], Response]
-    delete: Callable[[ViewSet, Request, str | None], Response]
+class AbstractViewSet(ViewSet):
+    def list(self, request):
+        raise NotImplementedError
+
+    def retrieve(self, request: Request, pk=None):
+        raise NotImplementedError
+
+    def create(self, request: Request):
+        raise NotImplementedError
+
+    def update(self, request: Request, pk=None):
+        raise NotImplementedError
+
+    def delete(self, request: Request, pk=None):
+        raise NotImplementedError
+
+
+class DefaultViewSet(AbstractViewSet):
+    pass
 
 
 def list_view_factory(
     model_class: type[ProsNode],
-) -> Callable[[BaseViewSet, Request], Response]:
+) -> Callable[[AbstractViewSet, Request], Response]:
     def list(self, request: Request) -> Response:
 
         # If a text filter is set...
