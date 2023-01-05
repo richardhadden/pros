@@ -10,31 +10,11 @@ from pros_core.models import ProsNode
 
 
 from pros_core.viewsets import (
-    create_view_factory,
-    autocomplete_view_factory,
-    retrieve_view_factory,
-    list_view_factory,
-    update_view_factory,
-    delete_view_factory,
-    DefaultViewSet,
-    AbstractViewSet,
+    generic_viewset_factory,
+    ProsAbstractViewSet,
 )
 
 urlpatterns = []
-
-
-def build_viewset_functions(model):
-    viewset_functions = {
-        "list": list_view_factory(model.model),
-        # "autocomplete": autocomplete_view_factory(model.model),
-    }
-    if not model.meta.get("abstract"):
-        viewset_functions["retrieve"] = retrieve_view_factory(model.model)
-        viewset_functions["create"] = create_view_factory(model.model)
-        viewset_functions["put"] = update_view_factory(model.model)
-        viewset_functions["delete"] = delete_view_factory(model.model)
-
-    return viewset_functions
 
 
 def build_url_patterns(model, vs):
@@ -92,24 +72,10 @@ def build_schema_from_pros_model(models, schema):
     return schema
 
 
-def get_permissions(self: type[AbstractViewSet]):
-    if self.request.method == "GET":
-        permission_classes = [AllowAny]
-    else:
-        permission_classes = [IsAuthenticated]
-    return [permission() for permission in permission_classes]
-
-
 for _, model in PROS_MODELS.items():
     if model.meta.get("inline_only"):
         continue
-    vs: type[DefaultViewSet] = type(
-        f"{model.model_name}ViewSet",
-        (DefaultViewSet,),
-        build_viewset_functions(model),
-    )
-
-    vs.get_permissions = get_permissions
+    vs: type[ProsAbstractViewSet] = generic_viewset_factory(model)
     urlpatterns += build_url_patterns(model, vs)
 
 

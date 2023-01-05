@@ -1,17 +1,25 @@
-class Relation:
-    def __init__(self, cls_name):
-        self.cls_name = cls_name
-
-    def __set_name__(self, owner, name):
-        self.rel_type = name
+from dataclasses import dataclass
 
 
-class OwnerBase:
-    def __init_subclass__(cls) -> None:
-        for k, v in cls.__dict__.items():
-            if isinstance(v, Relation):
-                setattr(cls, k, "BALLS")
+@dataclass
+class ResponseWrapper:
+    """Class for keeping track of an item in inventory."""
+
+    data: dict
+    status: int = 200
+
+    def keys(self):
+        return ["dict", "status"]
+
+    def __getitem__(self, key):
+        return self.__dict__.get(key)
+
+    def __iter__(self):
+        yield from (self.data, self.status)
 
 
-class Owner(OwnerBase):
-    item = Relation("FFF")
+t = ResponseWrapper({"something": 1})
+
+data, status = t
+
+print(data, status)

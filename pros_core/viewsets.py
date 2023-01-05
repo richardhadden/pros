@@ -3,6 +3,8 @@ import datetime
 from typing import Type, Callable
 
 from django.urls import path
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
 
 from neomodel.exceptions import DoesNotExist
 from neomodel import db
@@ -22,159 +24,37 @@ from pypher import Pypher, __
 
 from icecream import ic
 
-
-class AbstractViewSet(ViewSet):
-    def list(self, request):
-        raise NotImplementedError
-
-    def retrieve(self, request: Request, pk=None):
-        raise NotImplementedError
-
-    def create(self, request: Request):
-        raise NotImplementedError
-
-    def update(self, request: Request, pk=None):
-        raise NotImplementedError
-
-    def delete(self, request: Request, pk=None):
-        raise NotImplementedError
+from dataclasses import dataclass
 
 
-class DefaultViewSet(AbstractViewSet):
-    pass
+@dataclass
+class ResponseValue:
+    """Wrapper around data and HTTP status, to be unpacked into DRF Response object
+    or for treatment separately"""
+
+    data: dict
+    status: int = 200
+
+    def keys(self):
+        return ["data", "status"]
+
+    def __getitem__(self, key):
+        return self.__dict__.get(key)
+
+    def __iter__(self):
+        yield from (self.data, self.status)
 
 
-def list_view_factory(
-    model_class: type[ProsNode],
-) -> Callable[[AbstractViewSet, Request], Response]:
-    def list(self, request: Request) -> Response:
-
-        # If a text filter is set...
-        filter = request.query_params.get("filter")
-        if filter:
-
-            x = icontains("s", "label")(filter)
-            y = icontains("s", "label")(filter)
-            for additional_filter in PROS_MODELS[model_class.__name__.lower()].meta.get(
-                "text_filter_fields", []
-            ):
-                # print(additional_filter)
-                if isinstance(additional_filter, str):
-                    x = x.OR(icontains("s", additional_filter)(filter))
-
-                else:
-                    f = additional_filter(filter)
-                    if isinstance(f, Pypher):
-                        y = y.OR(f)
-
-            q = Pypher()
-            q.Match.node("s", labels=model_class.__name__)
-            q.WHERE(x)
-            q.RETURN(__.DISTINCT((__.s)))
-            q.UNION
-            q.MATCH.node("s", labels=model_class.__name__).rel("p").node("o")
-            q.WHERE(y)
-            q.RETURN(__.DISTINCT(__.s))
-
-            results, meta = db.cypher_query(str(q), q.bound_params)
-
-            node_data = [r[0] for r in results]
-
-        else:
-            last_refreshed_timestamp_string = request.query_params.get(
-                "lastRefreshedTimestamp"
-            )
-
-            if last_refreshed_timestamp_string:
-                d = datetime.datetime.fromisoformat(
-                    last_refreshed_timestamp_string.replace("Z", "")
-                )
-
-                """q = Pypher()
-                q.Match.node("s", labels=model_class.__name__)
-                q.raw(
-                    f"WHERE s.modifiedWhen > datetime('{last_refreshed_timestamp_string}')"
-                )
-                q.RETURN("s")
-                results, meta = db.cypher_query(str(q), q.bound_params)
-
-                r_list = (r[0] for r in results)
-                response = {"created_modified": [{**r._properties} for r in r_list]}
-                """
-
-                resp_data = {
-                    "created_modified": [
-                        {
-                            "real_type": b.real_type,
-                            "uid": b.uid,
-                            "label": b.label,
-                            "is_deleted": b.is_deleted,
-                            "deleted_and_has_dependent_nodes": b.is_deleted
-                            and b.has_dependent_relations(),
-                        }
-                        for b in model_class.nodes.filter(modifiedWhen__gt=d)
-                    ],
-                    "deleted": [
-                        {"uid": b.uid}
-                        for b in DeletedNode.nodes.filter(
-                            deletedWhen__gt=d, type=model_class.__name__
-                        )
-                    ],
-                }
-
-                return Response(resp_data)
-            else:
-                node_data = [
-                    {
-                        "real_type": b.real_type,
-                        "uid": b.uid,
-                        "label": b.label,
-                        "is_deleted": b.is_deleted,
-                        "deleted_and_has_dependent_nodes": b.is_deleted
-                        and b.has_dependent_relations(),
-                    }
-                    for b in model_class.nodes.order_by("real_type", "label")
-                ]
-        return Response(node_data)
-
-    return list
+# Utility functions
 
 
-def autocomplete_view_factory(model_class):
-    def list(self, request):
-        node_data = [
-            {
-                "uid": b.uid,
-                "label": b.label,
-                "real_type": b.real_type,
-                "is_deleted": b.is_deleted,
-            }
-            for b in model_class.nodes.all()
-        ]
-        return Response(node_data)
-
-    return list
-
-
-def retrieve_view_factory(model_class: ProsNode):
-    def retrieve(self, request, pk=None):
-
-        try:
-            this = model_class.nodes.get(uid=pk)
-        except Exception:
-            return Response(
-                status=404, data=f"<{model_class.__name__} uid={pk}> not found"
-            )
-        data = {
-            **this.properties,
-            "deleted_and_has_dependent_nodes": this.is_deleted
-            and this.has_dependent_relations(),
-            **this.direct_relations_as_data(),
-        }
-        # ic(data)
-        return Response(data)
-
-    return retrieve
+def delete_all_inline_nodes(instance):
+    q = Pypher()
+    q.MATCH.node("s", uid=instance.uid).rel_out("p").node(
+        "o", labels="ProsInlineOnlyNode"
+    )
+    q.DETACH.DELETE(__.o)
+    results, meta = db.cypher_query(str(q), q.bound_params)
 
 
 def prepare_data_value(properties, k, v):
@@ -252,35 +132,6 @@ def add_inline_related_nodes(
         new_related_node.save()
         rel_manager.connect(new_related_node)
         add_related_nodes(related_model, new_related_node, relation_data)
-
-
-def create_view_factory(model_class):
-    @db.write_transaction
-    def create(self, request):
-
-        (
-            property_data,
-            relation_data,
-            inline_relation_data,
-        ) = get_property_and_relation_data(request.data, model_class)
-
-        property_data = {
-            **property_data,
-            "createdBy": request.user.username,
-            "createdWhen": datetime.datetime.now(datetime.timezone.utc),
-            "modifiedBy": request.user.username,
-            "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
-        }
-
-        instance = model_class(**property_data)
-        instance.save()
-
-        add_related_nodes(model_class, instance, relation_data)
-        add_inline_related_nodes(model_class, instance, inline_relation_data)
-
-        return Response({"uid": instance.uid, "label": instance.label, "saved": True})
-
-    return create
 
 
 def get_non_default_fields(node):
@@ -374,15 +225,167 @@ def update_inline_related_nodes(instance, data):
             update_related_nodes(related_model, new_related_node, relation_data)
 
 
-def update_view_factory(model_class):
+# Viewset methods
+
+
+class ProsAbstractViewSet(ViewSet):
+    """ViewSet for abstract Pros models. Allows listing of entities, but nothing else."""
+
+    __model_class__ = None
+
+    def __init_subclass__(cls):
+        if cls.__name__ != "ProsDefaultViewSet" and cls.__model_class__ is None:
+            raise TypeError(
+                "ProsDefaultViewSet requires __model_class__ attribute to be "
+                "set to an instance of <pros_core.models.ProsNode>"
+            )
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+    def do_list(self, request: Request) -> ResponseValue:
+        # If a text filter is set...
+        filter = request.query_params.get("filter")
+        if filter:
+
+            x = icontains("s", "label")(filter)
+            y = icontains("s", "label")(filter)
+            for additional_filter in PROS_MODELS[
+                self.__model_class__.__name__.lower()
+            ].meta.get("text_filter_fields", []):
+                # print(additional_filter)
+                if isinstance(additional_filter, str):
+                    x = x.OR(icontains("s", additional_filter)(filter))
+
+                else:
+                    f = additional_filter(filter)
+                    if isinstance(f, Pypher):
+                        y = y.OR(f)
+
+            q = Pypher()
+            q.Match.node("s", labels=self.__model_class__.__name__)
+            q.WHERE(x)
+            q.RETURN(__.DISTINCT((__.s)))
+            q.UNION
+            q.MATCH.node("s", labels=self.__model_class__.__name__).rel("p").node("o")
+            q.WHERE(y)
+            q.RETURN(__.DISTINCT(__.s))
+
+            results, meta = db.cypher_query(str(q), q.bound_params)
+
+            node_data = [r[0] for r in results]
+
+        else:
+            last_refreshed_timestamp_string = request.query_params.get(
+                "lastRefreshedTimestamp"
+            )
+
+            if last_refreshed_timestamp_string:
+                d = datetime.datetime.fromisoformat(
+                    last_refreshed_timestamp_string.replace("Z", "")
+                )
+
+                resp_data = {
+                    "created_modified": [
+                        {
+                            "real_type": b.real_type,
+                            "uid": b.uid,
+                            "label": b.label,
+                            "is_deleted": b.is_deleted,
+                            "deleted_and_has_dependent_nodes": b.is_deleted
+                            and b.has_dependent_relations(),
+                        }
+                        for b in self.__model_class__.nodes.filter(modifiedWhen__gt=d)
+                    ],
+                    "deleted": [
+                        {"uid": b.uid}
+                        for b in DeletedNode.nodes.filter(
+                            deletedWhen__gt=d, type=self.__model_class__.__name__
+                        )
+                    ],
+                }
+
+                return ResponseValue(resp_data)
+            else:
+                node_data = [
+                    {
+                        "real_type": b.real_type,
+                        "uid": b.uid,
+                        "label": b.label,
+                        "is_deleted": b.is_deleted,
+                        "deleted_and_has_dependent_nodes": b.is_deleted
+                        and b.has_dependent_relations(),
+                    }
+                    for b in self.__model_class__.nodes.order_by("real_type", "label")
+                ]
+        return ResponseValue(node_data)
+
+    def list(self, request: Request) -> Response:
+        return Response(**self.do_list(request))
+
+
+class ProsDefaultViewSet(ProsAbstractViewSet):
+    """Default ViewSet for Pros models."""
+
+    def do_retrieve(self, request: Request, pk: str | None) -> ResponseValue:
+        try:
+            this = self.__model_class__.nodes.get(uid=pk)
+        except Exception:
+            return ResponseValue(
+                status=404, data=f"<{self.__model_class__.__name__} uid={pk}> not found"
+            )
+        data = {
+            **this.properties,
+            "deleted_and_has_dependent_nodes": this.is_deleted
+            and this.has_dependent_relations(),
+            **this.direct_relations_as_data(),
+        }
+        # ic(data)
+        return ResponseValue(data)
+
+    def retrieve(self, request: Request, pk: str | None = None) -> Response:
+        return Response(**self.do_retrieve(request, pk))
+
     @db.write_transaction
-    def update(self, request, pk=None):
-        # print(request.data)
+    def do_create(self, request: Request) -> ResponseValue:
         (
             property_data,
             relation_data,
             inline_relation_data,
-        ) = get_property_and_relation_data(request.data, model_class)
+        ) = get_property_and_relation_data(request.data, self.__model_class__)
+
+        property_data = {
+            **property_data,
+            "createdBy": request.user.username,
+            "createdWhen": datetime.datetime.now(datetime.timezone.utc),
+            "modifiedBy": request.user.username,
+            "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
+        }
+
+        instance = self.__model_class__(**property_data)
+        instance.save()
+
+        add_related_nodes(self.__model_class__, instance, relation_data)
+        add_inline_related_nodes(self.__model_class__, instance, inline_relation_data)
+
+        return ResponseValue(
+            {"uid": instance.uid, "label": instance.label, "saved": True}
+        )
+
+    def create(self, request: Request) -> Response:
+        return Response(**self.do_create(request))
+
+    @db.write_transaction
+    def do_update(self, request: Request, pk: str | None) -> ResponseValue:
+        (
+            property_data,
+            relation_data,
+            inline_relation_data,
+        ) = get_property_and_relation_data(request.data, self.__model_class__)
         property_data.pop("createdWhen")
         property_data.pop("createdBy")
         property_data = {
@@ -391,54 +394,43 @@ def update_view_factory(model_class):
             "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
         }
 
-        model_class.create_or_update({"uid": pk, **property_data})
+        self.__model_class__.create_or_update({"uid": pk, **property_data})
 
-        instance: ProsNode = model_class.nodes.get(uid=pk)
+        instance: ProsNode = self.__model_class__.nodes.get(uid=pk)
 
-        update_related_nodes(model_class, instance, relation_data)
+        update_related_nodes(self.__model_class__, instance, relation_data)
         update_inline_related_nodes(instance, inline_relation_data)
 
-        return Response({"uid": pk, "saved": True})
+        return ResponseValue({"uid": pk, "saved": True})
 
-    return update
+    def update(self, request, pk=None):
+        return Response(**self.do_update(request, pk))
 
-
-def delete_all_inline_nodes(instance):
-    q = Pypher()
-    q.MATCH.node("s", uid=instance.uid).rel_out("p").node(
-        "o", labels="ProsInlineOnlyNode"
-    )
-    q.DETACH.DELETE(__.o)
-    results, meta = db.cypher_query(str(q), q.bound_params)
-
-
-def delete_view_factory(model_class: ProsNode):
     @db.write_transaction
-    def delete(self, request, pk=None):
-
+    def do_delete(self, request: Request, pk: str | None) -> ResponseValue:
         if request.query_params.get("restore"):
-            instance: ProsNode = model_class.nodes.get(uid=pk)
+            instance: ProsNode = self.__model_class__.nodes.get(uid=pk)
             if instance.is_deleted:
                 instance.is_deleted = False
                 instance.save()
 
-            return Response(
+            return ResponseValue(
                 {
                     "result": "success",
-                    "detail": f"Deleted {model_class.__name__} '{instance.label}' restored.",
+                    "detail": f"Deleted {self.__model_class__.__name__} '{instance.label}' restored.",
                 }
             )
 
         try:
-            instance: ProsNode = model_class.nodes.get(uid=pk)
+            instance: ProsNode = self.__model_class__.nodes.get(uid=pk)
             if instance.has_dependent_relations():
 
                 instance.is_deleted = True
                 instance.save()
-                return Response(
+                return ResponseValue(
                     {
                         "detail": (
-                            f"Marked {model_class.__name__} '{instance.label}' as deletion desired,"
+                            f"Marked {self.__model_class__.__name__} '{instance.label}' as deletion desired,"
                             " pending removal of references from dependent entities"
                         ),
                         "result": "pending",
@@ -448,19 +440,43 @@ def delete_view_factory(model_class: ProsNode):
                 delete_all_inline_nodes(instance)
                 d = DeletedNode(
                     uid=instance.uid,
-                    type=model_class.__name__,
+                    type=self.__model_class__.__name__,
                     deletedWhen=datetime.datetime.now(datetime.timezone.utc),
                 )
                 d.save()
                 instance.delete()
 
-                return Response(
+                return ResponseValue(
                     {
-                        "detail": f"Deleted {model_class.__name__} {pk} as it has no dependencies",
+                        "detail": f"Deleted {self.__model_class__.__name__} {pk} as it has no dependencies",
                         "result": "success",
                     }
                 )
         except DoesNotExist:
-            return Response({"detail": "Not found", "result": "fail"})
+            return ResponseValue({"detail": "Not found", "result": "fail"}, status=404)
 
-    return delete
+    def delete(self, request: Request, pk: str | None = None):
+        return Response(**self.do_delete(request, pk))
+
+
+def generic_viewset_factory(
+    app_model,
+) -> type[ProsAbstractViewSet] | type[ProsDefaultViewSet]:
+    """Produces named ViewSet for a Pros model."""
+    if app_model.meta.get("abstract"):
+
+        return type(
+            f"{app_model.model.__name__}ViewSet",
+            (ProsAbstractViewSet,),
+            {
+                "__model_class__": app_model.model,
+            },
+        )
+    else:
+        return type(
+            f"{app_model.model.__name__}ViewSet",
+            (ProsDefaultViewSet,),
+            {
+                "__model_class__": app_model.model,
+            },
+        )
