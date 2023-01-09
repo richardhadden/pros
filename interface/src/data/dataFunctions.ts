@@ -7,6 +7,7 @@ import {
 import { BASE_URI, dbReady } from "../index";
 import { db, dbRequests, setDbRequests } from "./db";
 
+import { schema } from "../index";
 
 export type ViewEntityTypeData = {
   real_type: string;
@@ -147,9 +148,8 @@ async function dataRequest(
   // If we provide the entity type for db lookup, it's a GET request,
   // and a request for that endpoint has already been made (using lookup to
   // localstorage), retrieve the data directly from the indexeddb
-  if (entityTypeForDb && method === "GET" && dbRequests[entityTypeForDb]) {
+  if (entityTypeForDb && schema[entityTypeForDb]?.meta?.use_list_cache !== false && method === "GET" && dbRequests[entityTypeForDb]) {
     // Do a request to server for updated data... get, and index...
-
     await getDataAndPatchIndexedDB(url, entityTypeForDb);
     await dbReady;
     const response = await db[entityTypeForDb]
@@ -184,7 +184,7 @@ async function dataRequest(
   // Authorised and returns data
   if (response.status === 200) {
     const response_json = await response.json();
-    if (entityTypeForDb && method === "GET") {
+    if (entityTypeForDb && method === "GET" && schema[entityTypeForDb]?.meta?.use_list_cache !== false) {
       storeDataToIndexedDB(entityTypeForDb, response_json);
     }
     return response_json;

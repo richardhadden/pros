@@ -225,7 +225,6 @@ def build_viewsets(PROS_APPS):
 
     for app_name in PROS_APPS:
         app = __import__(app_name)
-        ic(dir(app), app.__path__)
         try:
             module = SourceFileLoader(
                 "viewsets", f"{app.__path__[0]}/viewsets.py"
@@ -234,10 +233,10 @@ def build_viewsets(PROS_APPS):
         except FileNotFoundError:
             pass
 
-    from .viewsets import ProsAbstractViewSet, ProsDefaultViewSet
+    from .viewsets import ProsBlankViewSet, ProsAbstractViewSet, ProsDefaultViewSet
 
-    for c in inheritors(ProsAbstractViewSet):
-        if c is not ProsDefaultViewSet:
+    for c in inheritors(ProsBlankViewSet):
+        if c not in {ProsDefaultViewSet, ProsAbstractViewSet}:
             viewsets[c.__model_class__.__name__.lower()] = c
 
     return viewsets

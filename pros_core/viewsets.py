@@ -226,9 +226,11 @@ def update_inline_related_nodes(instance, data):
 
 
 # Viewset methods
+class ProsBlankViewSet(ViewSet):
+    pass
 
 
-class ProsAbstractViewSet(ViewSet):
+class ProsAbstractViewSet(ProsBlankViewSet):
     """ViewSet for abstract Pros models. Allows listing of entities, but nothing else."""
 
     __model_class__ = None
