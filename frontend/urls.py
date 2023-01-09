@@ -1,6 +1,6 @@
 from django.urls import path
 
-from pros_core.setup_app import PROS_MODELS
+from pros_core.setup_app import PROS_MODELS, PROS_VIEWSET_MAP
 
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
@@ -14,6 +14,8 @@ from pros_core.viewsets import (
     ProsAbstractViewSet,
 )
 
+from icecream import ic
+
 urlpatterns = []
 
 
@@ -25,11 +27,7 @@ def build_url_patterns(model, vs):
         patterns += [
             path(
                 f"{model.app}/{model.model_name.lower()}/<str:pk>",
-                vs.as_view({"get": "retrieve"}),
-            ),
-            path(
-                f"{model.app}/{model.model_name.lower()}/<str:pk>",
-                vs.as_view({"put": "put"}),
+                vs.as_view({"get": "retrieve", "put": "update"}),
             ),
             path(
                 f"{model.app}/{model.model_name.lower()}/new/",
@@ -72,10 +70,13 @@ def build_schema_from_pros_model(models, schema):
     return schema
 
 
-for _, model in PROS_MODELS.items():
+for model_name, model in PROS_MODELS.items():
     if model.meta.get("inline_only"):
         continue
-    vs: type[ProsAbstractViewSet] = generic_viewset_factory(model)
+    if viewset := PROS_VIEWSET_MAP.get(model_name):
+        vs: type[ProsAbstractViewSet] = viewset
+    else:
+        vs: type[ProsAbstractViewSet] = generic_viewset_factory(model)
     urlpatterns += build_url_patterns(model, vs)
 
 

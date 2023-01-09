@@ -185,6 +185,15 @@ def inheritors(klass):
 
 def build_models(PROS_APPS):
     pros_models = {}
+    from .models import ProsNode
+
+    """for c in inheritors(ProsNode):
+        app_name = c.__module__.split(".")[0]
+        model = c
+        model_name = c.__name__
+        pros_models[model_name.lower()] = build_app_model(app_name, model, model_name)
+
+    """
     for app_name in PROS_APPS:
         app = __import__(app_name)
         app_model_classes = {}
@@ -209,6 +218,30 @@ def build_models(PROS_APPS):
     return pros_models
 
 
-# print(PROS_MODELS["inlineRelationDefinitions"])
+def build_viewsets(PROS_APPS):
+    from importlib.machinery import SourceFileLoader
+
+    viewsets = {}
+
+    for app_name in PROS_APPS:
+        app = __import__(app_name)
+        ic(dir(app), app.__path__)
+        try:
+            module = SourceFileLoader(
+                "viewsets", f"{app.__path__[0]}/viewsets.py"
+            ).load_module()
+
+        except FileNotFoundError:
+            pass
+
+    from .viewsets import ProsAbstractViewSet, ProsDefaultViewSet
+
+    for c in inheritors(ProsAbstractViewSet):
+        if c is not ProsDefaultViewSet:
+            viewsets[c.__model_class__.__name__.lower()] = c
+
+    return viewsets
+
+
 PROS_MODELS = build_models(PROS_APPS)
-# PROS_VIEWSETS = build_viewsets(PROS_APPS)
+PROS_VIEWSET_MAP = build_viewsets(PROS_APPS)
