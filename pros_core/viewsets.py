@@ -240,13 +240,6 @@ class ProsAbstractViewSet(ViewSet):
                 "set to an instance of <pros_core.models.ProsNode>"
             )
 
-    def get_permissions(self):
-        if self.request.method == "GET":
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
     def do_list(self, request: Request) -> ResponseValue:
         # If a text filter is set...
         filter = request.query_params.get("filter")
@@ -462,6 +455,14 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
 def generic_viewset_factory(
     app_model,
 ) -> type[ProsAbstractViewSet] | type[ProsDefaultViewSet]:
+    def get_permissions(self):
+        ic(self)
+        if self.request.method == "GET":
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
     """Produces named ViewSet for a Pros model."""
     if app_model.meta.get("abstract"):
 
@@ -470,6 +471,7 @@ def generic_viewset_factory(
             (ProsAbstractViewSet,),
             {
                 "__model_class__": app_model.model,
+                "get_permissions": get_permissions,
             },
         )
     else:
@@ -478,5 +480,6 @@ def generic_viewset_factory(
             (ProsDefaultViewSet,),
             {
                 "__model_class__": app_model.model,
+                "get_permissions": get_permissions,
             },
         )

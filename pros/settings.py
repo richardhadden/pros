@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "test_app.apps.TestAppConfig",
     "frontend.apps.FrontendConfig",
     "pros_dating.apps.ProsDatingConfig",
+    "pros_vocabs.apps.ProsVocabsConfig",
     "django_extensions",
 ]
 

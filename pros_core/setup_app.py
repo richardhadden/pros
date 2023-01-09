@@ -2,19 +2,19 @@ from collections import namedtuple
 
 
 import inspect
-
+from icecream import ic
 
 from neomodel.properties import Property, UniqueIdProperty
 from neomodel.relationship_manager import RelationshipDefinition
 from pros_core.models import ProsNode, REVERSE_RELATIONS, InlineRelation
+
 from django.apps import apps
 
 PROS_APPS = [
     app for app, conf in apps.app_configs.items() if getattr(conf, "pros_app", False)
 ]
-print(PROS_APPS)
+ic(PROS_APPS)
 
-PROS_MODELS = {}
 
 AppModel = namedtuple(
     "AppModels",
@@ -171,25 +171,44 @@ def build_app_model(app_name, model, model_name):
     )
 
 
-for app_name in PROS_APPS:
-    app = __import__(app_name)
-    app_model_classes = {}
+def inheritors(klass):
+    subclasses = set()
+    work = [klass]
+    while work:
+        parent = work.pop()
+        for child in parent.__subclasses__():
+            if child not in subclasses:
+                subclasses.add(child)
+                work.append(child)
+    return subclasses
 
-    for m in inspect.getmembers(app.models, inspect.isclass):
-        model = getattr(app.models, m[0])
-        model_name = model.__name__
 
-        # Check if it's a class defined in this model (not imported from somewhere)
-        # and that it's a top-level node
-        if m[1].__module__ == f"{app_name}.models" and issubclass(model, ProsNode):
+def build_models(PROS_APPS):
+    pros_models = {}
+    for app_name in PROS_APPS:
+        app = __import__(app_name)
+        app_model_classes = {}
 
-            app_model_classes[model_name.lower()] = build_app_model(
-                app_name, model, model_name
-            )
-    PROS_MODELS = {
-        **PROS_MODELS,
-        **app_model_classes,
-    }
+        # Get models
+        for m in inspect.getmembers(app.models, inspect.isclass):
+            model = getattr(app.models, m[0])
+            model_name = model.__name__
+
+            # Check if it's a class defined in this model (not imported from somewhere)
+            # and that it's a top-level node
+            if m[1].__module__ == f"{app_name}.models" and issubclass(model, ProsNode):
+
+                app_model_classes[model_name.lower()] = build_app_model(
+                    app_name, model, model_name
+                )
+        pros_models = {
+            **pros_models,
+            **app_model_classes,
+        }
+
+    return pros_models
 
 
 # print(PROS_MODELS["inlineRelationDefinitions"])
+PROS_MODELS = build_models(PROS_APPS)
+# PROS_VIEWSETS = build_viewsets(PROS_APPS)
