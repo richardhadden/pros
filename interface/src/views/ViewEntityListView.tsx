@@ -1,3 +1,5 @@
+import { CUSTOM_LIST_VIEW_PAGES } from "../../interface-config.js";
+
 import {
   Accessor,
   Component,
@@ -6,7 +8,10 @@ import {
   For,
   onMount,
   Show,
+  Switch,
+  Match,
 } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { useParams, useRouteData, useSearchParams } from "@solidjs/router";
 
 import UnsavedLink from "../utils/UnsavedLink";
@@ -88,112 +93,121 @@ const ViewEntityListView: Component = () => {
   });
 
   return (
-    <>
-      <TopBar
-        params={params}
-        barTitle={
-          <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
-            {getEntityNamePlural(params.entity_type)}
-          </div>
-        }
-        barCenter={
-          <div class="relative flex">
-            <input
-              type="text"
-              placeholder="Filter..."
-              class="input w-full max-w-xs text-black"
-              value={filterValue()}
-              onInput={(e: InputEvent) =>
-                onFilterInput((e.currentTarget as HTMLInputElement).value)
-              }
-            />
-          </div>
-        }
-        newButton={true}
-      />
+    <Switch>
+      <Match when={CUSTOM_LIST_VIEW_PAGES[params.entity_type]}>
+        <Dynamic
+          component={CUSTOM_LIST_VIEW_PAGES[params.entity_type]}
+          data={data()}
+          params={params}
+        />
+      </Match>
+      <Match when={true}>
+        <TopBar
+          params={params}
+          barTitle={
+            <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+              {getEntityNamePlural(params.entity_type)}
+            </div>
+          }
+          barCenter={
+            <div class="relative flex">
+              <input
+                type="text"
+                placeholder="Filter..."
+                class="input w-full max-w-xs text-black"
+                value={filterValue()}
+                onInput={(e: InputEvent) =>
+                  onFilterInput((e.currentTarget as HTMLInputElement).value)
+                }
+              />
+            </div>
+          }
+          newButton={true}
+        />
 
-      <Show
-        when={data()}
-        fallback={
+        <Show
+          when={data()}
+          fallback={
+            <div class="mx-auto mt-32  ml-6 ">
+              <LoadingSpinner />
+            </div>
+          }
+        >
           <div class="mx-auto mt-32  ml-6 ">
-            <LoadingSpinner />
-          </div>
-        }
-      >
-        <div class="mx-auto mt-32  ml-6 ">
-          <Show when={showFilteringSpinner()}>
-            <LoadingSpinner />
-          </Show>
-          <For each={Object.entries(data())}>
-            {([entity_name, items], index) => (
-              <>
-                <div class="grid grid-cols-8 gap-y-6">
-                  <div class="col-span-2 rounded-l-md pt-4 pb-6 pl-3">
-                    <h2 class="prose-md select-none font-semibold uppercase text-base-content">
-                      {getEntityNamePlural(entity_name)}
-                    </h2>
-                  </div>
-                  <div class="col-span-4 pt-4 pb-6 pr-4">
-                    <For each={items}>
-                      {(item) => (
-                        <div>
-                          <UnsavedLink
-                            href={`/entity/${entity_name}/${item.uid}`}
-                            class={`mb-3 flex max-w-4xl cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
-                              item.is_deleted
-                                ? "bg-gray-400 hover:bg-gray-500"
-                                : "bg-primary hover:bg-primary-focus"
-                            }`}
-                          >
-                            <div class="flex flex-col content-center">
-                              <div>
-                                <span class="prose-sm mr-7 select-none font-light uppercase">
-                                  {getEntityDisplayName(item.real_type)}
-                                </span>
-                              </div>
-                            </div>{" "}
-                            <div class="relative">
-                              <div class="inline-block font-semibold">
-                                {item.label}
-                              </div>
-                            </div>
-                            <div class="right-0 ml-auto justify-self-end">
-                              {item.is_deleted && (
-                                <div class="relative mr-2 flex flex-row">
-                                  <AiFillDelete
-                                    size={20}
-                                    class="mt-0.5 text-gray-600"
-                                  />
-                                  {item.deleted_and_has_dependent_nodes ? (
-                                    <AiFillClockCircle
-                                      size={20}
-                                      class="mt-0.5 ml-2 rounded-full text-warning"
-                                    />
-                                  ) : (
-                                    <AiFillCheckCircle
-                                      size={20}
-                                      class="mt-0.5 ml-2 text-success"
-                                    />
-                                  )}
+            <Show when={showFilteringSpinner()}>
+              <LoadingSpinner />
+            </Show>
+            <For each={Object.entries(data())}>
+              {([entity_name, items], index) => (
+                <>
+                  <div class="grid grid-cols-8 gap-y-6">
+                    <div class="col-span-2 rounded-l-md pt-4 pb-6 pl-3">
+                      <h2 class="prose-md select-none font-semibold uppercase text-base-content">
+                        {getEntityNamePlural(entity_name)}
+                      </h2>
+                    </div>
+                    <div class="col-span-4 pt-4 pb-6 pr-4">
+                      <For each={items}>
+                        {(item) => (
+                          <div>
+                            <UnsavedLink
+                              href={`/entity/${entity_name}/${item.uid}`}
+                              class={`mb-3 flex max-w-4xl cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
+                                item.is_deleted
+                                  ? "bg-gray-400 hover:bg-gray-500"
+                                  : "bg-primary hover:bg-primary-focus"
+                              }`}
+                            >
+                              <div class="flex flex-col content-center">
+                                <div>
+                                  <span class="prose-sm mr-7 select-none font-light uppercase">
+                                    {getEntityDisplayName(item.real_type)}
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                          </UnsavedLink>
-                        </div>
-                      )}
-                    </For>
+                              </div>{" "}
+                              <div class="relative">
+                                <div class="inline-block font-semibold">
+                                  {item.label}
+                                </div>
+                              </div>
+                              <div class="right-0 ml-auto justify-self-end">
+                                {item.is_deleted && (
+                                  <div class="relative mr-2 flex flex-row">
+                                    <AiFillDelete
+                                      size={20}
+                                      class="mt-0.5 text-gray-600"
+                                    />
+                                    {item.deleted_and_has_dependent_nodes ? (
+                                      <AiFillClockCircle
+                                        size={20}
+                                        class="mt-0.5 ml-2 rounded-full text-warning"
+                                      />
+                                    ) : (
+                                      <AiFillCheckCircle
+                                        size={20}
+                                        class="mt-0.5 ml-2 text-success"
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </UnsavedLink>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                    <div class="col-span-2 pt-4 pb-6 pr-4" />
                   </div>
-                  <div class="col-span-2 pt-4 pb-6 pr-4" />
-                </div>
-                <Show when={Object.keys(data()).length > index() + 1}>
-                  <div class="divider" />
-                </Show>
-              </>
-            )}
-          </For>
-        </div>
-      </Show>
-    </>
+                  <Show when={Object.keys(data()).length > index() + 1}>
+                    <div class="divider" />
+                  </Show>
+                </>
+              )}
+            </For>
+          </div>
+        </Show>
+      </Match>
+    </Switch>
   );
 };
 

@@ -1,4 +1,4 @@
-import { CUSTOM_PROPERTIES } from "../../../interface-config.js";
+import { CUSTOM_EDIT_FIELDS } from "../../../interface-config.js";
 
 import { Component, createSignal, Match, Show, Switch } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -48,9 +48,9 @@ const TypedInputField: Component<{
 
   return (
     <Switch>
-      <Match when={CUSTOM_PROPERTIES[props.propertyType]}>
+      <Match when={CUSTOM_EDIT_FIELDS[props.propertyType]}>
         <Dynamic
-          component={CUSTOM_PROPERTIES[props.propertyType]}
+          component={CUSTOM_EDIT_FIELDS[props.propertyType]}
           value={props.value || ""}
           setValue={(value: unknown) => props.setValue(value)}
         />

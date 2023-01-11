@@ -1,5 +1,5 @@
 from collections import namedtuple
-
+from django.conf import settings
 
 import inspect
 from icecream import ic
@@ -242,5 +242,66 @@ def build_viewsets(PROS_APPS):
     return viewsets
 
 
+def get_components(path):
+    file_dict = {}
+    for filepath in path.glob("*.tsx"):
+        with open(filepath) as f:
+            for line in f.readlines():
+                if line.startswith("export default"):
+                    l = line.replace("export default ", "").replace(";", "").strip()
+                    file_dict[l] = (
+                        str(filepath)
+                        .replace(str(settings.BASE_DIR), "..")
+                        .replace(".tsx", "")
+                    )
+                    break
+    return file_dict
+
+
+def gather_interface_components(apps):
+    from pathlib import Path
+    import os
+
+    ic(settings.BASE_DIR)
+
+    edit_fields = {}
+    field_rows = {}
+    list_view_pages = {}
+
+    for app_name in apps:
+        app = __import__(app_name)
+
+        path = Path(app.__path__[0])
+        interface = path / "interface"
+
+        edit_fields_path = interface / "edit_fields"
+        edit_fields = {**edit_fields, **get_components(edit_fields_path)}
+
+        list_view_pages_path = interface / "view_pages"
+        list_view_pages = {**list_view_pages, **get_components(list_view_pages_path)}
+
+        with open("interface/interface-config.tsx", "w") as f:
+            f.writelines(
+                f"import {comp} from '{fil}';\n"
+                for comp, fil in list_view_pages.items()
+            )
+            f.writelines(
+                f"import {comp} from '{fil}';\n" for comp, fil in edit_fields.items()
+            )
+            f.write("\n\n")
+            f.write(
+                f"""
+export const CUSTOM_LIST_VIEW_PAGES = {{ {", ".join(f"'{page.lower()}': {page}" for page in list_view_pages)}  }};
+export const CUSTOM_EDIT_FIELDS = {{ {", ".join(f"'{field}': {field}" for field in edit_fields)}  }};
+export const CUSTOM_VIEW_PAGES = {{}};
+"""
+            )
+
+
 PROS_MODELS = build_models(PROS_APPS)
 PROS_VIEWSET_MAP = build_viewsets(PROS_APPS)
+INTERFACE_COMPONENTS = gather_interface_components(PROS_APPS)
+
+from .build_json_schema import build_json_schema
+
+build_json_schema(PROS_MODELS)

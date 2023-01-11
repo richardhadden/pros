@@ -71,7 +71,9 @@ class Letter(Source):
 
 
 class Factoid(ProsNode):
-    label = StringProperty(index=True, help_text="Short text description")
+    label = StringProperty(
+        index=True, help_text="Short text description", required=True
+    )
 
     is_about_person = ProsRelationTo(
         "Person",

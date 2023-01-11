@@ -1,6 +1,6 @@
 import { Component, createSignal, createRef } from "solid-js";
 
-export const IncompleteDateProperty: Component<{
+const IncompleteDateProperty: Component<{
   value: any;
   setValue: (v: any) => void;
 }> = (props) => {
@@ -83,7 +83,7 @@ export const IncompleteDateProperty: Component<{
     <div class="w-fit">
       <input
         step="any"
-        class="w-36 appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+        class="border-b-primary bg-base-100 focus:border-primary focus:bg-base-200 w-36 appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-t-transparent border-l-transparent border-r-transparent bg-transparent pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:shadow-inner focus:outline-none"
         value={props.value || ""}
         onInput={setDate}
       />
@@ -93,3 +93,5 @@ export const IncompleteDateProperty: Component<{
     </div>
   );
 };
+
+export default IncompleteDateProperty;

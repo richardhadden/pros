@@ -10,6 +10,7 @@ import {
 
 import { Validator } from "@cfworker/json-schema";
 import { createDexieArrayQuery } from "solid-dexie";
+import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 
 const myData = {
   is_about_person: [
@@ -37,7 +38,7 @@ const myData = {
   date: {
     type: "imprecisedate",
     not_before: "2022-01-01",
-    not_after: "2022-01-0",
+    not_after: "2022-01-01",
   },
 };
 
@@ -71,7 +72,7 @@ const myJsonSchema = {
     label: {
       type: "string",
       minLength: 1,
-      message: { minLength: "A label must be provided" },
+      errorMessage: "something wrong",
     },
     text: { type: "string" },
     date: {
@@ -113,12 +114,12 @@ const myJsonSchema = {
   required: ["date"],
 };
 
-const validator = new Validator(myJsonSchema);
-const jsonSchema: Draft = new Draft07(myJsonSchema);
+const validator = new Validator(myJsonSchema, "2020-12", false);
+//const jsonSchema: Draft = new Draft07(myJsonSchema);
 
 const TestingSchema: Component = (props) => {
-  //const persons = createDexieArrayQuery(() => db.persons.toArray());
-
+  const v = validator.validate(myData);
+  console.log(v);
   return <div>testingschema</div>;
 };
 

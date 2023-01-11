@@ -1,4 +1,4 @@
-import { CUSTOM_PROPERTIES } from "../../../interface-config.js";
+import { CUSTOM_EDIT_FIELDS } from "../../../interface-config.js";
 
 import {
   Component,
@@ -154,9 +154,9 @@ const InlineRelationEditField: Component<{
                   {field_name.replaceAll("_", " ")}
                 </div>
                 <Switch>
-                  <Match when={CUSTOM_PROPERTIES[field.property_type]}>
+                  <Match when={CUSTOM_EDIT_FIELDS[field.property_type]}>
                     <Dynamic
-                      component={CUSTOM_PROPERTIES[field.property_type]}
+                      component={CUSTOM_EDIT_FIELDS[field.property_type]}
                       value={props.value[field_name] || ""}
                       setValue={(value) => setValue(field_name, value)}
                     />
