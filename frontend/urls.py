@@ -55,6 +55,7 @@ def construct_subclass_hierarchy(model):
 def build_schema_from_pros_model(models, schema):
 
     for _, model in models.items():
+        # ic(model.json_schema)
         schema[model.model_name.lower()] = {
             "top_level": True if model.model.__bases__ == (ProsNode,) else False,
             "fields": model.fields,
@@ -65,6 +66,7 @@ def build_schema_from_pros_model(models, schema):
             },
             **construct_subclass_hierarchy(model),
             "subclasses_list": [m.model_name for m in model.subclasses_as_list],
+            "json_schema": model.json_schema,
         }
 
     return schema

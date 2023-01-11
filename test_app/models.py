@@ -83,7 +83,7 @@ class Factoid(ProsNode):
     )
     citation = Reference.as_inline_field()
 
-    text = StringProperty()
+    text = StringProperty(required=True)
 
     related_factoids = ProsRelationTo(
         "Factoid",
@@ -253,5 +253,3 @@ class Test(ProsNode):
     dateTime = DateTimeProperty()
     email = EmailProperty()
     complex_date = IncompleteDateProperty()
-
-    citation = Citation.as_inline_field()

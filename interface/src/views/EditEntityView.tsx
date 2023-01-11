@@ -20,6 +20,10 @@ import { putEntityData } from "../data/DataEndpoints";
 import { AiFillWarning } from "solid-icons/ai";
 import { BiSolidEditAlt } from "solid-icons/bi";
 
+import { Validator } from "@cfworker/json-schema";
+
+import { unpackValidationErrors } from "../utils/unpackValidationErrors";
+
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
@@ -28,6 +32,7 @@ const EditEntityView: Component = (props) => {
   const [initialData, refetchInitialData] = useRouteData();
 
   const [data, setData] = createSignal(initialData);
+  const [errors, setErrors] = createSignal({});
 
   const handleSetData = (data) => {
     //console.log(data);
@@ -36,20 +41,35 @@ const EditEntityView: Component = (props) => {
   };
 
   const [showSaveToast, setShowSaveToast] = createSignal(false);
+  const [showErrorToast, setShowErrorToast] = createSignal(false);
 
   createEffect(() => setData(initialData));
 
   const onSave = async () => {
-    const response = await putEntityData(
-      params.entity_type,
-      data().uid,
-      data()
+    const validator = new Validator(
+      schema[params.entity_type].json_schema,
+      "2020-12",
+      false
     );
-    //console.log("SUBMIT RESPINSE", response);
-    if (response.saved) {
-      setHasUnsavedChange(false);
-      setShowSaveToast(true);
-      setInterval(() => setShowSaveToast(false), 3000);
+    const validated = validator.validate(data());
+    console.log(validated);
+    const validationErros = unpackValidationErrors(validated);
+
+    if (validated.valid) {
+      const response = await putEntityData(
+        params.entity_type,
+        data().uid,
+        data()
+      );
+      //console.log("SUBMIT RESPINSE", response);
+      if (response.saved) {
+        setHasUnsavedChange(false);
+        setShowSaveToast(true);
+        setInterval(() => setShowSaveToast(false), 3000);
+      }
+    } else {
+      setShowErrorToast(true);
+      setInterval(() => setShowErrorToast(false), 3000);
     }
   };
 
@@ -107,6 +127,7 @@ const EditEntityView: Component = (props) => {
               </div>
             </Show>
             <Form
+              errors={errors}
               data={data}
               setData={handleSetData}
               entity_type={params.entity_type}
@@ -120,6 +141,15 @@ const EditEntityView: Component = (props) => {
           <div class="alert alert-success text-success-content">
             <div>
               <span>Save successful</span>
+            </div>
+          </div>
+        </div>
+      </Show>
+      <Show when={showErrorToast()}>
+        <div class="toast-end toast">
+          <div class="alert alert-error text-error-content">
+            <div>
+              <span>Error with data</span>
             </div>
           </div>
         </div>

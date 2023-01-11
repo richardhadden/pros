@@ -13,7 +13,10 @@ class IncompleteDateProperty(StringProperty):
     dates as Neo4J Date objects (or else call date() in Cypher queries)
     """
 
-    pass
+    json_schema_validation = {
+        "type": "string",
+        "pattern": "^\\d*(?:-(?:0[1-9]|1[012])(?:-(?:0[1-9]|[12][0-9]|3[01]))?)?$",
+    }
 
 
 class ComplexDate(ProsInlineOnlyNode):

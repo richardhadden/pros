@@ -1,4 +1,6 @@
 from collections import namedtuple
+from dataclasses import dataclass, asdict
+
 from django.conf import settings
 
 import inspect
@@ -16,27 +18,24 @@ PROS_APPS = [
 ic(PROS_APPS)
 
 
-AppModel = namedtuple(
-    "AppModels",
-    [
-        "app",
-        "model",
-        "model_name",
-        "meta",
-        "properties",
-        "relations",
-        "inline_relations",
-        "reverse_relations",
-        "fields",
-        "subclasses",
-        "subclasses_as_list",
-    ],
-)
+@dataclass
+class AppModel:
+    app: str
+    model: ProsNode
+    model_name: str
+    meta: dict
+    properties: dict
+    relations: dict
+    inline_relations: dict
+    reverse_relations: dict
+    fields: dict
+    subclasses: dict
+    subclasses_as_list: list
+    json_schema: dict = dict
 
 
 def build_field(p):
     if isinstance(p, Property):
-
         return {
             "type": "property",
             "property_type": p.__class__.__name__,
@@ -299,9 +298,158 @@ export const CUSTOM_VIEW_PAGES = {{}};
 
 
 PROS_MODELS = build_models(PROS_APPS)
+PROPERTY_VALIDATORS = {
+    p.__name__: getattr(
+        p,
+        "json_schema_validation",
+    )
+    for p in inheritors(Property)
+    if getattr(p, "json_schema_validation", False)
+}
+ic(PROPERTY_VALIDATORS)
+
+
+def build_property_field(field):
+    F = {}
+    if field["property_type"] in PROPERTY_VALIDATORS:
+        F = PROPERTY_VALIDATORS[field["property_type"]]
+    elif field["property_type"] == "StringProperty":
+        F["type"] = "string"
+        if field["required"]:
+            F["minLength"] = 1
+    elif field["property_type"] == "IntegerProperty":
+        F["type"] = "string"
+        F["pattern"] = "^\\d*$"
+    elif field["property_type"] == "FloatProperty":
+        F["type"] = "number"
+    elif field["property_type"] == "BooleanProperty":
+        F["type"] = "boolean"
+    elif field["property_type"] == "DateProperty":
+        F["type"] = "string"
+        F["format"] = "date"
+    elif field["property_type"] == "DateTimeProperty":
+        F["type"] = "string"
+        F["format"] = "date-time"
+    elif field["property_type"] == "EmailProperty":
+        F["type"] = "string"
+        F["format"] = "email"
+
+    return F
+
+
+def build_relation_field(field):
+    # ic(field)
+    F = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "label": {"type": "string"},
+                "uid": {"type": "string"},
+            },
+        },
+    }
+
+    if field["cardinality"] in {"One", "OneOrMore"}:
+        F["minLength"] = 0
+
+    if field["relation_fields"]:
+        F["relData"] = {
+            f_name: build_property_field(f)
+            for f_name, f in field["relation_fields"].items()
+        }
+    return F
+
+
+def build_inline_relation_field(field):
+    related_model = PROS_MODELS[field["relation_to"].lower()]
+    subclasses = related_model.subclasses_as_list
+
+    internal_fields = related_model.meta.get("internal_fields", [])
+
+    subclasses = [sc for sc in subclasses if not sc.meta.get("abstract", False)]
+    if not related_model.meta.get("abstract", False):
+        subclasses.append(related_model)
+
+    F = {
+        "type": "object",
+        "oneOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": subclass_type.model_name.lower(),
+                    },
+                    **{
+                        f_name: build_field_schema(f)
+                        for f_name, f in subclass_type.fields.items()
+                        if f_name not in internal_fields
+                    },
+                },
+            }
+            for subclass_type in subclasses
+        ],
+    }
+    return F
+
+
+"""
+ [{
+          type: "object",
+          properties: {
+            type: { type: "string", const: "precisedate" },
+            date: {
+              type: "string",
+              pattern:
+                "^\\d*(?:-(?:0[1-9]|1[012])(?:-(?:0[1-9]|[12][0-9]|3[01]))?)?$",
+            },
+          },
+        },
+        {
+          type: "object",
+          properties: {
+            type: { type: "string", const: "imprecisedate" },
+            not_before: {
+              type: "string",
+              pattern:
+                "^\\d*(?:-(?:0[1-9]|1[012])(?:-(?:0[1-9]|[12][0-9]|3[01]))?)?$",
+            },
+            not_after: {
+              type: "string",
+              pattern:
+                "^\\d*(?:-(?:0[1-9]|1[012])(?:-(?:0[1-9]|[12][0-9]|3[01]))?)?$",
+            },
+          },
+          required: ["not_before", "not_after"],
+        },]
+"""
+
+
+def build_field_schema(field):
+    if field["type"] == "property":
+        return build_property_field(field)
+    elif field["type"] == "relation" and not field["inline_relation"]:
+        return build_relation_field(field)
+    elif field["type"] == "relation" and field["inline_relation"]:
+        return build_inline_relation_field(field)
+
+
+# Iterate models and add json schema
+for model_name, model in PROS_MODELS.items():
+    internal_fields = model.meta.get("internal_fields", [])
+    S = {
+        "$id": "https://example.com/product.schema.json",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+            field_name: build_field_schema(field)
+            for field_name, field in model.fields.items()
+            if field_name not in internal_fields
+        },
+    }
+
+    PROS_MODELS[model_name].json_schema = S
+    # ic(PROS_MODELS[model_name])
+
 PROS_VIEWSET_MAP = build_viewsets(PROS_APPS)
 INTERFACE_COMPONENTS = gather_interface_components(PROS_APPS)
-
-from .build_json_schema import build_json_schema
-
-build_json_schema(PROS_MODELS)
