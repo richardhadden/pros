@@ -3,6 +3,7 @@ import { Component, createSignal, createRef } from "solid-js";
 const IncompleteDateProperty: Component<{
   value: any;
   setValue: (v: any) => void;
+  errors: object;
 }> = (props) => {
   const [dateFieldPreviousValue, setDateFieldPreviousValue] = createSignal(
     props.value ?? ""
@@ -83,7 +84,11 @@ const IncompleteDateProperty: Component<{
     <div class="w-fit">
       <input
         step="any"
-        class="border-b-primary bg-base-100 focus:border-primary focus:bg-base-200 w-36 appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-t-transparent border-l-transparent border-r-transparent bg-transparent pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:shadow-inner focus:outline-none"
+        class={`${
+          props.errors
+            ? "border-b-error focus:border-error"
+            : "border-b-primary focus:border-primary"
+        }  bg-base-100  focus:bg-base-200 w-36 appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-t-transparent border-l-transparent border-r-transparent bg-transparent pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:shadow-inner focus:outline-none`}
         value={props.value || ""}
         onInput={setDate}
       />

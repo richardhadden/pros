@@ -9,6 +9,8 @@ import {
   onCleanup,
   Switch,
   Match,
+  createEffect,
+  createMemo,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { groupBy } from "ramda";
@@ -23,6 +25,7 @@ import { CgOptions } from "solid-icons/cg";
 import TypedInputField from "./TypedInputField";
 
 import RelationEditField from "./RelationEditField";
+import { unpackInlineErrors } from "../../utils/unpackValidationErrors.js";
 
 function clickOutside(el: HTMLElement, accessor) {
   const onClick = (e) => !el.contains(e.target) && accessor()?.();
@@ -37,6 +40,12 @@ const InlineRelationEditField: Component<{
   inlineRelationFieldName: string;
   errors: object;
 }> = (props) => {
+  const inlineErrors = createMemo(() => {
+    return unpackInlineErrors(props.errors);
+  });
+
+  createEffect(() => inlineErrors());
+
   const grouped_fields = () => {
     const groups = groupByType(Object.entries(selectedTypeModel().fields));
 
@@ -155,7 +164,11 @@ const InlineRelationEditField: Component<{
           {([field_name, field]) => (
             <Show when={shouldShowField(field_name)}>
               <div class="col-span-3">
-                <div class="prose prose-sm mb-4 w-full select-none pl-2 font-semibold uppercase">
+                <div
+                  class={`prose prose-sm mb-4 w-full select-none pl-2 font-semibold uppercase ${
+                    inlineErrors()[field_name] ? "text-error" : ""
+                  }`}
+                >
                   {field_name.replaceAll("_", " ")}
                 </div>
                 <Switch>
@@ -164,6 +177,7 @@ const InlineRelationEditField: Component<{
                       component={CUSTOM_EDIT_FIELDS[field.property_type]}
                       value={props.value[field_name] || ""}
                       setValue={(value) => setValue(field_name, value)}
+                      errors={inlineErrors()[field_name]}
                     />
                   </Match>
                   <Match when={true}>
@@ -171,6 +185,7 @@ const InlineRelationEditField: Component<{
                       value={props.value[field_name] || ""}
                       setValue={(value) => setValue(field_name, value)}
                       propertyType={field.property_type}
+                      errors={inlineErrors()[field_name]}
                     />
                   </Match>
                 </Switch>
@@ -185,7 +200,11 @@ const InlineRelationEditField: Component<{
           {([field_name, field], index) => (
             <Show when={shouldShowField(field_name)}>
               <div class="col-span-8">
-                <div class="prose prose-sm mb-4 flex select-none font-semibold uppercase">
+                <div
+                  class={`prose prose-sm mb-4 flex select-none font-semibold uppercase ${
+                    inlineErrors()[field_name] ? "text-error" : ""
+                  }`}
+                >
                   <span class="mt-0.5">
                     {props.override_label || field_name.replaceAll("_", " ")}
                   </span>
@@ -203,6 +222,7 @@ const InlineRelationEditField: Component<{
                     value={props.value[field_name] || []}
                     onChange={(value) => setValue(field_name, value)}
                     reverseRelation={selectedTypeModel().reverseRelation}
+                    errors={inlineErrors()[field_name]}
                   />
                 </div>
                 <Show when={index() < grouped_fields().relation.length - 1}>

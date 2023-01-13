@@ -41,8 +41,8 @@ class Reference(ProsInlineOnlyNode):
 
 class Citation(Reference):
 
-    page = IntegerProperty()
-    line = IntegerProperty()
+    page = IntegerProperty(required=True)
+    line = IntegerProperty(required=True)
     source = ProsRelationTo("Source", "is_source_of", cardinality=One)
 
 

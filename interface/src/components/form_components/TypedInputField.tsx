@@ -96,7 +96,13 @@ const TypedInputField: Component<{
             props.errors ? typedInputFieldErrorStyle : typedInputFieldStyle
           }
           value={props.value}
-          onInput={(e) => props.setValue(Number(e.currentTarget.value))}
+          onInput={(e) =>
+            props.setValue(
+              e.currentTarget.value === ""
+                ? null
+                : Number(e.currentTarget.value)
+            )
+          }
           id={props.fieldName}
         />
       </Match>
