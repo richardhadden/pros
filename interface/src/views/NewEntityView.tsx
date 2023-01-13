@@ -17,37 +17,77 @@ import { schema } from "../index";
 import Form from "../components/EditForm";
 import { postNewEntityData } from "../data/DataEndpoints";
 
+import { Validator } from "@cfworker/json-schema";
+
+import { unpackValidationErrors } from "../utils/unpackValidationErrors";
+
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
 const NewEntityView: Component = (props) => {
   const params = useParams();
-  //const [initialData, refetchInitialData] = useRouteData();
+
+  const createBlankDataTemplate = (et) => {
+    // For validation, cannot easily validate an empty data object,
+    // so we create a blank one
+    const t = Object.entries(schema[et].fields).reduce((acc, curr) => {
+      const [field_name, field] = curr;
+      if (field.type === "relation" && field.inline_relation) {
+        acc[field_name] = { type: "" };
+      } else if (field.type === "relation") {
+        acc[field_name] = [];
+      } else {
+        acc[field_name] = "";
+      }
+
+      return acc;
+    }, {});
+    return t;
+  };
 
   const navigate = useNavigate();
 
-  const [data, setData] = createSignal({});
-
+  const [data, setData] = createSignal(
+    createBlankDataTemplate(params.entity_type)
+  );
+  const [errors, setErrors] = createSignal({});
   const handleSetData = (data) => {
     setHasUnsavedChange(true);
     setData(data);
   };
 
   const [showSaveToast, setShowSaveToast] = createSignal(false);
+  const [showErrorToast, setShowErrorToast] = createSignal(false);
 
   createEffect(() => console.log(data()));
 
   const onSave = async () => {
-    const response = await postNewEntityData(params.entity_type, data());
-    console.log("SUBMIT RESPINSE", response);
-    if (response.saved) {
-      setHasUnsavedChange(false);
-      setShowSaveToast(true);
-      setInterval(() => setShowSaveToast(false), 3000);
-      console.log("response", response);
-      navigate(`/entity/${params.entity_type}/${response.uid}/`, {
-        replace: false,
-      });
+    console.log(schema[params.entity_type].json_schema);
+    console.log("DATA", data());
+    const validator = new Validator(
+      schema[params.entity_type].json_schema,
+      "2020-12",
+      false
+    );
+    const validated = validator.validate(data());
+
+    const validationErrors = unpackValidationErrors(validated);
+    setErrors(validationErrors);
+
+    if (validated.valid) {
+      const response = await postNewEntityData(params.entity_type, data());
+      if (response && response.saved) {
+        setHasUnsavedChange(false);
+        setShowSaveToast(true);
+        setInterval(() => setShowSaveToast(false), 3000);
+
+        navigate(`/entity/${params.entity_type}/${response.uid}/`, {
+          replace: false,
+        });
+      }
+    } else {
+      setShowErrorToast(true);
+      setInterval(() => setShowErrorToast(false), 3000);
     }
   };
 
@@ -78,6 +118,7 @@ const NewEntityView: Component = (props) => {
             data={data}
             setData={handleSetData}
             entity_type={params.entity_type}
+            errors={errors}
           />
         </div>
       </Show>
@@ -87,6 +128,15 @@ const NewEntityView: Component = (props) => {
           <div class="alert alert-success text-success-content">
             <div>
               <span>Save successful</span>
+            </div>
+          </div>
+        </div>
+      </Show>
+      <Show when={showErrorToast()}>
+        <div class="toast-end toast">
+          <div class="alert alert-error text-error-content">
+            <div>
+              <span>Cannot save: error with form</span>
             </div>
           </div>
         </div>

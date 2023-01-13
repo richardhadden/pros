@@ -156,7 +156,7 @@ def update_related_nodes(
         # as it's not allowed... instead, get the old node from the rel_manager,
         # look up the new node by uid, and then reconnect the rel_manager
         if isinstance(rel_manager, neomodel.cardinality.One):
-            ic("cardinality one")
+
             old_node = rel_manager.get()
             new_node = related_model.nodes.get(uid=related_values[0]["uid"])
             rel_manager.reconnect(old_node, new_node)
@@ -167,7 +167,7 @@ def update_related_nodes(
         # or create new connection if so. Then, clean up all the no-longer
         # desired connections.
         elif isinstance(rel_manager, neomodel.cardinality.OneOrMore):
-            ic("cardinality one or more")
+
             for related_value in related_values:
 
                 if already_connected_node := rel_manager.get_or_none(
@@ -203,7 +203,7 @@ def update_related_nodes(
 
 def update_inline_related_nodes(instance, data):
     for inline_related_name, inline_field_data in data.items():
-        ic(inline_related_name)
+
         rel_manager = getattr(instance, inline_related_name)
         related_model = PROS_MODELS[inline_field_data["type"]].model
 
@@ -490,7 +490,7 @@ def generic_viewset_factory(
     app_model,
 ) -> type[ProsAbstractViewSet] | type[ProsDefaultViewSet]:
     def get_permissions(self):
-        ic(self)
+        # ic(self)
         if self.request.method == "GET":
             permission_classes = [AllowAny]
         else:

@@ -45,6 +45,7 @@ const RelationEditField: Component<{
   onChange: Setter<RelationFieldType[]>;
   data: RelationFieldType;
   reverseRelation: string;
+  errors: object;
 }> = (props) => {
   const [cardinalityReached, setCardinalityReached] = createSignal(false);
   const [resultsPanelVisible, setResultsPanelVisible] = createSignal(false);
@@ -262,12 +263,16 @@ const RelationEditField: Component<{
           <div class="relative col-span-6 flex w-full">
             <input
               type="text"
-              class={`mb-4 mt-4 
+              class={`${
+                props.errors
+                  ? "border-error focus:border-error "
+                  : "border-primary focus:border-primary"
+              }  mb-4 mt-4 
             w-full rounded-t-md border-b-2 
             border-t-2 border-l-2 
-            border-r-2 border-primary border-t-transparent border-l-transparent 
+            border-r-2  border-t-transparent border-l-transparent 
             border-r-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 
-            focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary 
+            focus:rounded-b-md focus:border-2 focus:border-b-2 
             focus:bg-base-200 focus:shadow-inner  focus:outline-none`}
               value={autoCompleteTextInput()}
               onInput={(e) => setAutoCompleteTextInput(e.target.value)}

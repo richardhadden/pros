@@ -1,4 +1,4 @@
-import { Accessor, Component, Show } from "solid-js";
+import { Accessor, Component, createEffect, Show } from "solid-js";
 
 import TypedInputField from "./TypedInputField";
 
@@ -11,7 +11,7 @@ const TypedInputRow: Component<{
   errors: object;
 }> = (props) => {
   //createEffect(() => console.log(props.fieldName, props.value));
-
+  createEffect(() => console.log(props.errors));
   return (
     <>
       <div class="col-span-2 mb-4 mt-8 flex select-none flex-col items-baseline font-semibold uppercase">
@@ -31,6 +31,7 @@ const TypedInputRow: Component<{
           setValue={props.setValue}
           fieldName={props.fieldName}
           propertyType={props.propertyType}
+          errors={props.errors}
         />
       </div>
       <div class="col-span-1" />

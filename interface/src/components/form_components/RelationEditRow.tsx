@@ -54,6 +54,7 @@ const RelationEditRow: Component<{
           onChange={props.onChange}
           data={props.data}
           reverseRelation={props.reverseRelation}
+          errors={props.errors}
         />
       </div>
     </>

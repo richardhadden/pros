@@ -6,6 +6,9 @@ import { Dynamic } from "solid-js/web";
 const typedInputFieldStyle =
   "w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none";
 
+const typedInputFieldErrorStyle =
+  "w-full rounded-b-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-error border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-error focus:bg-base-200 focus:shadow-inner focus:outline-none";
+
 const TypedInputField: Component<{
   fieldName: string;
   value: any;
@@ -20,6 +23,7 @@ const TypedInputField: Component<{
     | "DateTimeProperty"
     | string;
   helpText?: string;
+  errors: object;
 }> = (props) => {
   const [floatFieldPreviousValue, setFloatFieldPreviousValue] = createSignal(
     props.value ?? ""
@@ -30,10 +34,10 @@ const TypedInputField: Component<{
     const v = (e.currentTarget as HTMLInputElement).value;
     const regex = /^\d*(?:\.\d*)?$/;
     if (regex.test(v)) {
-      props.setValue(v);
+      props.setValue(Number(v));
       setFloatFieldPreviousValue(v);
     } else {
-      props.setValue(floatFieldPreviousValue());
+      props.setValue(Number(floatFieldPreviousValue()));
     }
   };
 
@@ -58,7 +62,9 @@ const TypedInputField: Component<{
       <Match when={props.propertyType === "StringProperty"}>
         <input
           type="text"
-          class={typedInputFieldStyle}
+          class={
+            props.errors ? typedInputFieldErrorStyle : typedInputFieldStyle
+          }
           value={props.value || ""}
           onInput={(e) => props.setValue(e.currentTarget.value)}
         />
@@ -67,7 +73,9 @@ const TypedInputField: Component<{
         <div>
           <input
             type="email"
-            class={typedInputFieldStyle}
+            class={
+              props.errors ? typedInputFieldErrorStyle : typedInputFieldStyle
+            }
             value={props.value || ""}
             onInput={setEmail}
           />
@@ -84,7 +92,9 @@ const TypedInputField: Component<{
         <input
           step="any"
           type="number"
-          class={typedInputFieldStyle}
+          class={
+            props.errors ? typedInputFieldErrorStyle : typedInputFieldStyle
+          }
           value={props.value}
           onInput={(e) => props.setValue(Number(e.currentTarget.value))}
           id={props.fieldName}
@@ -95,7 +105,9 @@ const TypedInputField: Component<{
           step="any"
           type="text"
           pattern="^\d*\.?\d*$"
-          class={"w-fit " + typedInputFieldStyle}
+          class={`w-fit ${
+            props.errors ? typedInputFieldErrorStyle : typedInputFieldStyle
+          }`}
           value={props.value || ""}
           onInput={setFloat}
         />
@@ -104,7 +116,9 @@ const TypedInputField: Component<{
         <div class="w-fit">
           <input
             type="checkbox"
-            class="toggle-primary toggle mt-3"
+            class={`${
+              props.errors ? "toggle-error" : "toggle-primary"
+            } toggle mt-3`}
             checked={props.value}
             onChange={(e) => props.setValue(e.currentTarget.checked)}
           />
@@ -117,7 +131,7 @@ const TypedInputField: Component<{
         <div class="w-fit">
           <input
             type="date"
-            class="appearance-none  rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
+            class="appearance-none rounded-tl-md rounded-tr-md border-b-2 border-t-2 border-l-2 border-r-2 border-b-primary border-t-transparent border-l-transparent border-r-transparent bg-transparent bg-base-100 pl-5 pr-5 pb-3 pt-3 focus:rounded-t-md focus:rounded-b-md focus:border-2 focus:border-b-2 focus:border-primary focus:bg-base-200 focus:shadow-inner focus:outline-none"
             value={props.value || ""}
             onInput={(e) => props.setValue(e.currentTarget.value)}
           />

@@ -70,6 +70,7 @@ const InlineRelationEditField: Component<{
 
   onMount(() => {
     setSelectedType(props.value?.type || subclasses_list()[0]);
+    //props.onChange({ type: selectedType().toLowerCase() });
   });
 
   const selectedTypeModel = () => {

@@ -162,7 +162,7 @@ const Form: Component<{
                     setValue={(value) =>
                       handleSetFieldData(schema_field_name, value)
                     }
-                    errors={props.errors()[schema_field_name]}
+                    errors={props.errors()?.[schema_field_name]}
                   />
                 </Match>
 
@@ -183,7 +183,7 @@ const Form: Component<{
                     setValue={(value) =>
                       handleSetFieldData(schema_field_name, value)
                     }
-                    errors={props.errors()[schema_field_name]}
+                    errors={props.errors()?.[schema_field_name]}
                   />
                 </Match>
 
@@ -226,7 +226,7 @@ const Form: Component<{
                     onChange={(value) =>
                       handleSetFieldData(schema_field_name, value)
                     }
-                    errors={props.errors()[schema_field_name]}
+                    errors={props.errors()?.[schema_field_name]}
                   />
                 </Match>
                 {/* Renders inline relation field */}
@@ -245,7 +245,7 @@ const Form: Component<{
                     inlineRelationFieldName={
                       (field as SchemaFieldRelation).relation_to
                     }
-                    errors={props.errors()[schema_field_name]}
+                    errors={props.errors()?.[schema_field_name]}
                   />
                 </Match>
               </Switch>

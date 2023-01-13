@@ -53,6 +53,7 @@ const EmbeddedNewEntity: Component<{
           data={props.data}
           setData={props.setData}
           entity_type={props.entityType()}
+          errors={() => {}}
         />
       </div>
     </Show>

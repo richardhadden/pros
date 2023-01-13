@@ -445,6 +445,16 @@ for model_name, model in PROS_MODELS.items():
             for field_name, field in model.fields.items()
             if field_name not in internal_fields
         },
+        "required": [
+            field_name
+            for field_name, field in model.fields.items()
+            if field.get("required")
+        ]
+        + [
+            field_name
+            for field_name, field in model.fields.items()
+            if field.get("cardinality") in {"One", "OneOrMore"}
+        ],
     }
 
     PROS_MODELS[model_name].json_schema = S

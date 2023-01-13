@@ -152,7 +152,7 @@ const EditEntityView: Component = (props) => {
         <div class="toast-end toast">
           <div class="alert alert-error text-error-content">
             <div>
-              <span>Error with data</span>
+              <span>Cannot save: error with form</span>
             </div>
           </div>
         </div>
