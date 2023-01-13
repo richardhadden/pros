@@ -57,6 +57,7 @@ const nested_get = (
 const Form: Component<{
   entity_type: string;
   data: Accessor<{ [key: string]: RelationFieldType[] | string }>;
+  errors: Accessor<object>;
   setData: Setter<object>;
 }> = (props) => {
   const handleSetFieldData = (field_name: string, value: any) => {
@@ -98,10 +99,15 @@ const Form: Component<{
 
   const build_label = createMemo(() => {
     if (schema[props.entity_type]?.meta?.label_template) {
-      return build_label_template(
+      const label = build_label_template(
         (schema[props.entity_type as string] as SchemaEntity).meta
           .label_template
       );
+      if (label) {
+        return label;
+      } else {
+        return "";
+      }
     } else {
       return props.data()["label"];
     }
@@ -111,7 +117,7 @@ const Form: Component<{
     let sorted_fields = Object.entries(schema[props.entity_type]?.fields);
     const field_orderings = schema[props.entity_type]?.meta?.order_fields;
     if (field_orderings) {
-      console.log("orderfields");
+      //console.log("orderfields");
       sorted_fields = sortBy(([field_name, field]) => {
         if (field_name === "label") {
           return -1;
@@ -156,6 +162,7 @@ const Form: Component<{
                     setValue={(value) =>
                       handleSetFieldData(schema_field_name, value)
                     }
+                    errors={props.errors()[schema_field_name]}
                   />
                 </Match>
 
@@ -176,6 +183,7 @@ const Form: Component<{
                     setValue={(value) =>
                       handleSetFieldData(schema_field_name, value)
                     }
+                    errors={props.errors()[schema_field_name]}
                   />
                 </Match>
 
@@ -218,6 +226,7 @@ const Form: Component<{
                     onChange={(value) =>
                       handleSetFieldData(schema_field_name, value)
                     }
+                    errors={props.errors()[schema_field_name]}
                   />
                 </Match>
                 {/* Renders inline relation field */}
@@ -236,6 +245,7 @@ const Form: Component<{
                     inlineRelationFieldName={
                       (field as SchemaFieldRelation).relation_to
                     }
+                    errors={props.errors()[schema_field_name]}
                   />
                 </Match>
               </Switch>

@@ -318,8 +318,7 @@ def build_property_field(field):
         if field["required"]:
             F["minLength"] = 1
     elif field["property_type"] == "IntegerProperty":
-        F["type"] = "string"
-        F["pattern"] = "^\\d*$"
+        F["type"] = "integer"
     elif field["property_type"] == "FloatProperty":
         F["type"] = "number"
     elif field["property_type"] == "BooleanProperty":
@@ -351,10 +350,10 @@ def build_relation_field(field):
     }
 
     if field["cardinality"] in {"One", "OneOrMore"}:
-        F["minLength"] = 0
+        F["minItems"] = 1
 
     if field["relation_fields"]:
-        F["relData"] = {
+        F["items"]["properties"]["relData"] = {
             f_name: build_property_field(f)
             for f_name, f in field["relation_fields"].items()
         }

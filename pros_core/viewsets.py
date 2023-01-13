@@ -156,17 +156,42 @@ def update_related_nodes(
         # as it's not allowed... instead, get the old node from the rel_manager,
         # look up the new node by uid, and then reconnect the rel_manager
         if isinstance(rel_manager, neomodel.cardinality.One):
+            ic("cardinality one")
             old_node = rel_manager.get()
             new_node = related_model.nodes.get(uid=related_values[0]["uid"])
             rel_manager.reconnect(old_node, new_node)
 
-        # Otherwise, do the nice easy brute-force technique of dropping all connections
-        # and recreating them.
-        # #TODO: Maybe this can be made more efficient on DB?
+        # If it's a OneOrMore cardinality relation, also cannot disconnect
+        # everything; here we need to find out whether a relation already exists,
+        # in which case, use rel_manager.replace (otherwise it creates new)
+        # or create new connection if so. Then, clean up all the no-longer
+        # desired connections.
+        elif isinstance(rel_manager, neomodel.cardinality.OneOrMore):
+            ic("cardinality one or more")
+            for related_value in related_values:
+
+                if already_connected_node := rel_manager.get_or_none(
+                    uid=related_value["uid"]
+                ):
+                    rel_manager.replace(
+                        already_connected_node,
+                        related_value.get("relData") or {},
+                    )
+                else:
+                    rel_manager.connect(
+                        related_model.nodes.get(uid=related_value["uid"]),
+                        related_value.get("relData") or {},
+                    )
+
+            updated_uids = {rv["uid"] for rv in related_values}
+
+            for node in rel_manager.all():
+                if node.uid not in updated_uids:
+                    rel_manager.disconnect(node)
+        # Otherwise, more efficient brute-force option as
         else:
             # Remove all relations
-            for related in rel_manager.all():
-                rel_manager.disconnect(related_model.nodes.get(uid=related.uid))
+            rel_manager.disconnect_all()
 
             # And recreate them again so that the data is updated
             for related_value in related_values:
@@ -178,7 +203,7 @@ def update_related_nodes(
 
 def update_inline_related_nodes(instance, data):
     for inline_related_name, inline_field_data in data.items():
-
+        ic(inline_related_name)
         rel_manager = getattr(instance, inline_related_name)
         related_model = PROS_MODELS[inline_field_data["type"]].model
 
@@ -190,6 +215,8 @@ def update_inline_related_nodes(instance, data):
         ) = get_property_and_relation_data(inline_field_data, related_model)
         try:  # If there is already a node related here...
 
+            ## We need to remove the old node, because it could have changed type...
+
             old_related_node = rel_manager.all()[0]  # Get it...
             # (there should only be one node to get, due to One cardinality)
 
@@ -200,20 +227,23 @@ def update_inline_related_nodes(instance, data):
             # Reconnect from the old node to the new node
             rel_manager.reconnect(old_related_node, new_related_node)
 
-            # Disconnect the old inline related node from its
-            # current outbound relations
+            # CHANGE: No need to delete connections: just delete the node
+            # if it is no longer referenced by anything else
+            """
             for k, v in relation_data.items():
                 old_node_rel_manager = getattr(old_related_node, k)
                 for i in v:
                     i_related_model = PROS_MODELS[i["real_type"]].model
                     i_node = i_related_model.nodes.get(uid=i["uid"])
                     old_node_rel_manager.disconnect(i_node)
+            """
 
             # Add the relation to the new node
-            update_related_nodes(related_model, new_related_node, relation_data)
+            add_related_nodes(related_model, new_related_node, relation_data)
 
             # If the old node is not related to anything else
             # delete it
+
             if not old_related_node.has_relations():
                 old_related_node.delete()
 
@@ -222,7 +252,7 @@ def update_inline_related_nodes(instance, data):
             new_related_node = related_model(**property_data)
             new_related_node.save()
             rel_manager.connect(new_related_node)
-            update_related_nodes(related_model, new_related_node, relation_data)
+            add_related_nodes(related_model, new_related_node, relation_data)
 
 
 # Viewset methods
@@ -389,9 +419,11 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
             "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
         }
 
-        self.__model_class__.create_or_update({"uid": pk, **property_data})
-
         instance: ProsNode = self.__model_class__.nodes.get(uid=pk)
+
+        for property_key, property_value in property_data.items():
+            setattr(instance, property_key, property_value)
+        instance.save()
 
         update_related_nodes(self.__model_class__, instance, relation_data)
         update_inline_related_nodes(instance, inline_relation_data)

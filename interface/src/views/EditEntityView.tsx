@@ -45,6 +45,8 @@ const EditEntityView: Component = (props) => {
 
   createEffect(() => setData(initialData));
 
+  createEffect(() => console.log(data()));
+
   const onSave = async () => {
     const validator = new Validator(
       schema[params.entity_type].json_schema,
@@ -52,8 +54,9 @@ const EditEntityView: Component = (props) => {
       false
     );
     const validated = validator.validate(data());
-    console.log(validated);
-    const validationErros = unpackValidationErrors(validated);
+
+    const validationErrors = unpackValidationErrors(validated);
+    setErrors(validationErrors);
 
     if (validated.valid) {
       const response = await putEntityData(

@@ -1,4 +1,4 @@
-import { Component } from "solid-js";
+import { Accessor, Component, Show } from "solid-js";
 
 import TypedInputField from "./TypedInputField";
 
@@ -8,13 +8,16 @@ const TypedInputRow: Component<{
   setValue: (v: any) => void;
   propertyType: "StringProperty" | "EmailProperty" | "IntegerProperty";
   helpText: string;
+  errors: object;
 }> = (props) => {
   //createEffect(() => console.log(props.fieldName, props.value));
 
   return (
     <>
       <div class="col-span-2 mb-4 mt-8 flex select-none flex-col items-baseline font-semibold uppercase">
-        <div>{props.fieldName.replaceAll("_", " ")}</div>
+        <div class={props.errors && "text-error"}>
+          {props.fieldName.replaceAll("_", " ")}
+        </div>
         <label
           class="prose prose-sm mt-4 block select-none uppercase text-gray-300"
           for={props.fieldName}

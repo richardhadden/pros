@@ -35,6 +35,7 @@ const groupByType = groupBy(([field_name, field]) => field.type);
 
 const InlineRelationEditField: Component<{
   inlineRelationFieldName: string;
+  errors: object;
 }> = (props) => {
   const grouped_fields = () => {
     const groups = groupByType(Object.entries(selectedTypeModel().fields));
@@ -102,13 +103,16 @@ const InlineRelationEditField: Component<{
   return (
     <>
       <div class="col-span-2 mb-2 mt-8 flex select-none flex-col items-baseline font-semibold uppercase">
-        <div>{props.fieldName.replaceAll("_", " ")}</div>
+        <div class={props.errors && "text-error"}>
+          {props.fieldName.replaceAll("_", " ")}
+        </div>
         <label
           class="prose prose-sm mt-4 block select-none uppercase text-gray-300"
           for={props.fieldName}
         >
           {props.helpText}
         </label>
+
         <div
           class=" flex flex-col"
           use:clickOutside={() => setShowDropdown(false)}

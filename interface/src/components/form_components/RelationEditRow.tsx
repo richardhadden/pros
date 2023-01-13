@@ -24,11 +24,16 @@ const RelationEditRow: Component<{
   onChange: Setter<RelationFieldType[]>;
   data: Accessor<RelationFieldType[]>;
   reverseRelation: string;
+  errors: object;
 }> = (props) => {
   return (
     <>
       {/* LEFT COLUMN */}
-      <div class="col-span-2 mb-4 mt-4 select-none font-semibold uppercase">
+      <div
+        class={`col-span-2 mb-4 mt-4 select-none font-semibold uppercase ${
+          props.errors && "text-error"
+        }`}
+      >
         {props.override_labels
           ? props.override_labels[0]
           : props.fieldName.replaceAll("_", " ")}

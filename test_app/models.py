@@ -1,4 +1,4 @@
-from neomodel import One, ZeroOrOne
+from neomodel import One, ZeroOrOne, OneOrMore
 from neomodel.properties import (
     StringProperty,
     BooleanProperty,
@@ -43,7 +43,7 @@ class Citation(Reference):
 
     page = IntegerProperty()
     line = IntegerProperty()
-    source = ProsRelationTo("Source", "is_source_of")
+    source = ProsRelationTo("Source", "is_source_of", cardinality=One)
 
 
 class ImpliedByFactoid(Reference):
@@ -79,7 +79,7 @@ class Factoid(ProsNode):
         "Person",
         reverse_name="HAS_FACTOID_ABOUT",
         model=UncertainRelation,
-        cardinality=ZeroOrOne,
+        cardinality=OneOrMore,
     )
     citation = Reference.as_inline_field()
 

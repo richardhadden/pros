@@ -86,7 +86,7 @@ const TypedInputField: Component<{
           type="number"
           class={typedInputFieldStyle}
           value={props.value}
-          onInput={(e) => props.setValue(e.currentTarget.value)}
+          onInput={(e) => props.setValue(Number(e.currentTarget.value))}
           id={props.fieldName}
         />
       </Match>

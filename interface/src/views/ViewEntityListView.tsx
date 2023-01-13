@@ -88,6 +88,11 @@ const ViewEntityListView: Component = () => {
   };
 
   createEffect(() => {
+    params.entity_type;
+    setShowFilteringSpinner(true);
+  });
+
+  createEffect(() => {
     data();
     setShowFilteringSpinner(false);
   });
@@ -126,7 +131,7 @@ const ViewEntityListView: Component = () => {
         />
 
         <Show
-          when={data()}
+          when={data() && showFilteringSpinner() == false}
           fallback={
             <div class="mx-auto mt-32  ml-6 ">
               <LoadingSpinner />
