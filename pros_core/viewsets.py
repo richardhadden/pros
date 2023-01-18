@@ -4,7 +4,7 @@ from typing import Type, Callable
 
 from django.urls import path
 from rest_framework.permissions import IsAuthenticated, AllowAny
-
+from jsonschema import validate, ValidationError
 
 from neomodel.exceptions import DoesNotExist
 from neomodel import db
@@ -379,6 +379,14 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
 
     @db.write_transaction
     def do_create(self, request: Request) -> ResponseValue:
+        try:
+            v = validate(
+                instance=request.data,
+                schema=PROS_MODELS[self.__model_class__.__name__.lower()].json_schema,
+            )
+        except ValidationError as e:
+            return ResponseValue(data=e, status=400)
+
         (
             property_data,
             relation_data,
@@ -408,6 +416,14 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
 
     @db.write_transaction
     def do_update(self, request: Request, pk: str | None) -> ResponseValue:
+        try:
+            v = validate(
+                instance=request.data,
+                schema=PROS_MODELS[self.__model_class__.__name__.lower()].json_schema,
+            )
+        except ValidationError as e:
+            return ResponseValue(data=e, status=400)
+
         (
             property_data,
             relation_data,
