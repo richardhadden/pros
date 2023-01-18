@@ -102,6 +102,12 @@ class Order(Factoid):
     person_ordered = ProsRelationTo("Person", "received_order")
     thing_ordered = ProsRelationTo("Factoid", "ordered_by")
 
+    class Meta:
+        order_fields = ["text", "is_about_person", "person_ordered", "thing_ordered"]
+        override_labels = {
+            "is_about_person": OverrideLabel("person_giving_order", "order_given_by"),
+        }
+
 
 class Event(Factoid):
     location = ProsRelationTo("Location", reverse_name="location_of_event")

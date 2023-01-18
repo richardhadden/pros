@@ -35,7 +35,7 @@ const RelationEditRow: Component<{
         }`}
       >
         {props.override_labels
-          ? props.override_labels[0]
+          ? props.override_labels[0].replaceAll("_", " ")
           : props.fieldName.replaceAll("_", " ")}
         <div class="mt-1 ml-1 select-none">
           <BsArrowReturnRight class="inline-block" />{" "}

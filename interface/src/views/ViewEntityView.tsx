@@ -225,7 +225,8 @@ const TypeGroupedRelationViewRow: Component<{
               class={`col-span-2 mb-4 mt-4 select-none pt-2 font-semibold uppercase`}
             >
               <Show when={index() === 0}>
-                {props.override_label || props.fieldName.replaceAll("_", " ")}
+                {props.override_label?.replaceAll("_", " ") ||
+                  props.fieldName.replaceAll("_", " ")}
               </Show>
 
               <div
@@ -520,11 +521,11 @@ const ViewEntity: Component = () => {
                           }
                         >
                           <RelationViewRow
-                            override_label={
-                              schema[params.entity_type].meta.override_labels?.[
-                                schema_field_name.toLowerCase()
-                              ]?.[0]
-                            }
+                            override_label={schema[
+                              params.entity_type
+                            ].meta.override_labels?.[
+                              schema_field_name.toLowerCase()
+                            ]?.[0].replaceAll("_", " ")}
                             fieldName={schema_field_name}
                             value={data()[schema_field_name]}
                             field={field as SchemaFieldRelation}
