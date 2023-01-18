@@ -188,7 +188,9 @@ def update_related_nodes(
             for node in rel_manager.all():
                 if node.uid not in updated_uids:
                     rel_manager.disconnect(node)
-        # Otherwise, more efficient brute-force option as
+        # TODO: this might not be as quick as comparing lists
+        # of relations and making fewer changes... (unlikely list will
+        # change dramatically...)
         else:
             # Remove all relations
             rel_manager.disconnect_all()
