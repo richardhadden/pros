@@ -31,6 +31,7 @@ class AppModel:
     fields: dict
     subclasses: dict
     subclasses_as_list: list
+    model_docstring: str
     json_schema: dict = dict
 
 
@@ -167,6 +168,7 @@ def build_app_model(app_name, model, model_name):
             build_app_model(app_name, m, m.__name__)
             for m in build_subclasses_as_list(model)
         ],
+        model_docstring=model.__doc__,
     )
 
 

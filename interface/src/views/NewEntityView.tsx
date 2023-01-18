@@ -113,6 +113,7 @@ const NewEntityView: Component = (props) => {
             </div>
           }
         />
+
         <div class="mt-32 mb-48">
           <Form
             data={data}

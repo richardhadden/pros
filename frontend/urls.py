@@ -52,6 +52,9 @@ def construct_subclass_hierarchy(model):
     return {}
 
 
+import markdown
+
+
 def build_schema_from_pros_model(models, schema):
 
     for _, model in models.items():
@@ -67,6 +70,9 @@ def build_schema_from_pros_model(models, schema):
             **construct_subclass_hierarchy(model),
             "subclasses_list": [m.model_name for m in model.subclasses_as_list],
             "json_schema": model.json_schema,
+            "model_docstring": markdown.markdown(model.model_docstring)
+            if model.model_docstring
+            else "",
         }
 
     return schema

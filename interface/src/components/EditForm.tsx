@@ -133,136 +133,146 @@ const Form: Component<{
   });
 
   return (
-    <div class="ml-6 grid grid-cols-8">
-      <Show when={schema[props.entity_type]}>
-        <For each={sorted_fields()}>
-          {(
-            [schema_field_name, field]: [string, unknown],
-            index: Accessor<number>
-          ) => (
-            <>
-              <Switch>
-                {/* Renders default property field */}
-                <Match
-                  when={
-                    (field as SchemaFieldProperty).type === "property" &&
-                    schema_field_name !== "label"
-                  }
-                >
-                  <TypedInputRow
-                    fieldName={schema_field_name}
-                    propertyType={(field as SchemaFieldProperty).property_type}
-                    helpText={field.help_text}
-                    value={
-                      props.data()[schema_field_name] !== null
-                        ? props.data()[schema_field_name]
-                        : schema[props.entity_type].fields[schema_field_name]
-                            .default_value || ""
+    <>
+      <div class="ml-6 grid grid-cols-8">
+        <div
+          innerHTML={schema[props.entity_type]?.model_docstring}
+          class="prose-sm col-span-8 text-center  font-semibold uppercase text-gray-300"
+        ></div>
+        <Show when={schema[props.entity_type]}>
+          <For each={sorted_fields()}>
+            {(
+              [schema_field_name, field]: [string, unknown],
+              index: Accessor<number>
+            ) => (
+              <>
+                <Switch>
+                  {/* Renders default property field */}
+                  <Match
+                    when={
+                      (field as SchemaFieldProperty).type === "property" &&
+                      schema_field_name !== "label"
                     }
-                    setValue={(value) =>
-                      handleSetFieldData(schema_field_name, value)
-                    }
-                    errors={props.errors()?.[schema_field_name]}
-                  />
-                </Match>
+                  >
+                    <TypedInputRow
+                      fieldName={schema_field_name}
+                      propertyType={
+                        (field as SchemaFieldProperty).property_type
+                      }
+                      helpText={field.help_text}
+                      value={
+                        props.data()[schema_field_name] !== null
+                          ? props.data()[schema_field_name]
+                          : schema[props.entity_type].fields[schema_field_name]
+                              .default_value || ""
+                      }
+                      setValue={(value) =>
+                        handleSetFieldData(schema_field_name, value)
+                      }
+                      errors={props.errors()?.[schema_field_name]}
+                    />
+                  </Match>
 
-                {/* Renders label as editable field if no label template */}
-                <Match
-                  when={
-                    (field as SchemaFieldProperty).type === "property" &&
-                    schema_field_name === "label" &&
-                    !schema[props.entity_type].meta.label_template
-                  }
-                >
-                  <TypedInputRow
-                    fieldName={schema_field_name}
-                    helpText={(field as SchemaFieldProperty).help_text}
-                    propertyType={(field as SchemaFieldProperty).property_type}
-                    // @ts-ignore
-                    value={props.data()[schema_field_name] || ""}
-                    setValue={(value) =>
-                      handleSetFieldData(schema_field_name, value)
+                  {/* Renders label as editable field if no label template */}
+                  <Match
+                    when={
+                      (field as SchemaFieldProperty).type === "property" &&
+                      schema_field_name === "label" &&
+                      !schema[props.entity_type].meta.label_template
                     }
-                    errors={props.errors()?.[schema_field_name]}
-                  />
-                </Match>
+                  >
+                    <TypedInputRow
+                      fieldName={schema_field_name}
+                      helpText={(field as SchemaFieldProperty).help_text}
+                      propertyType={
+                        (field as SchemaFieldProperty).property_type
+                      }
+                      // @ts-ignore
+                      value={props.data()[schema_field_name] || ""}
+                      setValue={(value) =>
+                        handleSetFieldData(schema_field_name, value)
+                      }
+                      errors={props.errors()?.[schema_field_name]}
+                    />
+                  </Match>
 
-                {/* Renders template-generated label if there is label_template set */}
-                <Match
-                  when={
-                    schema_field_name === "label" &&
-                    schema[props.entity_type].meta.label_template
-                  }
-                >
-                  <TextFieldView
-                    fieldName={schema_field_name}
-                    // @ts-ignore
-                    value={props.data()["label"] || ""}
-                  />
-                </Match>
+                  {/* Renders template-generated label if there is label_template set */}
+                  <Match
+                    when={
+                      schema_field_name === "label" &&
+                      schema[props.entity_type].meta.label_template
+                    }
+                  >
+                    <TextFieldView
+                      fieldName={schema_field_name}
+                      // @ts-ignore
+                      value={props.data()["label"] || ""}
+                    />
+                  </Match>
 
-                {/* Renders normal relation field */}
-                <Match
-                  when={
-                    (field as SchemaFieldRelation).type === "relation" &&
-                    !(field as SchemaFieldRelation).inline_relation
-                  }
-                >
-                  <RelationEditRow
-                    override_labels={
-                      schema[props.entity_type].meta?.override_labels?.[
-                        schema_field_name
-                      ]
+                  {/* Renders normal relation field */}
+                  <Match
+                    when={
+                      (field as SchemaFieldRelation).type === "relation" &&
+                      !(field as SchemaFieldRelation).inline_relation
                     }
-                    fieldName={schema_field_name}
-                    value={props.data()[schema_field_name] || []}
-                    field={field as SchemaFieldRelation}
-                    relatedToType={(
-                      field as SchemaFieldRelation
-                    ).relation_to.toLowerCase()}
-                    relationFields={
-                      (field as SchemaFieldRelation).relation_fields
+                  >
+                    <RelationEditRow
+                      override_labels={
+                        schema[props.entity_type].meta?.override_labels?.[
+                          schema_field_name
+                        ]
+                      }
+                      fieldName={schema_field_name}
+                      value={props.data()[schema_field_name] || []}
+                      field={field as SchemaFieldRelation}
+                      relatedToType={(
+                        field as SchemaFieldRelation
+                      ).relation_to.toLowerCase()}
+                      relationFields={
+                        (field as SchemaFieldRelation).relation_fields
+                      }
+                      onChange={(value) =>
+                        handleSetFieldData(schema_field_name, value)
+                      }
+                      errors={props.errors()?.[schema_field_name]}
+                    />
+                  </Match>
+                  {/* Renders inline relation field */}
+                  <Match
+                    when={
+                      (field as SchemaFieldRelation).type === "relation" &&
+                      (field as SchemaFieldRelation).inline_relation
                     }
-                    onChange={(value) =>
-                      handleSetFieldData(schema_field_name, value)
-                    }
-                    errors={props.errors()?.[schema_field_name]}
-                  />
-                </Match>
-                {/* Renders inline relation field */}
-                <Match
-                  when={
-                    (field as SchemaFieldRelation).type === "relation" &&
-                    (field as SchemaFieldRelation).inline_relation
-                  }
-                >
-                  <InlineRelationEditField
-                    value={props.data()[schema_field_name] || {}}
-                    onChange={(value) =>
-                      handleSetFieldData(schema_field_name, value)
-                    }
-                    fieldName={schema_field_name}
-                    inlineRelationFieldName={
-                      (field as SchemaFieldRelation).relation_to
-                    }
-                    errors={props.errors()?.[schema_field_name]}
-                  />
-                </Match>
-              </Switch>
+                  >
+                    <InlineRelationEditField
+                      value={props.data()[schema_field_name] || {}}
+                      onChange={(value) =>
+                        handleSetFieldData(schema_field_name, value)
+                      }
+                      fieldName={schema_field_name}
+                      inlineRelationFieldName={
+                        (field as SchemaFieldRelation).relation_to
+                      }
+                      errors={props.errors()?.[schema_field_name]}
+                    />
+                  </Match>
+                </Switch>
 
-              <Show
-                when={
-                  Object.entries(schema[props.entity_type].fields).length >
-                  index() + 1
-                }
-              >
-                <div class="divider col-span-8" />
-              </Show>
-            </>
-          )}
-        </For>
-      </Show>
-    </div>
+                <Show
+                  when={
+                    Object.entries(schema[props.entity_type].fields).length >
+                    index() + 1
+                  }
+                >
+                  <div class="divider col-span-8" />
+                </Show>
+              </>
+            )}
+          </For>
+        </Show>
+      </div>
+    </>
   );
 };
 

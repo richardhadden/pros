@@ -285,7 +285,11 @@ class ProsRelationBase(StructuredRel):
 
 
 def ProsRelationTo(
-    cls_name, reverse_name: str | None = None, cardinality=None, model=None
+    cls_name,
+    reverse_name: str | None = None,
+    cardinality=None,
+    model=None,
+    help_text: str = None,
 ):
     m: ProsRelationBase = type(
         model.__name__ if model else "ProsRelation",
@@ -294,6 +298,7 @@ def ProsRelationTo(
         if model
         else {"reverse_name": StringProperty(default=reverse_name.upper())},
     )
+    m.help_text = help_text
     REVERSE_RELATIONS[cls_name][reverse_name.lower()]
 
     return RelationshipTo(

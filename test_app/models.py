@@ -138,7 +138,9 @@ class Death(Event):
 
 
 class Naming(Event):
-    title = StringProperty()
+    """Describes the attribution of a name to a Person."""
+
+    title = StringProperty(help_text="e.g. 'Sir', 'Lord'")
     first_name = StringProperty()
     last_name = StringProperty()
 
