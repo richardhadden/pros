@@ -234,7 +234,8 @@ class Entity(ProsNode):
 
 
 class Person(Entity):
-    pass
+    class Meta:
+        mergeable = True
 
 
 class Organisation(Entity):

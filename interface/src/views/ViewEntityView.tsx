@@ -63,7 +63,7 @@ export const TextFieldView: Component<{ fieldName: string; value: string }> = (
   );
 };
 
-const RelationViewField: Component<{
+export const RelationViewField: Component<{
   override_label: string;
   fieldName: string;
   reverseRelation: boolean;
@@ -161,7 +161,7 @@ const RelationViewField: Component<{
   );
 };
 
-const RelationViewRow: Component<{
+export const RelationViewRow: Component<{
   override_label: string;
   fieldName: string;
   reverseRelation: boolean;
@@ -200,7 +200,7 @@ const RelationViewRow: Component<{
 
 const groupByEntityType = groupBy((item) => item.real_type);
 
-const TypeGroupedRelationViewRow: Component<{
+export const TypeGroupedRelationViewRow: Component<{
   override_label: string;
   fieldName: string;
   reverseRelation: boolean;
@@ -360,6 +360,57 @@ const buildDateString = (date_as_string) => {
   });
 };
 
+const RowView: Component<{
+  fields: Array;
+  data: object;
+  params: { entity_type: string; uid: string };
+}> = (props) => {
+  return (
+    <For each={props.fields}>
+      {([schema_field_name, field], index) => (
+        <Show when={schema_field_name !== "is_deleted"}>
+          <Switch>
+            <Match when={field.type === "property"}>
+              <TextFieldView
+                fieldName={schema_field_name}
+                value={props.data[schema_field_name]}
+              />
+            </Match>
+            <Match when={field.type === "relation" && !field.inline_relation}>
+              <RelationViewRow
+                override_label={schema[
+                  props.params.entity_type
+                ].meta.override_labels?.[
+                  schema_field_name.toLowerCase()
+                ]?.[0].replaceAll("_", " ")}
+                fieldName={schema_field_name}
+                value={props.data[schema_field_name]}
+                field={field as SchemaFieldRelation}
+              />
+            </Match>
+            <Match when={field.type === "relation" && field.inline_relation}>
+              <InlineRelationView
+                fieldName={schema_field_name}
+                value={props.data[schema_field_name]}
+                field={field}
+              />
+            </Match>
+          </Switch>
+
+          <Show
+            when={
+              Object.entries(schema[props.params.entity_type].fields).length >
+              index() + 1
+            }
+          >
+            <div class="divider col-span-8" />
+          </Show>
+        </Show>
+      )}
+    </For>
+  );
+};
+
 const ViewEntity: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
   const [data, refetchData] = useRouteData();
@@ -412,7 +463,7 @@ const ViewEntity: Component = () => {
     }
     return sorted_fields;
   });
-  createEffect(() => console.log("OARAMS", params));
+
   return (
     <>
       <Show when={data() && data()["status"] !== "error"}>
@@ -427,6 +478,7 @@ const ViewEntity: Component = () => {
                 editButton={true}
                 editButtonDeactivated={data().is_deleted}
                 deleteButton={true}
+                mergeButton={schema[params.entity_type]?.meta?.mergeable}
                 barTitle={
                   <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
                     {getEntityDisplayName(params.entity_type)}
@@ -505,57 +557,12 @@ const ViewEntity: Component = () => {
                   <div class="col-span-1" />
                 </Show>
 
-                <For each={sorted_fields()}>
-                  {([schema_field_name, field], index) => (
-                    <Show when={schema_field_name !== "is_deleted"}>
-                      <Switch>
-                        <Match when={field.type === "property"}>
-                          <TextFieldView
-                            fieldName={schema_field_name}
-                            value={data()[schema_field_name]}
-                          />
-                        </Match>
-                        <Match
-                          when={
-                            field.type === "relation" && !field.inline_relation
-                          }
-                        >
-                          <RelationViewRow
-                            override_label={schema[
-                              params.entity_type
-                            ].meta.override_labels?.[
-                              schema_field_name.toLowerCase()
-                            ]?.[0].replaceAll("_", " ")}
-                            fieldName={schema_field_name}
-                            value={data()[schema_field_name]}
-                            field={field as SchemaFieldRelation}
-                          />
-                        </Match>
-                        <Match
-                          when={
-                            field.type === "relation" && field.inline_relation
-                          }
-                        >
-                          <InlineRelationView
-                            fieldName={schema_field_name}
-                            value={data()[schema_field_name]}
-                            field={field}
-                          />
-                        </Match>
-                      </Switch>
+                <RowView
+                  data={data()}
+                  fields={sorted_fields()}
+                  params={params}
+                />
 
-                      <Show
-                        when={
-                          Object.entries(schema[params.entity_type].fields)
-                            .length >
-                          index() + 1
-                        }
-                      >
-                        <div class="divider col-span-8" />
-                      </Show>
-                    </Show>
-                  )}
-                </For>
                 {Object.keys(schema[params.entity_type].reverse_relations)
                   .length > 0 && <div class="col-span-8 mt-32" />}
                 <For
@@ -600,3 +607,4 @@ const ViewEntity: Component = () => {
 };
 
 export default ViewEntity;
+export { RowView };

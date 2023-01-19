@@ -14,6 +14,7 @@ import ViewEntityListView from "./views/ViewEntityListView";
 import ViewEntity from "./views/ViewEntityView";
 import EditEntityView from "./views/EditEntityView";
 import NewEntityView from "./views/NewEntityView";
+import MergeView from "./views/MergeView";
 
 import Sidebar from "./components/SideBar";
 import Login, { userStatus, alreadyLoggedIn } from "./components/Login";
@@ -52,7 +53,7 @@ const Home: Component = () => {
                 assumenda excepturi exercitationem quasi. In deleniti eaque aut
                 repudiandae et a id nisi.
               </p>
-              <button class="btn btn-primary">Get Started</button>
+              <button class="btn-primary btn">Get Started</button>
             </div>
           </div>
         </div>
@@ -87,6 +88,11 @@ const App: Component = () => {
                   path="/entity/:entity_type/"
                   component={ViewEntityListView}
                   data={EntityViewAllData}
+                />
+                <Route
+                  path="/entity/:entity_type/:uid/merge/"
+                  component={MergeView}
+                  data={EntityData}
                 />
                 <Route
                   path="/entity/:entity_type/:uid/edit/"

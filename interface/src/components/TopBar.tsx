@@ -13,6 +13,7 @@ import DeleteModal from "./DeleteModal";
 import RestoreModal from "./RestoreModal";
 
 import UnsavedLink from "../utils/UnsavedLink";
+import { IoGitMerge } from "solid-icons/io";
 
 type TopBarProps = {
   params: { entity_type: string; uid: string };
@@ -29,6 +30,7 @@ type TopBarProps = {
   onClickSaveButton?: (e: MouseEvent) => null;
   refetchData?: any;
   data?: Accessor<object>;
+  mergeButton: boolean;
 };
 
 const TopBar: Component<TopBarProps> = (props: TopBarProps) => {
@@ -60,6 +62,14 @@ const TopBar: Component<TopBarProps> = (props: TopBarProps) => {
                   <BsPlus size={32} />
                 </UnsavedLink>
               )}
+            {props.mergeButton && (
+              <UnsavedLink
+                class="btn-accent btn-square btn-lg btn mr-px h-20 w-20 rounded-tl-none rounded-tr-none rounded-bl-none rounded-br-none text-neutral"
+                href={`/entity/${props.params.entity_type}/${props.params.uid}/merge/`}
+              >
+                <IoGitMerge size={28} />
+              </UnsavedLink>
+            )}
             {props.deleteButton && (
               <button
                 onClick={onClickDelete}
