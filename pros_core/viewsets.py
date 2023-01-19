@@ -17,7 +17,7 @@ from pros_core.setup_app import PROS_MODELS
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.request import Request
-from pros_core.models import ProsNode, DeletedNode
+from pros_core.models import ProsInlineOnlyNode, ProsNode, DeletedNode
 from pros_core.filters import icontains
 
 from pypher import Pypher, __
@@ -203,23 +203,68 @@ def update_related_nodes(
                 )
 
 
-def update_inline_related_nodes(instance, data):
+def update_inline_related_nodes(instance, data, username=None):
     for inline_related_name, inline_field_data in data.items():
 
         rel_manager = getattr(instance, inline_related_name)
         related_model = PROS_MODELS[inline_field_data["type"]].model
 
         new_type = inline_field_data.pop("type")
+
         (
             property_data,
             relation_data,
             inline_relation_data,
         ) = get_property_and_relation_data(inline_field_data, related_model)
-        try:  # If there is already a node related here...
+        try:
+
+            # Get old node
+            old_related_node: ProsNode = rel_manager.all()[0]
+
+            # Check whether it's inline-only
+            old_field_inline_only = isinstance(old_related_node, ProsInlineOnlyNode)
+
+            # If it's not inline-only, we should update the modified info
+            if not old_field_inline_only:
+                property_data.pop("createdWhen")
+                property_data.pop("createdBy")
+                property_data = {
+                    **property_data,
+                    "modifiedBy": username,
+                    "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
+                }
+
+            # NEW STRATEGY...
+
+            # if type is the same, don't replace Inline Node, just update props and relations
+            if old_related_node.real_type == new_type:
+                for prop_key, prop_value in property_data.items():
+                    setattr(old_related_node, prop_key, prop_value)
+                    update_related_nodes(related_model, old_related_node, relation_data)
+
+            else:
+                new_related_node = related_model(**property_data)
+                new_related_node.save()
+                rel_manager.reconnect(old_related_node, new_related_node)
+                add_related_nodes(related_model, new_related_node, relation_data)
+
+                if old_field_inline_only:
+                    old_related_node.delete()
+
+            # create new Inline Node with properties
+
+            # add relations to new Inline Node
+
+            # if the old Inline Node is inline-only
+            # delete
+            # else:
+            # leave it there??
+
+            # If there is already a node related here...
 
             ## We need to remove the old node, because it could have changed type...
-
-            old_related_node = rel_manager.all()[0]  # Get it...
+            '''
+            old_related_node: ProsNode = rel_manager.all()[0]  # Get it...
             # (there should only be one node to get, due to One cardinality)
 
             # Create a new node with the data
@@ -246,9 +291,13 @@ def update_inline_related_nodes(instance, data):
             # If the old node is not related to anything else
             # delete it
 
-            if not old_related_node.has_relations():
-                old_related_node.delete()
+            ic(old_related_node.Meta.__dict__)
 
+            if not getattr(old_related_node.Meta, "inline_only"):
+                ic("deleting old node", old_related_node)
+
+                old_related_node.delete()
+            '''
         except IndexError:
             # Otherwise, this node does not exist
             new_related_node = related_model(**property_data)
@@ -444,7 +493,9 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
         instance.save()
 
         update_related_nodes(self.__model_class__, instance, relation_data)
-        update_inline_related_nodes(instance, inline_relation_data)
+        update_inline_related_nodes(
+            instance, inline_relation_data, request.user.username
+        )
 
         return ResponseValue({"uid": pk, "saved": True})
 
