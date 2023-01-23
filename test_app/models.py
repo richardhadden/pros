@@ -237,6 +237,8 @@ class Person(Entity):
     class Meta:
         mergeable = True
 
+    merged = ProsRelationTo("Person", reverse_name="merged")
+
 
 class Organisation(Entity):
     has_location = ProsRelationTo(

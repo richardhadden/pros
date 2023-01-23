@@ -11,6 +11,7 @@ import EntityChip from "../ui_components/entityChip";
 
 import { getEntityDisplayName } from "../../utils/entity_names";
 import { fetchAutoCompleteData } from "../../data/DataEndpoints";
+import { sortBy } from "ramda";
 
 type RelationFieldType = {
   uid: string;
@@ -21,11 +22,13 @@ type RelationFieldType = {
 
 const EntitySelector: Component<{
   relation_to: string;
-  errors: object;
+  errors?: object;
   onChange: Setter<RelationFieldType[]>;
   cardinalityReached: boolean;
   value: RelationFieldType[];
-  after: Element;
+  after?: Element;
+  placeholder?: string;
+  exclude?: string[];
 }> = (props) => {
   const [autoCompleteTextInput, setAutoCompleteTextInput] = createSignal("");
   const [resultsPanelVisible, setResultsPanelVisible] = createSignal(false);
@@ -44,6 +47,13 @@ const EntitySelector: Component<{
     }
   };
 
+  const notExcluded = (uid: string) => {
+    if (props.exclude) {
+      return !props.exclude.includes(uid);
+    }
+    return true;
+  };
+
   const handleInputFocusIn = async () => {
     setResultsPanelVisible(true);
     //console.log(autoCompleteData.length);
@@ -57,7 +67,8 @@ const EntitySelector: Component<{
             r.test(item.label) &&
             !props.value
               .map((item: RelationFieldType) => item.uid)
-              .includes(item.uid)
+              .includes(item.uid) &&
+            notExcluded(item.uid)
           );
         })
       );
@@ -106,6 +117,7 @@ const EntitySelector: Component<{
             onFocusIn={handleInputFocusIn}
             onFocusOut={() => setResultsPanelVisible(false)}
             onKeyPress={handleKeyEnter}
+            placeholder={props.placeholder}
           />{" "}
           {props.after}
         </div>

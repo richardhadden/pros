@@ -11,7 +11,7 @@ const groupByRealType = groupBy(
 
 // * Hereafter are the actual data routes
 
-async function fetchEntityViewAllData(uri: string) {
+export async function fetchEntityViewAllData(uri: string) {
   // Get the entityType from the uri to pass to fetch/db lookup;
   // unless there is some search param at the end, in which case
   // we need to hit the server
@@ -41,7 +41,7 @@ export function EntityViewAllData({ params, location }) {
   return [entity_view_data, refetch];
 }
 
-async function fetchEntityData(uri_end: string) {
+export async function fetchEntityData(uri_end: string) {
   //console.log("fetch_entity_data called");
   const response_json = await dataRequest(uri_end);
 

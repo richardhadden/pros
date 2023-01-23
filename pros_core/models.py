@@ -132,6 +132,7 @@ class ProsNode(StructuredNode):
         )
         q.AND(__.s).property("uid").operator("<>", __.o2.property("uid"))
 
+        # TODO: don't hardcode dates!
         q.OPTIONAL.MATCH.node("o").rel_out("dp", labels="DATE").node("odate")
         q.OPTIONAL.MATCH.node("o2").rel_out("dp2", labels="DATE").node("o2date")
 
