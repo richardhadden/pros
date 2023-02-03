@@ -123,29 +123,36 @@ class ProsNode(StructuredNode):
         return properties
 
     def direct_relations_as_data(self):
-        q = Pypher()
-        q.MATCH.node("s", uid=self.uid).rel("p").node("o")
-        q.OPTIONAL.MATCH.node("o").rel("p2").node("o2")
-        q.WHERE.CONDITIONALOR(
-            __.p.property("inline").operator("=", True),
-            __.p2.property("inline").operator("=", True),
-        )
-        q.AND(__.s).property("uid").operator("<>", __.o2.property("uid"))
+        q = """
+        MATCH (a {uid:$uid})
+OPTIONAL MATCH (a)-[rel:MERGED*]-(b)
+WITH [a,b] as ss
+UNWIND ss as s
+MATCH (s)
+OPTIONAL MATCH (s)-[r]-(o)
+WHERE type(r)<>"MERGED" AND s.uid <> o.uid
+OPTIONAL MATCH (o)-[r2]-(o2)
+WHERE type(r2)<>"MERGED" AND s.uid <> o2.uid
 
-        # TODO: don't hardcode dates!
-        q.OPTIONAL.MATCH.node("o").rel_out("dp", labels="DATE").node("odate")
-        q.OPTIONAL.MATCH.node("o2").rel_out("dp2", labels="DATE").node("o2date")
+AND r.inline OR r2.inline   
+OPTIONAL MATCH (o)-[dp:DATE]->(odate)
+OPTIONAL MATCH (o2)-[db:DATE]->(o2date)
+     
+RETURN s, r, o, r2, o2, odate, o2date"""
 
-        q.RETURN(__.s, __.p, __.o, __.p2, __.o2, __.odate, __.o2date)
-
-        db_results, meta = db.cypher_query(str(q), q.bound_params)
+        db_results, meta = db.cypher_query(q, {"uid": self.uid})
 
         R = defaultdict(set)
+        labels = set()
+
+        for result in db_results:
+            ic(result)
 
         for i, result in enumerate(db_results):
-            s, p, o, p2, o2, odate, o2date = result
 
-            if p.get("inline"):  # Get the inline data of this node
+            s, p, o, p2, o2, odate, o2date = result
+            labels.add(s.get("label"))
+            if p and p.get("inline"):  # Get the inline data of this node
 
                 # this is just inline and has no relations... just unpack
                 if (
@@ -158,30 +165,37 @@ class ProsNode(StructuredNode):
                     R[p.type.lower()] = d
 
                 if p2:  # If the inline has any related nodes, get those too...
-                    if p2.type.lower() not in R[p.type.lower()]:
-                        R[p.type.lower()][p2.type.lower()] = set()
+                    try:
+                        if p2.type.lower() not in R[p.type.lower()]:
+                            R[p.type.lower()][p2.type.lower()] = set()
 
-                    R[p.type.lower()][p2.type.lower()].add(
-                        frozendict(
-                            {
-                                **dict(o2),
-                                "sort_date": o2date.get(
-                                    "earliest_possible_conservative"
-                                )
-                                if o2date
-                                else "",
-                                # TODO: This is only necessary if actually deleted!!
-                                "deleted_and_has_dependent_nodes": self.has_dependent_relations(
-                                    dict(o2)["uid"]
-                                )
-                                if o2.get("is_deleted")
-                                else False,
-                                "relData": frozendict(
-                                    {k: v for k, v in p2.items() if k != "reverse_name"}
-                                ),
-                            }
+                        R[p.type.lower()][p2.type.lower()].add(
+                            frozendict(
+                                {
+                                    **dict(o2),
+                                    "sort_date": o2date.get(
+                                        "earliest_possible_conservative"
+                                    )
+                                    if o2date
+                                    else "",
+                                    # TODO: This is only necessary if actually deleted!!
+                                    "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                                        dict(o2)["uid"]
+                                    )
+                                    if o2.get("is_deleted")
+                                    else False,
+                                    "relData": frozendict(
+                                        {
+                                            k: v
+                                            for k, v in p2.items()
+                                            if k != "reverse_name"
+                                        }
+                                    ),
+                                }
+                            )
                         )
-                    )
+                    except:
+                        pass
 
             else:
                 # This result should be treated as an associated inline
@@ -219,34 +233,44 @@ class ProsNode(StructuredNode):
                     # This method of determining direction of relation originally
                     # used the types, but this caused problems for relations to same type.
                     # Instead, use the uid of the nodes to determine directionality
-                    if s.get("uid") == p.start_node.get("uid"):
+                    if s and p and s.get("uid") == p.start_node.get("uid"):
 
                         dict_key = p.type.lower()
-                    else:
+                    elif p:
                         dict_key = p["reverse_name"].lower()
 
-                    if (
-                        dict_key not in R
-                    ):  # If we have already found it, don't replace it
-                        R[dict_key] = set()
-                    R[dict_key].add(
-                        frozendict(
-                            {
-                                **dict(o),
-                                "sort_date": odate.get("earliest_possible_conservative")
-                                if odate
-                                else "",
-                                "deleted_and_has_dependent_nodes": self.has_dependent_relations(
-                                    dict(o)["uid"]
-                                )
-                                if o.get("is_deleted")
-                                else False,
-                                "relData": frozendict(
-                                    {k: v for k, v in p.items() if k != "reverse_name"}
-                                ),
-                            }
+                    try:
+                        if (
+                            dict_key and dict_key not in R
+                        ):  # If we have already found it, don't replace it
+                            R[dict_key] = set()
+                        R[dict_key].add(
+                            frozendict(
+                                {
+                                    **dict(o),
+                                    "sort_date": odate.get(
+                                        "earliest_possible_conservative"
+                                    )
+                                    if odate
+                                    else "",
+                                    "deleted_and_has_dependent_nodes": self.has_dependent_relations(
+                                        dict(o)["uid"]
+                                    )
+                                    if o.get("is_deleted")
+                                    else False,
+                                    "relData": frozendict(
+                                        {
+                                            k: v
+                                            for k, v in p.items()
+                                            if k != "reverse_name"
+                                        }
+                                    ),
+                                }
+                            )
                         )
-                    )
+                    except:
+                        pass
+        R["label"] = labels
         return R
 
     def has_relations(self):

@@ -139,7 +139,10 @@ const MergeView: Component = (props) => {
                   value={selectedMergeItems()}
                   cardinalityReached={selectedMergeItems().length >= 1}
                   placeholder="Select person to merge"
-                  exclude={[params.uid]}
+                  exclude={[
+                    params.uid,
+                    ...data().merged_items.map((i) => i.uid),
+                  ]}
                 />
               </div>
             }

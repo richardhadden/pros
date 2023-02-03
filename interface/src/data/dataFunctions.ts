@@ -33,8 +33,10 @@ async function storeDataToIndexedDB(
     uid: item.uid,
     label: item.label,
     real_type: item.real_type,
-    deleted: item.deleted,
+    is_deleted: item.is_deleted,
     deleted_and_has_dependent_nodes: item.deleted_and_has_dependent_nodes,
+    merged_items: item.merged_items ?? [],
+    is_merged_item: item.is_merged_item ?? false,
   }));
   db[entityType].bulkPut(dataToStore);
   const timestamp = new Date();
@@ -52,8 +54,10 @@ async function updateDataInIndexedDB(
     uid: item.uid,
     label: item.label,
     real_type: item.real_type,
-    deleted: item.deleted,
+    is_deleted: item.is_deleted,
     deleted_and_has_dependent_nodes: item.deleted_and_has_dependent_nodes,
+    merged_items: item.merged_items ?? [],
+    is_merged_item: item.is_merged_item ?? false,
   }));
   for (let item of dataToStore) {
     const itemInDB = await db[entityType].get(item.id);

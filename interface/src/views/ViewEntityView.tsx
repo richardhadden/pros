@@ -11,7 +11,7 @@ import {
   Switch,
   Suspense,
 } from "solid-js";
-import { groupBy } from "ramda";
+import { all, F, groupBy } from "ramda";
 import UnsavedLink from "../utils/UnsavedLink";
 
 import TopBar from "../components/TopBar";
@@ -19,7 +19,7 @@ import { schema } from "../index";
 import { getEntityDisplayName } from "../utils/entity_names";
 
 import { format, formatDistance, formatRelative, subDays } from "date-fns";
-
+import { BsLink } from "solid-icons/bs";
 import { utcToZonedTime } from "date-fns-tz";
 
 import {
@@ -57,7 +57,13 @@ export const TextFieldView: Component<{ fieldName: string; value: string }> = (
         {props.fieldName.replaceAll("_", " ")}
       </div>
       <div class="col-span-6 mb-4 mt-4">
-        {props.value !== null && props.value?.toString()}
+        <Show
+          when={props.fieldName === "label"}
+          fallback={props.value !== null && props.value?.toString()}
+        >
+          {props.value}
+        </Show>
+        {}
       </div>
     </>
   );
@@ -348,16 +354,20 @@ const InlineRelationView: Component = (props) => {
 };
 
 const buildDateString = (date_as_string) => {
-  console.log(date_as_string);
-  const parsedDate = new Date(date_as_string);
+  try {
+    console.log(date_as_string);
+    const parsedDate = new Date(date_as_string);
 
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const timeZoneDate = utcToZonedTime(new Date(parsedDate.toUTCString()), tz);
-  const time = parsedDate.toTimeString().slice(0, 5);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const timeZoneDate = utcToZonedTime(new Date(parsedDate.toUTCString()), tz);
+    const time = parsedDate.toTimeString().slice(0, 5);
 
-  return formatDistance(timeZoneDate, new Date(), {
-    addSuffix: true,
-  });
+    return formatDistance(timeZoneDate, new Date(), {
+      addSuffix: true,
+    });
+  } catch {
+    return "No date";
+  }
 };
 
 const RowView: Component<{
@@ -368,7 +378,11 @@ const RowView: Component<{
   return (
     <For each={props.fields}>
       {([schema_field_name, field], index) => (
-        <Show when={schema_field_name !== "is_deleted"}>
+        <Show
+          when={
+            schema_field_name !== "is_deleted" && schema_field_name !== "merged"
+          }
+        >
           <Switch>
             <Match when={field.type === "property"}>
               <TextFieldView
@@ -408,6 +422,178 @@ const RowView: Component<{
         </Show>
       )}
     </For>
+  );
+};
+
+const ViewMergedEntity: Component<{
+  fields: Array<[string, { type: "property" | "relation" }]>;
+  data: object;
+  params: { entity_type: string; uid: string };
+}> = (props) => {
+  const col_width = () => {
+    return Math.floor(10 / (props.data.merged_items?.length + 1));
+  };
+
+  const reverseRelationGroupTypes = createMemo(() => {
+    const all_items_data = [props.data, ...props.data.merged_items];
+    console.log(all_items_data);
+    const reverse_relations = Object.keys(
+      schema[props.params.entity_type].reverse_relations
+    );
+    const subtypes_by_rr_type = {};
+
+    for (let rr of reverse_relations) {
+      subtypes_by_rr_type[rr] = [];
+      for (let item of all_items_data) {
+        if (rr in item) {
+          for (let rel_item of item[rr]) {
+            subtypes_by_rr_type[rr].push(rel_item.real_type);
+          }
+        }
+      }
+    }
+    return subtypes_by_rr_type;
+  });
+
+  const getTypedGroupFieldData = (entity, rr) => {
+    if (rr in entity) {
+      console.log(">>", groupByEntityType(entity[rr]));
+      return groupByEntityType(entity[rr]);
+    }
+    return {};
+  };
+
+  return (
+    <div class="grid grid-cols-12 gap-2">
+      <For each={props.fields}>
+        {([schema_field_name, field], index) => {
+          return (
+            <Show
+              when={
+                schema_field_name !== "is_deleted" &&
+                schema_field_name !== "merged"
+              }
+            >
+              <Switch>
+                <Match when={field.type === "property"}>
+                  <div class="col-span-2 mb-4 mt-4 select-none font-semibold uppercase">
+                    {schema_field_name.replaceAll("_", " ")}
+                  </div>
+                </Match>
+                <Match when={field.type === "relation"}>
+                  <div
+                    class={`col-span-2 mb-4 mt-4 select-none font-semibold uppercase`}
+                  >
+                    {schema_field_name.replaceAll("_", " ")}
+                    <div class="mt-1 ml-1 select-none">
+                      <BsArrowReturnRight class="inline-block" />{" "}
+                      <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+                        {field.relation_to}
+                      </span>
+                    </div>
+                  </div>
+                </Match>
+              </Switch>
+              <Switch>
+                <Match when={field.type === "property"}>
+                  <div class={`col-span-${col_width()} mt-3`}>
+                    <Show
+                      when={schema_field_name === "label"}
+                      fallback={" " !== null && props.value?.toString()}
+                    >
+                      {props.data[schema_field_name]}
+                    </Show>
+                  </div>
+                  <For each={props.data.merged_items}>
+                    {(item) => (
+                      <div class={`col-span-${col_width()} mt-3`}>
+                        {item[schema_field_name]}
+                      </div>
+                    )}
+                  </For>
+                  <div class="col-span-12" />
+                  <For each={Object.entries(reverseRelationGroupTypes())}>
+                    {([field_name, related_object_types], index) => (
+                      <>
+                        <Show when={related_object_types.length > 0}>
+                          <For each={related_object_types}>
+                            {(related_object_type, index) => (
+                              <>
+                                <Show
+                                  when={index() === 0}
+                                  fallback={
+                                    <div class="col-span-2">
+                                      <div
+                                        class={`${
+                                          index() === 0 ? "mt-1" : "mt-5"
+                                        } ml-1 select-none font-semibold uppercase`}
+                                      >
+                                        <BsArrowReturnRight class="inline-block" />{" "}
+                                        <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+                                          {getEntityDisplayName(
+                                            related_object_type
+                                          )}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  }
+                                >
+                                  <div class="col-span-2 font-semibold uppercase">
+                                    {field_name.replaceAll("_", " ")}
+                                    <div
+                                      class={`${
+                                        index() === 0 ? "mt-1" : "mt-5"
+                                      } ml-1 select-none `}
+                                    >
+                                      <BsArrowReturnRight class="inline-block" />{" "}
+                                      <span class="prose-sm rounded-sm bg-neutral pt-1 pb-1 pl-2 pr-2 text-neutral-content">
+                                        {getEntityDisplayName(
+                                          related_object_type
+                                        )}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </Show>
+
+                                <div class={`col-span-${col_width()}`}>
+                                  <RelationViewField
+                                    value={
+                                      getTypedGroupFieldData(
+                                        props.data,
+                                        field_name
+                                      )[related_object_type]
+                                    }
+                                  />
+                                </div>
+                                <For each={props.data.merged_items}>
+                                  {(item) => (
+                                    <div class={`col-span-${col_width()}`}>
+                                      <RelationViewField
+                                        value={
+                                          getTypedGroupFieldData(
+                                            item,
+                                            field_name
+                                          )[related_object_type]
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                                </For>
+                                <div class="col-span-12"></div>
+                              </>
+                            )}
+                          </For>
+                        </Show>
+                      </>
+                    )}
+                  </For>
+                </Match>
+              </Switch>
+            </Show>
+          );
+        }}
+      </For>
+    </div>
   );
 };
 
@@ -485,9 +671,64 @@ const ViewEntity: Component = () => {
                   </div>
                 }
                 barCenter={
-                  <>
-                    <div class={ViewedItemTopBarStyle}>{data().label}</div>
-                  </>
+                  <div class="flex flex-row items-center justify-center">
+                    <div class="prose-md relative top-1.5 mb-3 h-12 w-fit rounded-sm border-gray-600 bg-primary p-3 pl-6 pr-6 font-semibold text-neutral-content shadow-xl">
+                      {data().label}
+                    </div>
+                    <Show when={data().is_merged_item}>
+                      <div class="ml-1 mr-1 flex flex-col justify-center text-neutral-content">
+                        <BsLink />
+                      </div>
+                      <For each={data().merged_items}>
+                        {(mergedItem, index) => (
+                          <>
+                            <UnsavedLink
+                              href={`/entity/${params.entity_type}/${mergedItem.uid}`}
+                              class={` flex h-fit w-fit cursor-pointer flex-row rounded-sm pb-2 pt-2 pl-4 pr-2 text-neutral-content  ${
+                                mergedItem.is_deleted
+                                  ? "bg-gray-400 hover:bg-gray-500"
+                                  : "bg-primary hover:bg-primary-focus"
+                              }`}
+                            >
+                              <div class="relative">
+                                <div class="mr-2 inline-block text-xs font-semibold">
+                                  {mergedItem.label}
+                                </div>
+                              </div>
+                              <div class="right-0 ml-auto justify-self-end">
+                                {mergedItem.is_deleted && (
+                                  <div class="relative mr-2 flex flex-row">
+                                    <AiFillDelete
+                                      size={14}
+                                      class="mt-[6px]  text-gray-600"
+                                    />
+                                    {mergedItem.deleted_and_has_dependent_nodes ? (
+                                      <AiFillClockCircle
+                                        size={14}
+                                        class="mt-[6px] ml-1 rounded-full text-warning"
+                                      />
+                                    ) : (
+                                      <AiFillCheckCircle
+                                        size={14}
+                                        class="mt-[6px] ml-1 text-success"
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </UnsavedLink>
+                            <Show
+                              when={index() < data().merged_items.length - 1}
+                            >
+                              <div class="ml-1 mr-1 flex flex-col justify-center text-neutral-content">
+                                <BsLink />
+                              </div>
+                            </Show>
+                          </>
+                        )}
+                      </For>
+                    </Show>
+                  </div>
                 }
                 barEnd={
                   <div class="ml-6 flex select-none  flex-col items-start  rounded-sm pb-2 pt-2 pr-3 pl-3 text-xs uppercase text-white">
@@ -557,43 +798,56 @@ const ViewEntity: Component = () => {
                   <div class="col-span-1" />
                 </Show>
 
-                <RowView
-                  data={data()}
-                  fields={sorted_fields()}
-                  params={params}
-                />
-
-                {Object.keys(schema[params.entity_type].reverse_relations)
-                  .length > 0 && <div class="col-span-8 mt-32" />}
-                <For
-                  each={Object.entries(
-                    schema[params.entity_type].reverse_relations
-                  )}
-                >
-                  {([schema_field_name, field], index) => (
-                    <Show when={data()[schema_field_name]?.length > 0}>
-                      <TypeGroupedRelationViewRow
-                        override_label={
-                          schema[params.entity_type].meta.override_labels?.[
-                            schema_field_name.toLowerCase()
-                          ]?.[1]
-                        }
-                        fieldName={schema_field_name}
-                        value={data()[schema_field_name]}
-                        field={field}
-                        reverseRelation={true}
+                <Switch>
+                  <Match when={data().is_merged_item}>
+                    <div class="col-span-8">
+                      <ViewMergedEntity
+                        data={data()}
+                        fields={sorted_fields()}
+                        params={params}
                       />
+                    </div>
+                  </Match>
+                  <Match when={true}>
+                    <RowView
+                      data={data()}
+                      fields={sorted_fields()}
+                      params={params}
+                    />
 
-                      <Show
-                        when={
-                          Object.entries(schema[params.entity_type].fields)
-                            .length >
-                          index() + 1
-                        }
-                      ></Show>
-                    </Show>
-                  )}
-                </For>
+                    {Object.keys(schema[params.entity_type].reverse_relations)
+                      .length > 0 && <div class="col-span-8 mt-32" />}
+                    <For
+                      each={Object.entries(
+                        schema[params.entity_type].reverse_relations
+                      )}
+                    >
+                      {([schema_field_name, field], index) => (
+                        <Show when={data()[schema_field_name]?.length > 0}>
+                          <TypeGroupedRelationViewRow
+                            override_label={
+                              schema[params.entity_type].meta.override_labels?.[
+                                schema_field_name.toLowerCase()
+                              ]?.[1]
+                            }
+                            fieldName={schema_field_name}
+                            value={data()[schema_field_name]}
+                            field={field}
+                            reverseRelation={true}
+                          />
+
+                          <Show
+                            when={
+                              Object.entries(schema[params.entity_type].fields)
+                                .length >
+                              index() + 1
+                            }
+                          ></Show>
+                        </Show>
+                      )}
+                    </For>
+                  </Match>
+                </Switch>
               </div>
             </Match>
           </Switch>

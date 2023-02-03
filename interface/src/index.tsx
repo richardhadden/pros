@@ -40,7 +40,7 @@ function SchemaWrapper(props: SchemaWrapperProps) {
       return acc;
     }, {});
 
-    db.version(2).stores(stores);
+    db.version(3).stores(stores);
     db.open();
     console.log("setting up db");
     resolveDbReady();

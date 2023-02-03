@@ -1,5 +1,5 @@
 import datetime
-
+import itertools
 from typing import Type, Callable
 
 from django.urls import path
@@ -19,6 +19,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from pros_core.models import ProsInlineOnlyNode, ProsNode, DeletedNode
 from pros_core.filters import icontains
+
+from multilookupdict import MultiLookupDict
 
 from pypher import Pypher, __
 
@@ -306,6 +308,356 @@ def update_inline_related_nodes(instance, data, username=None):
             add_related_nodes(related_model, new_related_node, relation_data)
 
 
+def get_list(entity_type, text_filter=None):
+    """Get list of items of a type, grouping together merged entities
+    as different permutations, i.e. main person, with merged entities as separate field.
+
+    n.b. entity_type should come from the BACKEND, so safe to interpolate it!
+    """
+    ic(entity_type)
+
+    q = f"""
+    
+    
+    MATCH (a:{entity_type})
+    CALL {{
+        WITH a
+        MATCH path = (a)-[:MERGED*]-(b)
+        CALL {{
+                    WITH b
+                    WITH b
+                    MATCH (b)<-[in_r]-(x)
+                    WHERE NOT in_r:MERGED 
+                    RETURN COUNT(b) > 0  as has_inbound_b
+                }}
+                WITH b, b.is_deleted AND has_inbound_b AS ddn
+        RETURN COLLECT(b{{.label, .uid, .real_type, .is_deleted, deleted_and_has_dependent_nodes:ddn}}) AS cb
+    }}
+    CALL {{
+                WITH a
+                WITH a
+                MATCH (a)<-[in_r]-(x)
+                WHERE NOT in_r:MERGED 
+                RETURN COUNT(a) > 0  as has_inbound_a
+            }}
+        WITH DISTINCT(a) AS da, a.is_deleted AND has_inbound_a AS ddn, cb <> [] as is_merged_item,  cb
+  
+
+    RETURN da{{.label, .uid, .real_type, .is_deleted, is_merged_item:is_merged_item, is_merged_item:is_merged_item, merged_items:cb}} AS results
+    ORDER BY da.label
+
+
+    """
+
+    results, meta = db.cypher_query(q)
+    return itertools.chain.from_iterable(results)
+
+
+def get_filter_list(entity_type: str, text_filter: str):
+    ic(text_filter)
+    q = f"""
+        CALL {{
+        MATCH (a:{entity_type})
+        WITH a, toLower(a.label) CONTAINS toLower($text_filter) AS a_matches
+        CALL {{
+            WITH a, a_matches
+            MATCH path = (a)-[:MERGED*]-(other)
+            WHERE a_matches OR toLower(other.label) CONTAINS toLower($text_filter)
+            RETURN other as b
+        }}
+        MATCH (a)-[:MERGED*]-(b)
+        CALL {{
+            WITH a
+            MATCH (a)-[:MERGED*]-(b)
+            CALL {{
+                WITH b
+                WITH b
+                MATCH (b)<-[in_r]-(x)
+                WHERE NOT in_r:MERGED 
+                RETURN COUNT(b) > 0  as has_inbound_b
+            }}
+            WITH b, b.is_deleted AND has_inbound_b AS ddn
+            RETURN COLLECT(b{{.label, .uid, .real_type, .is_deleted, deleted_and_has_dependent_nodes:ddn}}) as cb
+        }}
+        CALL {{
+                WITH a
+                WITH a
+                MATCH (a)<-[in_r]-(x)
+                WHERE NOT in_r:MERGED 
+                RETURN COUNT(a) > 0  as has_inbound_a
+            }}
+        WITH DISTINCT(a) AS da, a.is_deleted AND has_inbound_a AS ddn, cb
+        RETURN da{{.uid, .label, .real_type, .is_deleted, is_merged_item:true, deleted_and_has_dependent_nodes: ddn, merged_items: cb}} AS results
+
+        UNION
+
+        MATCH (a:{entity_type})
+        WHERE toLower(a.label) CONTAINS toLower($text_filter) AND NOT (a)-[:MERGED]-()
+        CALL {{
+                MATCH (a)<-[in_r]-(x)
+                WHERE NOT in_r:MERGED 
+                RETURN COUNT(a) > 0  as has_inbound_a
+            }}
+        WITH a as da, a.is_deleted AND has_inbound_a AS ddn
+        return da{{.uid, .label, .real_type, .is_deleted, is_merged_item:false, deleted_and_has_dependent_nodes:ddn, merged_items:[]}} AS results
+        }}
+        WITH results
+        RETURN results
+        ORDER BY results.label
+        """
+    results, meta = db.cypher_query(
+        q,
+        {
+            "text_filter": text_filter,
+        },
+    )
+
+    return itertools.chain.from_iterable(results)
+
+
+def get_created_modified_list(entity_type: str, timestamp: datetime.datetime):
+
+    q = f"""
+        
+        CALL {{
+            MATCH (a:{entity_type})
+            WITH a, a.modifiedWhen > datetime($timestamp) AS a_matches
+            CALL {{
+                WITH a, a_matches
+                MATCH path = (a)-[:MERGED*]-(other)
+                WHERE a_matches OR other.modifiedWhen > datetime($timestamp)
+                RETURN other as b
+            }}
+            MATCH (a)-[:MERGED*]-(b)
+            CALL {{
+                WITH a
+                MATCH (a)-[:MERGED*]-(b)
+                CALL {{
+                    WITH b
+                    WITH b
+                    MATCH (b)<-[in_r]-(x)
+                    WHERE NOT in_r:MERGED 
+                    RETURN COUNT(b) > 0  as has_inbound_b
+                }}
+                WITH b, b.is_deleted AND has_inbound_b AS ddn
+                RETURN COLLECT(b{{.label, .uid, .real_type, .is_deleted, deleted_and_has_dependent_nodes:ddn}}) as cb
+            }}
+            CALL {{
+                    WITH a
+                    WITH a
+                    MATCH (a)<-[in_r]-(x)
+                    WHERE NOT in_r:MERGED 
+                    RETURN COUNT(a) > 0  as has_inbound_a
+                }}
+            WITH DISTINCT(a) AS da, a.is_deleted AND has_inbound_a AS ddn, cb
+            RETURN da{{.uid, .label, .real_type, .is_deleted, is_merged_item:true, deleted_and_has_dependent_nodes: ddn, merged_items: cb}} AS results
+
+            UNION
+
+            MATCH (a:{entity_type})
+            WHERE a.modifiedWhen > datetime($timestamp) AND NOT (a)-[:MERGED]-()
+            CALL {{
+                    MATCH (a)<-[in_r]-(x)
+                    WHERE NOT in_r:MERGED 
+                    RETURN COUNT(a) > 0  as has_inbound_a
+                }}
+            WITH a as da, a.is_deleted AND has_inbound_a AS ddn
+            RETURN da{{.uid, .label, .real_type, .is_deleted, is_merged_item:false, deleted_and_has_dependent_nodes:ddn, merged_items:[]}} AS results
+        }}
+        WITH results
+        RETURN results
+        ORDER BY results.label
+        """
+    results, meta = db.cypher_query(q, {"timestamp": timestamp})
+
+    return itertools.chain.from_iterable(results)
+
+
+def get_item(model_class: str, uid: str):
+    q = """MATCH (main { uid:$uid })
+
+// START OF QUERY ON SINGLE MATCHED NODE
+CALL {
+// Direct incoming
+  WITH main
+  CALL {
+    WITH main
+    OPTIONAL MATCH (main)<-[incoming_relation]-(incoming_node)
+    WHERE incoming_relation.inline is null AND NOT incoming_relation:MERGED
+    CALL {
+      WITH incoming_node
+      MATCH (incoming_node)<-[in_r]-(x)
+      WHERE NOT in_r:MERGED
+      RETURN COUNT(incoming_node) > 0 AS has_inbound_incoming_node
+    }
+    WITH apoc.map.setValues(incoming_node, ["rel_type", toLower(incoming_relation.reverse_name), "deleted_and_has_dependent_nodes", has_inbound_incoming_node AND incoming_node.is_deleted]) AS mod_incoming_node
+    RETURN apoc.map.groupByMulti(COLLECT(mod_incoming_node), "rel_type") AS incoming_relations
+  }
+  
+// Outgoing direct
+  CALL {
+    WITH main
+    OPTIONAL MATCH (main)-[outgoing_relation]->(outgoing_node)
+    WHERE outgoing_relation.inline is null AND NOT outgoing_relation:MERGED
+    CALL {
+      WITH outgoing_node
+      MATCH (outgoing_node)<-[in_r]-(x)
+      WHERE NOT in_r:MERGED
+      RETURN COUNT(outgoing_node) > 0 AS has_inbound_outgoing_node
+    }
+    WITH apoc.map.setValues(outgoing_node, ["rel_type", toLower(type(outgoing_relation)), "deleted_and_has_dependent_nodes", has_inbound_outgoing_node AND outgoing_node.is_deleted]) AS mod_outgoing_node
+    RETURN apoc.map.groupByMulti(COLLECT(mod_outgoing_node), "rel_type") AS outgoing_relations
+  }
+  
+// Incoming inline...
+  CALL {
+    WITH main
+    OPTIONAL MATCH (main)<-[incoming_relation]-(incoming_node)<-[passthrough_rel]-(passthrough_node)
+    WHERE main.uid <> passthrough_node.uid AND NOT incoming_relation:MERGED AND passthrough_rel.inline
+    CALL {
+      WITH passthrough_node
+      MATCH (passthrough_node)<-[in_r]-(x)
+      WHERE NOT in_r:MERGED
+      RETURN COUNT(passthrough_node) > 0 AS has_inbound_passthrough_node
+    }
+    WITH incoming_relation, incoming_node, passthrough_rel, apoc.map.setValues(passthrough_node, ["rel_type", toLower(incoming_relation.reverse_name), "deleted_and_has_dependent_nodes", has_inbound_passthrough_node AND passthrough_node.is_deleted]) AS ptn
+    RETURN apoc.map.groupByMulti(COLLECT(ptn), "rel_type") AS incoming_inline
+    
+  }
+// Inlines...
+  CALL {
+    WITH main
+    OPTIONAL MATCH (main)-[inline_relation]->(inline_node)
+    WHERE main.uid <> inline_node.uid AND inline_relation.inline
+    CALL {
+      WITH inline_node
+      OPTIONAL MATCH (inline_node)-[related_rel]->(related_node)
+      WHERE NOT related_rel:MERGED
+      CALL {
+        WITH related_node
+        MATCH (related_node)<-[in_r]-(x)
+        WHERE NOT in_r:MERGED
+        RETURN COUNT(related_node) > 0 AS has_inbound_related_node
+      }
+      WITH apoc.map.setValues(related_node, ["rel_type", toLower(type(related_rel)), "deleted_and_has_dependent_nodes", has_inbound_related_node AND related_node.is_deleted]) AS mod_related_node, related_rel
+      RETURN related_rel, apoc.map.groupByMulti(COLLECT(mod_related_node), "rel_type") AS grouped_mod_related_node // NOW, just need to add in related node to inline_node..., grouping by type!!
+    }
+    
+    WITH apoc.map.setValues(inline_node, ["type", inline_node.real_type]) AS mod_inline_node,
+    inline_relation, inline_node, related_rel, grouped_mod_related_node
+    RETURN apoc.map.mergeList([mod_inline_node, grouped_mod_related_node]) AS inlines, inline_relation, inline_node, related_rel, grouped_mod_related_node
+  }
+  CALL {
+    MATCH (main)<-[in_r]-(x)
+    WHERE NOT in_r:MERGED
+    RETURN COUNT(main) > 0 AS has_inbound_main
+  }
+  WITH apoc.map.setValues(main, [toLower(type(inline_relation)), inlines, "deleted_and_has_dependent_nodes", has_inbound_main AND main.is_deleted]) AS main_node, inlines, outgoing_relations, incoming_inline, incoming_relations
+  RETURN apoc.map.mergeList(COLLECT(apoc.map.mergeList([main_node, outgoing_relations, incoming_relations, incoming_inline]))) AS main_node
+}
+
+CALL {
+  WITH main
+  OPTIONAL MATCH (main)-[:MERGED*]-(mn)
+  
+// START OF LOOKUPS FOR MERGED NODES
+  
+// START OF QUERY ON SINGLE MATCHED NODE
+  CALL {
+// Direct incoming
+    WITH mn
+    CALL {
+      WITH mn
+      OPTIONAL MATCH (mn)<-[incoming_relation]-(incoming_node)
+      WHERE incoming_relation.inline is null AND NOT incoming_relation:MERGED
+      CALL {
+        WITH incoming_node
+        MATCH (incoming_node)<-[in_r]-(x)
+        WHERE NOT in_r:MERGED
+        RETURN COUNT(incoming_node) > 0 AS has_inbound_incoming_node
+      }
+      WITH apoc.map.setValues(incoming_node, ["rel_type", toLower(incoming_relation.reverse_name), "deleted_and_has_dependent_nodes", has_inbound_incoming_node AND incoming_node.is_deleted]) AS mod_incoming_node
+      RETURN apoc.map.groupByMulti(COLLECT(mod_incoming_node), "rel_type") AS incoming_relations
+    }
+    
+// Outgoing direct
+    CALL {
+      WITH mn
+      OPTIONAL MATCH (mn)-[outgoing_relation]->(outgoing_node)
+      WHERE outgoing_relation.inline is null AND NOT outgoing_relation:MERGED
+      CALL {
+        WITH outgoing_node
+        MATCH (outgoing_node)<-[in_r]-(x)
+        WHERE NOT in_r:MERGED
+        RETURN COUNT(outgoing_node) > 0 AS has_inbound_outgoing_node
+      }
+      WITH apoc.map.setValues(outgoing_node, ["rel_type", toLower(type(outgoing_relation)), "deleted_and_has_dependent_nodes", has_inbound_outgoing_node AND outgoing_node.is_deleted]) AS mod_outgoing_node
+      RETURN apoc.map.groupByMulti(COLLECT(mod_outgoing_node), "rel_type") AS outgoing_relations
+    }
+    
+// Incoming inline...
+    CALL {
+      WITH mn
+      OPTIONAL MATCH (mn)<-[incoming_relation]-(incoming_node)<-[passthrough_rel]-(passthrough_node)
+      WHERE mn.uid <> passthrough_node.uid AND NOT incoming_relation:MERGED AND passthrough_rel.inline
+      CALL {
+        WITH passthrough_node
+        MATCH (passthrough_node)<-[in_r]-(x)
+        WHERE NOT in_r:MERGED
+        RETURN COUNT(passthrough_node) > 0 AS has_inbound_passthrough_node
+      }
+      WITH incoming_relation, incoming_node, passthrough_rel, apoc.map.setValues(passthrough_node, ["rel_type", toLower(incoming_relation.reverse_name), "deleted_and_has_dependent_nodes", has_inbound_passthrough_node AND passthrough_node.is_deleted]) AS ptn
+      RETURN apoc.map.groupByMulti(COLLECT(ptn), "rel_type") AS incoming_inline
+      
+    }
+// Inlines...
+    CALL {
+      WITH mn
+      OPTIONAL MATCH (mn)-[inline_relation]->(inline_node)
+      WHERE mn.uid <> inline_node.uid AND inline_relation.inline
+      CALL {
+        WITH inline_node
+        OPTIONAL MATCH (inline_node)-[related_rel]->(related_node)
+        WHERE NOT related_rel:MERGED
+        CALL {
+          WITH related_node
+          MATCH (related_node)<-[in_r]-(x)
+          WHERE NOT in_r:MERGED
+          RETURN COUNT(related_node) > 0 AS has_inbound_related_node
+        }
+        WITH apoc.map.setValues(related_node, ["rel_type", toLower(type(related_rel)), "deleted_and_has_dependent_nodes", has_inbound_related_node AND related_node.is_deleted]) AS mod_related_node, related_rel
+        RETURN related_rel, apoc.map.groupByMulti(COLLECT(mod_related_node{ .uid, .real_type, .label, .is_deleted, .rel_type, .deleted_and_has_dependent_nodes }), "rel_type") AS grouped_mod_related_node // NOW, just need to add in related node to inline_node..., grouping by type!!
+      }
+      
+      WITH apoc.map.setValues(inline_node, ["type", inline_node.real_type]) AS mod_inline_node,
+      inline_relation, inline_node, related_rel, grouped_mod_related_node
+      RETURN apoc.map.mergeList([mod_inline_node, grouped_mod_related_node]) AS inlines, inline_relation, inline_node, related_rel, grouped_mod_related_node
+    }
+    CALL {
+      MATCH (mn)<-[in_r]-(x)
+      WHERE NOT in_r:MERGED
+      RETURN COUNT(mn) > 0 AS has_inbound_main
+    }
+    WITH apoc.map.setValues(mn, [toLower(type(inline_relation)), inlines, "deleted_and_has_dependent_nodes", has_inbound_main AND mn.is_deleted]) AS main_node, inlines, outgoing_relations, incoming_inline, incoming_relations
+    RETURN apoc.map.mergeList(COLLECT(apoc.map.mergeList([main_node, outgoing_relations, incoming_relations, incoming_inline]))) AS merged_main_node
+  }
+  RETURN DISTINCT (merged_main_node) AS merged_nodes
+}
+WITH main_node, merged_nodes.uid is NOT null AS is_merged_item, COLLECT(merged_nodes) AS mnlist
+
+WITH apoc.map.setValues(main_node, ["merged_items", mnlist, "is_merged_item", is_merged_item]) AS result, is_merged_item
+RETURN
+CASE is_merged_item WHEN true THEN result ELSE apoc.map.removeKey(result, "merged_items") END
+"""
+    results, meta = db.cypher_query(q, {"uid": uid})
+    try:
+        return results[0][0]
+    except IndexError:
+        raise model_class.DoesNotExist(
+            f"""<{model_class.__name__} uid={uid}> not found."""
+        )
+
+
 # Viewset methods
 class ProsBlankViewSet(ViewSet):
     pass
@@ -327,56 +679,26 @@ class ProsAbstractViewSet(ProsBlankViewSet):
         # If a text filter is set...
         filter = request.query_params.get("filter")
         if filter:
+            node_data = get_filter_list(
+                self.__model_class__.__name__, text_filter=filter
+            )
 
-            x = icontains("s", "label")(filter)
-            y = icontains("s", "label")(filter)
-            for additional_filter in PROS_MODELS[
-                self.__model_class__.__name__.lower()
-            ].meta.get("text_filter_fields", []):
-                # print(additional_filter)
-                if isinstance(additional_filter, str):
-                    x = x.OR(icontains("s", additional_filter)(filter))
-
-                else:
-                    f = additional_filter(filter)
-                    if isinstance(f, Pypher):
-                        y = y.OR(f)
-
-            q = Pypher()
-            q.Match.node("s", labels=self.__model_class__.__name__)
-            q.WHERE(x)
-            q.RETURN(__.DISTINCT((__.s)))
-            q.UNION
-            q.MATCH.node("s", labels=self.__model_class__.__name__).rel("p").node("o")
-            q.WHERE(y)
-            q.RETURN(__.DISTINCT(__.s))
-
-            results, meta = db.cypher_query(str(q), q.bound_params)
-
-            node_data = [r[0] for r in results]
-
+        # No filter assigned
         else:
+
             last_refreshed_timestamp_string = request.query_params.get(
                 "lastRefreshedTimestamp"
             )
-
+            # Get update from timestamp
             if last_refreshed_timestamp_string:
                 d = datetime.datetime.fromisoformat(
                     last_refreshed_timestamp_string.replace("Z", "")
                 )
 
                 resp_data = {
-                    "created_modified": [
-                        {
-                            "real_type": b.real_type,
-                            "uid": b.uid,
-                            "label": b.label,
-                            "is_deleted": b.is_deleted,
-                            "deleted_and_has_dependent_nodes": b.is_deleted
-                            and b.has_dependent_relations(),
-                        }
-                        for b in self.__model_class__.nodes.filter(modifiedWhen__gt=d)
-                    ],
+                    "created_modified": get_created_modified_list(
+                        self.__model_class__.__name__, d
+                    ),
                     "deleted": [
                         {"uid": b.uid}
                         for b in DeletedNode.nodes.filter(
@@ -386,18 +708,10 @@ class ProsAbstractViewSet(ProsBlankViewSet):
                 }
 
                 return ResponseValue(resp_data)
+
+            # Return list
             else:
-                node_data = [
-                    {
-                        "real_type": b.real_type,
-                        "uid": b.uid,
-                        "label": b.label,
-                        "is_deleted": b.is_deleted,
-                        "deleted_and_has_dependent_nodes": b.is_deleted
-                        and b.has_dependent_relations(),
-                    }
-                    for b in self.__model_class__.nodes.order_by("real_type", "label")
-                ]
+                node_data = get_list(self.__model_class__.__name__)
         return ResponseValue(node_data)
 
     def list(self, request: Request) -> Response:
@@ -409,19 +723,9 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
 
     def do_retrieve(self, request: Request, pk: str | None) -> ResponseValue:
         try:
-            this = self.__model_class__.nodes.get(uid=pk)
-        except Exception:
-            return ResponseValue(
-                status=404, data=f"<{self.__model_class__.__name__} uid={pk}> not found"
-            )
-        data = {
-            **this.properties,
-            "deleted_and_has_dependent_nodes": this.is_deleted
-            and this.has_dependent_relations(),
-            **this.direct_relations_as_data(),
-        }
-        # ic(data)
-        return ResponseValue(data)
+            return ResponseValue(get_item(self.__model_class__, pk))
+        except DoesNotExist as e:
+            return ResponseValue(e.message, 404)
 
     def retrieve(self, request: Request, pk: str | None = None) -> Response:
         return Response(**self.do_retrieve(request, pk))
@@ -508,6 +812,7 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
             instance: ProsNode = self.__model_class__.nodes.get(uid=pk)
             if instance.is_deleted:
                 instance.is_deleted = False
+                instance.modifiedWhen = datetime.datetime.now(datetime.timezone.utc)
                 instance.save()
 
             return ResponseValue(
@@ -522,6 +827,7 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
             if instance.has_dependent_relations():
 
                 instance.is_deleted = True
+                instance.modifiedWhen = datetime.datetime.now(datetime.timezone.utc)
                 instance.save()
                 return ResponseValue(
                     {

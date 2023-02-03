@@ -25,6 +25,7 @@ import {
 } from "../utils/entity_names";
 import { filter } from "ramda";
 import { ViewEntityTypeData } from "../data/DataEndpoints";
+import { BsLink } from "solid-icons/bs";
 /*
 const x = <div class="navbar bg-neutral text-neutral-content rounded-b-lg pr-0 pt-0 pb-0 ml-12 max-w-7xl">
     <div class="navbar-start ml-3 prose-xl font-semibold">{getEntityNamePlural(params.entity_type).toUpperCase()}</div>
@@ -97,6 +98,8 @@ const ViewEntityListView: Component = () => {
     setShowFilteringSpinner(false);
   });
 
+  createEffect(() => console.log("DATA", data()));
+
   return (
     <Switch>
       <Match when={CUSTOM_LIST_VIEW_PAGES[params.entity_type]}>
@@ -146,59 +149,173 @@ const ViewEntityListView: Component = () => {
               {([entity_name, items], index) => (
                 <>
                   <div class="grid grid-cols-8 gap-y-6">
-                    <div class="col-span-2 rounded-l-md pt-4 pb-6 pl-3">
+                    <div class="col-span-1 rounded-l-md pt-4 pb-6 pl-3">
                       <h2 class="prose-md select-none font-semibold uppercase text-base-content">
                         {getEntityNamePlural(entity_name)}
                       </h2>
                     </div>
-                    <div class="col-span-4 pt-4 pb-6 pr-4">
+                    <div class="col-span-5 pt-4 pb-6 pr-4">
                       <For each={items}>
-                        {(item) => (
-                          <div>
-                            <UnsavedLink
-                              href={`/entity/${entity_name}/${item.uid}`}
-                              class={`mb-3 flex max-w-4xl cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
-                                item.is_deleted
-                                  ? "bg-gray-400 hover:bg-gray-500"
-                                  : "bg-primary hover:bg-primary-focus"
-                              }`}
-                            >
-                              <div class="flex flex-col content-center">
-                                <div>
-                                  <span class="prose-sm mr-7 select-none font-light uppercase">
-                                    {getEntityDisplayName(item.real_type)}
-                                  </span>
-                                </div>
-                              </div>{" "}
-                              <div class="relative">
-                                <div class="inline-block font-semibold">
-                                  {item.label}
-                                </div>
-                              </div>
-                              <div class="right-0 ml-auto justify-self-end">
-                                {item.is_deleted && (
-                                  <div class="relative mr-2 flex flex-row">
-                                    <AiFillDelete
-                                      size={20}
-                                      class="mt-0.5 text-gray-600"
-                                    />
-                                    {item.deleted_and_has_dependent_nodes ? (
-                                      <AiFillClockCircle
-                                        size={20}
-                                        class="mt-0.5 ml-2 rounded-full text-warning"
-                                      />
-                                    ) : (
-                                      <AiFillCheckCircle
-                                        size={20}
-                                        class="mt-0.5 ml-2 text-success"
-                                      />
-                                    )}
+                        {(item) => {
+                          console.log(item);
+                          return (
+                            <div>
+                              <Switch>
+                                <Match when={item.is_merged_item}>
+                                  <div class="flex flex-row items-center">
+                                    <UnsavedLink
+                                      href={`/entity/${entity_name}/${item.uid}`}
+                                      class={`mb-3 flex h-fit flex-1 cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
+                                        item.is_deleted
+                                          ? "bg-gray-400 hover:bg-gray-500"
+                                          : "bg-primary hover:bg-primary-focus"
+                                      }`}
+                                    >
+                                      <div class="flex w-fit flex-col justify-center">
+                                        <div>
+                                          <span class="prose-sm mr-7 select-none font-light uppercase">
+                                            {getEntityDisplayName(
+                                              item.real_type
+                                            )}
+                                          </span>
+                                        </div>
+                                      </div>{" "}
+                                      <div class="relative">
+                                        <div class="inline-block font-semibold">
+                                          {item.label}
+                                        </div>
+                                      </div>
+                                      <div class="right-0 ml-auto flex flex-row items-center justify-self-end">
+                                        {item.is_deleted && (
+                                          <div class="relative mr-2 flex flex-row">
+                                            <AiFillDelete
+                                              size={16}
+                                              class="mt-0.5 text-gray-600"
+                                            />
+                                            {item.deleted_and_has_dependent_nodes ? (
+                                              <AiFillClockCircle
+                                                size={16}
+                                                class="mt-0.5 ml-2 rounded-full text-warning"
+                                              />
+                                            ) : (
+                                              <AiFillCheckCircle
+                                                size={16}
+                                                class="mt-0.5 ml-2 text-success"
+                                              />
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </UnsavedLink>
+                                    <div class="ml-1 mr-1 flex flex-col justify-center text-primary">
+                                      <BsLink class="relative bottom-[5px]" />
+                                    </div>
+
+                                    <For each={item.merged_items}>
+                                      {(mergedItem, index) => (
+                                        <>
+                                          <UnsavedLink
+                                            href={`/entity/${entity_name}/${mergedItem.uid}`}
+                                            class={`mb-3  flex h-fit cursor-pointer flex-row rounded-sm pb-2 pt-2 pl-4 pr-2 text-neutral-content  ${
+                                              mergedItem.is_deleted
+                                                ? "bg-gray-400 hover:bg-gray-500"
+                                                : "bg-primary hover:bg-primary-focus"
+                                            }`}
+                                          >
+                                            <div class="relative">
+                                              <div class="mr-2 inline-block text-xs font-semibold">
+                                                {mergedItem.label}
+                                              </div>
+                                            </div>
+                                            <div class="right-0 ml-auto justify-self-end">
+                                              {mergedItem.is_deleted && (
+                                                <div class="relative mr-2 flex flex-row">
+                                                  <AiFillDelete
+                                                    size={14}
+                                                    class="mt-[6px]  text-gray-600"
+                                                  />
+                                                  {mergedItem.deleted_and_has_dependent_nodes ? (
+                                                    <AiFillClockCircle
+                                                      size={14}
+                                                      class="mt-[6px] ml-1 rounded-full text-warning"
+                                                    />
+                                                  ) : (
+                                                    <AiFillCheckCircle
+                                                      size={14}
+                                                      class="mt-[6px] ml-1 text-success"
+                                                    />
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </UnsavedLink>
+                                          <Show
+                                            when={
+                                              index() <
+                                              item.merged_items.length - 1
+                                            }
+                                          >
+                                            <div class="ml-1 mr-1 flex flex-col justify-center text-primary-focus">
+                                              <BsLink class="relative bottom-[5px]" />
+                                            </div>
+                                          </Show>
+                                        </>
+                                      )}
+                                    </For>
                                   </div>
-                                )}
-                              </div>
-                            </UnsavedLink>
-                          </div>
-                        )}
+                                </Match>
+                                <Match when={true}>
+                                  <div>
+                                    <UnsavedLink
+                                      href={`/entity/${entity_name}/${item.uid}`}
+                                      class={`mb-3 flex cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
+                                        item.is_deleted
+                                          ? "bg-gray-400 hover:bg-gray-500"
+                                          : "bg-primary hover:bg-primary-focus"
+                                      }`}
+                                    >
+                                      <div class="flex flex-col content-center">
+                                        <div>
+                                          <span class="prose-sm mr-7 select-none font-light uppercase">
+                                            {getEntityDisplayName(
+                                              item.real_type
+                                            )}
+                                          </span>
+                                        </div>
+                                      </div>{" "}
+                                      <div class="relative">
+                                        <div class="inline-block font-semibold">
+                                          {item.label}
+                                        </div>
+                                      </div>
+                                      <div class="right-0 ml-auto flex flex-row items-center justify-self-end">
+                                        {item.is_deleted && (
+                                          <div class="relative mr-2 flex flex-row">
+                                            <AiFillDelete
+                                              size={16}
+                                              class=" text-gray-600"
+                                            />
+                                            {item.deleted_and_has_dependent_nodes ? (
+                                              <AiFillClockCircle
+                                                size={16}
+                                                class="ml-2 rounded-full text-warning"
+                                              />
+                                            ) : (
+                                              <AiFillCheckCircle
+                                                size={16}
+                                                class=" ml-2 text-success"
+                                              />
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </UnsavedLink>
+                                  </div>
+                                </Match>
+                              </Switch>
+                            </div>
+                          );
+                        }}
                       </For>
                     </div>
                     <div class="col-span-2 pt-4 pb-6 pr-4" />

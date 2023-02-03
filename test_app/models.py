@@ -236,6 +236,8 @@ class Entity(ProsNode):
 class Person(Entity):
     class Meta:
         mergeable = True
+        internal_fields = ["merged"]
+        # use_list_cache = False
 
     merged = ProsRelationTo("Person", reverse_name="merged")
 
