@@ -7,6 +7,7 @@ import {
   lazy,
   Suspense,
   ErrorBoundary,
+  For,
 } from "solid-js";
 import { Routes, Route } from "@solidjs/router";
 
@@ -21,16 +22,83 @@ import Login, { userStatus, alreadyLoggedIn } from "./components/Login";
 import { EntityData, EntityViewAllData } from "./data/DataEndpoints";
 import Testing from "./views/Testing";
 import TestingSchema from "./views/TestingSchema";
+import { createStore } from "solid-js/store";
+import { createEffect } from "solid-js";
 
 export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
+export const [floatingPages, setFloatingPages] = createStore({});
 
+import {
+  DragDropProvider,
+  DragDropSensors,
+  DragEventHandler,
+  createDraggable,
+  DragOverlay,
+  transformStyle,
+} from "@thisbeyond/solid-dnd";
+/*
+const Draggable = (props) => {
+  const draggable = createDraggable(props.id);
+  return (
+    <div
+      ref={draggable.ref}
+      class="draggable-container absolute z-50 border border-black"
+      classList={{ "opacity-0": draggable.isActiveDraggable }}
+      style={{
+        top: "200px",
+        left: (props.id === 1 ? 200 : 300) + "px",
+      }}
+    >
+      <div
+        class="h-12 cursor-grab bg-primary"
+        classList={{ "cursor-grabbed": draggable.isActiveDraggable }}
+        {...draggable.dragActivators}
+      >
+        Entity
+      </div>
+      <div class="content">
+        Draggable <div class="bg-secondary">some other</div>
+      </div>
+    </div>
+  );
+};
+
+export const FloatingPages = () => {
+  let transform = { x: 0, y: 0 };
+
+  const onDragMove: DragEventHandler = ({ overlay }) => {
+    if (overlay) {
+      transform = { ...overlay.transform };
+    }
+  };
+
+  const onDragEnd: DragEventHandler = ({ draggable }) => {
+    const node = draggable.node;
+    node.style.setProperty("top", node.offsetTop + transform.y + "px");
+    node.style.setProperty("left", node.offsetLeft + transform.x + "px");
+  };
+
+  return (
+    <DragDropProvider onDragMove={onDragMove} onDragEnd={onDragEnd}>
+      <DragDropSensors />
+
+      <Draggable id={1} />
+      <Draggable id={2} />
+
+      <DragOverlay>
+        {(draggable) => <div class="draggable">Draggable {draggable.id}</div>}
+      </DragOverlay>
+    </DragDropProvider>
+  );
+};
+*/
 const Home: Component = () => {
-  const [c, setC] = createSignal(true);
   return (
     <div class="mt-12 flex flex-grow flex-row justify-center">
       <div class="w-3/6">
         <div class="prose">
           <h1 class="prose-h1">Home</h1>
+
           <p class="prose-lead">
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae a
             veniam consequuntur nesciunt omnis cumque doloremque aperiam tempora

@@ -221,7 +221,7 @@ export const TypeGroupedRelationViewRow: Component<{
   }[];
 }> = (props) => {
   const itemGroups = createMemo(() => groupByEntityType(props.value));
-  createEffect(() => console.log(itemGroups()));
+  //createEffect(() => console.log(itemGroups()));
   return (
     <>
       <For each={Object.entries(itemGroups())}>
@@ -355,7 +355,7 @@ const InlineRelationView: Component = (props) => {
 
 const buildDateString = (date_as_string) => {
   try {
-    console.log(date_as_string);
+    //console.log(date_as_string);
     const parsedDate = new Date(date_as_string);
 
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -436,7 +436,7 @@ const ViewMergedEntity: Component<{
 
   const reverseRelationGroupTypes = createMemo(() => {
     const all_items_data = [props.data, ...props.data.merged_items];
-    console.log(all_items_data);
+    //console.log(all_items_data);
     const reverse_relations = Object.keys(
       schema[props.params.entity_type].reverse_relations
     );
@@ -457,7 +457,7 @@ const ViewMergedEntity: Component<{
 
   const getTypedGroupFieldData = (entity, rr) => {
     if (rr in entity) {
-      console.log(">>", groupByEntityType(entity[rr]));
+      //console.log(">>", groupByEntityType(entity[rr]));
       return groupByEntityType(entity[rr]);
     }
     return {};
@@ -624,10 +624,10 @@ const ViewEntity: Component = () => {
           data() ? data()[field_name]?.some((item) => item.is_deleted) : false
         )
         .some((has_deleted) => has_deleted);
-      console.log("any deleted", any);
+      //console.log("any deleted", any);
       return any;
     }
-    console.log("any deleted fails");
+    //console.log("any deleted fails");
     return false;
   };
 
@@ -635,7 +635,7 @@ const ViewEntity: Component = () => {
     let sorted_fields = Object.entries(schema[params.entity_type]?.fields);
     const field_orderings = schema[params.entity_type]?.meta?.order_fields;
     if (field_orderings) {
-      console.log("orderfields");
+      //console.log("orderfields");
       sorted_fields = sortBy(([field_name, field]) => {
         if (field_name === "label") {
           return -1;

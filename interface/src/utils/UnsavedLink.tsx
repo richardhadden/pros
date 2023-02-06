@@ -8,6 +8,8 @@ import {
   on,
   Show,
   splitProps,
+  Switch,
+  Match,
 } from "solid-js";
 import {
   useHref,
@@ -15,7 +17,14 @@ import {
   useNavigate,
   useResolvedPath,
 } from "@solidjs/router";
-import { hasUnsavedChange, setHasUnsavedChange } from "../App";
+import { createKeyHold } from "@solid-primitives/keyboard";
+
+import {
+  hasUnsavedChange,
+  setHasUnsavedChange,
+  floatingPages,
+  setFloatingPages,
+} from "../App";
 
 const trimPathRegex = /^\/+|\/+$/g;
 function normalizePath(path: string, omitSlash: boolean = false) {
@@ -34,6 +43,8 @@ interface AnchorProps
   end?: boolean;
 }
 
+const metaHeld = createKeyHold("Meta", { preventDefault: true });
+
 const UnsavedLink = (props: AnchorProps) => {
   const navigate = useNavigate();
   const [redirectModalVisible, setRedirectModalVisible] = createSignal(false);
@@ -50,6 +61,28 @@ const UnsavedLink = (props: AnchorProps) => {
     console.log("clicked");
     if (hasUnsavedChange()) {
       setRedirectModalVisible(true);
+    } else {
+      doNavigateAway();
+    }
+  };
+
+  const isLinkToEntity = () => {
+    try {
+      const [_, entity, entityType, uid] = props.href.split("/");
+      //console.log(entity, entityType, uid);
+      if (uid) {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  const onMetaClick = () => {
+    if (metaHeld()) {
+      setFloatingPages({ [props.href]: { loaded: false } });
+      console.log(floatingPages);
     } else {
       doNavigateAway();
     }
@@ -86,12 +119,12 @@ const UnsavedLink = (props: AnchorProps) => {
             <h3 class="font-semibold uppercase">Confirm Unsaved Changes</h3>
             <p class="py-4">Leave page without saving changes?</p>
             <div class="modal-action">
-              <span onClick={doNavigateAway} class="btn btn-error">
+              <span onClick={doNavigateAway} class="btn-error btn">
                 Confirm
               </span>
               <span
                 onClick={() => setRedirectModalVisible(false)}
-                class="btn btn-success"
+                class="btn-success btn"
               >
                 Cancel
               </span>
@@ -99,9 +132,38 @@ const UnsavedLink = (props: AnchorProps) => {
           </div>
         </div>
       </Show>
-      <Show
-        when={hasUnsavedChange()}
-        fallback={
+      <Switch>
+        <Match when={isLinkToEntity() && metaHeld() && !hasUnsavedChange()}>
+          <a
+            onClick={onMetaClick}
+            {...rest}
+            //href={href() || props.href}
+            state={JSON.stringify(props.state)}
+            classList={{
+              ...(props.class && { [props.class]: true }),
+              [props.inactiveClass!]: !isActive(),
+              [props.activeClass!]: isActive(),
+              ...rest.classList,
+            }}
+            aria-current={isActive() ? "page" : undefined}
+          />
+        </Match>
+        <Match when={hasUnsavedChange()}>
+          <a
+            onClick={onClickLink}
+            {...rest}
+            //href={href() || props.href}
+            state={JSON.stringify(props.state)}
+            classList={{
+              ...(props.class && { [props.class]: true }),
+              [props.inactiveClass!]: !isActive(),
+              [props.activeClass!]: isActive(),
+              ...rest.classList,
+            }}
+            aria-current={isActive() ? "page" : undefined}
+          />
+        </Match>
+        <Match when={true}>
           <a
             //onClick={onClickLink}
             {...rest}
@@ -115,22 +177,8 @@ const UnsavedLink = (props: AnchorProps) => {
             }}
             aria-current={isActive() ? "page" : undefined}
           />
-        }
-      >
-        <a
-          onClick={onClickLink}
-          {...rest}
-          //href={href() || props.href}
-          state={JSON.stringify(props.state)}
-          classList={{
-            ...(props.class && { [props.class]: true }),
-            [props.inactiveClass!]: !isActive(),
-            [props.activeClass!]: isActive(),
-            ...rest.classList,
-          }}
-          aria-current={isActive() ? "page" : undefined}
-        />
-      </Show>
+        </Match>
+      </Switch>
     </>
   );
 };
