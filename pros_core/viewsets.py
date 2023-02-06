@@ -158,7 +158,7 @@ def update_related_nodes(
         # as it's not allowed... instead, get the old node from the rel_manager,
         # look up the new node by uid, and then reconnect the rel_manager
         if isinstance(rel_manager, neomodel.cardinality.One):
-
+            ic(related_name, "is one")
             old_node = rel_manager.get()
             new_node = related_model.nodes.get(uid=related_values[0]["uid"])
             rel_manager.reconnect(old_node, new_node)
@@ -169,16 +169,20 @@ def update_related_nodes(
         # or create new connection if so. Then, clean up all the no-longer
         # desired connections.
         elif isinstance(rel_manager, neomodel.cardinality.OneOrMore):
-
+            ic(related_name, "is oneonemore")
             for related_value in related_values:
-
+                ic(">>", related_value)
                 if already_connected_node := rel_manager.get_or_none(
                     uid=related_value["uid"]
                 ):
+                    ic("already exists")
+                    ic(related_value.get("relData"))
                     rel_manager.replace(
                         already_connected_node,
-                        related_value.get("relData") or {},
+                        related_value.get("relData") or {"something": "arse"},
                     )
+                    # ic(rel_manager.relationship(already_connected_node))
+
                 else:
                     rel_manager.connect(
                         related_model.nodes.get(uid=related_value["uid"]),
@@ -188,7 +192,9 @@ def update_related_nodes(
             updated_uids = {rv["uid"] for rv in related_values}
 
             for node in rel_manager.all():
+
                 if node.uid not in updated_uids:
+
                     rel_manager.disconnect(node)
         # TODO: this might not be as quick as comparing lists
         # of relations and making fewer changes... (unlikely list will
@@ -243,6 +249,7 @@ def update_inline_related_nodes(instance, data, username=None):
                 for prop_key, prop_value in property_data.items():
                     setattr(old_related_node, prop_key, prop_value)
                     update_related_nodes(related_model, old_related_node, relation_data)
+                old_related_node.save()
 
             else:
                 new_related_node = related_model(**property_data)
@@ -490,7 +497,7 @@ CALL {
       WHERE NOT in_r:MERGED
       RETURN COUNT(incoming_node) > 0 AS has_inbound_incoming_node
     }
-    WITH apoc.map.setValues(incoming_node, ["rel_type", toLower(incoming_relation.reverse_name), "deleted_and_has_dependent_nodes", has_inbound_incoming_node AND incoming_node.is_deleted]) AS mod_incoming_node
+    WITH apoc.map.setValues(incoming_node, ["relData", incoming_relation, "rel_type", toLower(incoming_relation.reverse_name), "deleted_and_has_dependent_nodes", has_inbound_incoming_node AND incoming_node.is_deleted]) AS mod_incoming_node
     RETURN apoc.map.groupByMulti(COLLECT(mod_incoming_node), "rel_type") AS incoming_relations
   }
   
@@ -505,7 +512,7 @@ CALL {
       WHERE NOT in_r:MERGED
       RETURN COUNT(outgoing_node) > 0 AS has_inbound_outgoing_node
     }
-    WITH apoc.map.setValues(outgoing_node, ["rel_type", toLower(type(outgoing_relation)), "deleted_and_has_dependent_nodes", has_inbound_outgoing_node AND outgoing_node.is_deleted]) AS mod_outgoing_node
+    WITH apoc.map.setValues(outgoing_node, ["relData", outgoing_relation, "rel_type", toLower(type(outgoing_relation)), "deleted_and_has_dependent_nodes", has_inbound_outgoing_node AND outgoing_node.is_deleted]) AS mod_outgoing_node
     RETURN apoc.map.groupByMulti(COLLECT(mod_outgoing_node), "rel_type") AS outgoing_relations
   }
   
@@ -789,7 +796,7 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
             "modifiedBy": request.user.username,
             "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
         }
-
+        ic(relation_data)
         instance: ProsNode = self.__model_class__.nodes.get(uid=pk)
 
         for property_key, property_value in property_data.items():

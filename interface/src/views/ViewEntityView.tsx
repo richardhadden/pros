@@ -83,6 +83,12 @@ export const RelationViewField: Component<{
     deleted_and_has_dependent_nodes?: boolean;
   }[];
 }> = (props) => {
+  const getRelData = (item) => {
+    return Object.entries(item.relData).filter(
+      ([fname, f]) => fname !== "reverse_name"
+    );
+  };
+
   return (
     <For each={props.value}>
       {(item) => (
@@ -147,19 +153,21 @@ export const RelationViewField: Component<{
               </Match>
             </Switch>
 
-            <div class="card-body grid grid-cols-8">
-              <For each={Object.entries(item.relData)}>
-                {([relatedFieldName, relatedFieldValue]) => (
-                  <>
-                    <div class="prose-sm col-span-2 font-semibold uppercase">
-                      {relatedFieldName}
-                    </div>
-                    <div />
-                    <div class="prose-sm col-span-5">{relatedFieldValue}</div>
-                  </>
-                )}
-              </For>
-            </div>
+            <Show when={getRelData(item).length > 0}>
+              <div class="card-body grid grid-cols-8">
+                <For each={getRelData(item)}>
+                  {([relatedFieldName, relatedFieldValue]) => (
+                    <>
+                      <div class="prose-sm col-span-2 font-semibold uppercase">
+                        {relatedFieldName}
+                      </div>
+                      <div />
+                      <div class="prose-sm col-span-5">{relatedFieldValue}</div>
+                    </>
+                  )}
+                </For>
+              </div>
+            </Show>
           </div>
         </Show>
       )}
