@@ -44,7 +44,7 @@ const TopBar: Component<TopBarProps> = (props: TopBarProps) => {
   return schema ? (
     <>
       <div class="mr-16">
-        <div class="navbar fixed z-50 ml-32 flex h-20 w-4/6 flex-row justify-evenly rounded-b-sm bg-neutral pr-0 pt-0 pb-0 text-neutral-content shadow-2xl">
+        <div class="navbar fixed z-30 ml-32 flex h-20 w-4/6 flex-row justify-evenly rounded-b-sm bg-neutral pr-0 pt-0 pb-0 text-neutral-content shadow-2xl">
           <div class="prose-md ml-3 w-fit  font-semibold uppercase">
             {props.barTitle}
           </div>

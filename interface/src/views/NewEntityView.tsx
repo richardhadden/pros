@@ -16,6 +16,7 @@ import { getEntityDisplayName } from "../utils/entity_names";
 import { schema } from "../index";
 import Form from "../components/EditForm";
 import { postNewEntityData } from "../data/DataEndpoints";
+import { createShortcut } from "@solid-primitives/keyboard";
 
 import { Validator } from "@cfworker/json-schema";
 
@@ -55,6 +56,14 @@ const NewEntityView: Component = (props) => {
     setHasUnsavedChange(true);
     setData(data);
   };
+
+  createShortcut(
+    ["Meta", "s"],
+    () => {
+      onSave();
+    },
+    { preventDefault: true, requireReset: true }
+  );
 
   const [showSaveToast, setShowSaveToast] = createSignal(false);
   const [showErrorToast, setShowErrorToast] = createSignal(false);

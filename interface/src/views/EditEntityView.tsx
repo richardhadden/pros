@@ -19,7 +19,7 @@ import Form from "../components/EditForm";
 import { putEntityData } from "../data/DataEndpoints";
 import { AiFillWarning } from "solid-icons/ai";
 import { BiSolidEditAlt } from "solid-icons/bi";
-
+import { createShortcut } from "@solid-primitives/keyboard";
 import { Validator } from "@cfworker/json-schema";
 
 import { unpackValidationErrors } from "../utils/unpackValidationErrors";
@@ -28,6 +28,13 @@ const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
 const EditEntityView: Component = (props) => {
+  createShortcut(
+    ["Meta", "s"],
+    () => {
+      onSave();
+    },
+    { preventDefault: true, requireReset: true }
+  );
   const params = useParams();
   const [initialData, refetchInitialData] = useRouteData();
 

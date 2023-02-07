@@ -12,6 +12,11 @@ const SERVER: string = "http://127.0.0.1:8000";
 const BASE_URI: string = "http://127.0.0.1:8000/api";
 
 import { SchemaObject, SchemaEntity, SubClasses } from "./types/schemaTypes";
+import {
+  DragDropProvider,
+  DragDropSensors,
+  DragOverlay,
+} from "@thisbeyond/solid-dnd";
 
 const [schema, setSchema] = createStore<SchemaObject>({});
 

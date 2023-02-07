@@ -80,9 +80,18 @@ const UnsavedLink = (props: AnchorProps) => {
   };
 
   const onMetaClick = () => {
+    console.log("metaclick");
     if (metaHeld()) {
-      setFloatingPages({ [props.href]: { loaded: false } });
-      console.log(floatingPages);
+      const [_, entity, entityType, uid] = props.href.split("/");
+      setFloatingPages([
+        ...floatingPages(),
+        {
+          uid: uid,
+          real_type: entityType,
+          minimised: false,
+        },
+      ]);
+      //console.log(floatingPages);
     } else {
       doNavigateAway();
     }
@@ -119,12 +128,12 @@ const UnsavedLink = (props: AnchorProps) => {
             <h3 class="font-semibold uppercase">Confirm Unsaved Changes</h3>
             <p class="py-4">Leave page without saving changes?</p>
             <div class="modal-action">
-              <span onClick={doNavigateAway} class="btn-error btn">
+              <span onClick={doNavigateAway} class="btn btn-error">
                 Confirm
               </span>
               <span
                 onClick={() => setRedirectModalVisible(false)}
-                class="btn-success btn"
+                class="btn btn-success"
               >
                 Cancel
               </span>

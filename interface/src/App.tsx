@@ -26,7 +26,7 @@ import { createStore } from "solid-js/store";
 import { createEffect } from "solid-js";
 
 export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
-export const [floatingPages, setFloatingPages] = createStore({});
+export const [floatingPages, setFloatingPages] = createSignal([]);
 
 import {
   DragDropProvider,
@@ -36,62 +36,9 @@ import {
   DragOverlay,
   transformStyle,
 } from "@thisbeyond/solid-dnd";
-/*
-const Draggable = (props) => {
-  const draggable = createDraggable(props.id);
-  return (
-    <div
-      ref={draggable.ref}
-      class="draggable-container absolute z-50 border border-black"
-      classList={{ "opacity-0": draggable.isActiveDraggable }}
-      style={{
-        top: "200px",
-        left: (props.id === 1 ? 200 : 300) + "px",
-      }}
-    >
-      <div
-        class="h-12 cursor-grab bg-primary"
-        classList={{ "cursor-grabbed": draggable.isActiveDraggable }}
-        {...draggable.dragActivators}
-      >
-        Entity
-      </div>
-      <div class="content">
-        Draggable <div class="bg-secondary">some other</div>
-      </div>
-    </div>
-  );
-};
+import { DragTest } from "./views/DragTest";
+import EntityWindow from "./components/EntityWindow";
 
-export const FloatingPages = () => {
-  let transform = { x: 0, y: 0 };
-
-  const onDragMove: DragEventHandler = ({ overlay }) => {
-    if (overlay) {
-      transform = { ...overlay.transform };
-    }
-  };
-
-  const onDragEnd: DragEventHandler = ({ draggable }) => {
-    const node = draggable.node;
-    node.style.setProperty("top", node.offsetTop + transform.y + "px");
-    node.style.setProperty("left", node.offsetLeft + transform.x + "px");
-  };
-
-  return (
-    <DragDropProvider onDragMove={onDragMove} onDragEnd={onDragEnd}>
-      <DragDropSensors />
-
-      <Draggable id={1} />
-      <Draggable id={2} />
-
-      <DragOverlay>
-        {(draggable) => <div class="draggable">Draggable {draggable.id}</div>}
-      </DragOverlay>
-    </DragDropProvider>
-  );
-};
-*/
 const Home: Component = () => {
   return (
     <div class="mt-12 flex flex-grow flex-row justify-center">
@@ -133,49 +80,107 @@ const Home: Component = () => {
 const App: Component = () => {
   onMount(alreadyLoggedIn);
 
+  createEffect(() => console.log(floatingPages()));
+
+  let transform = { x: 0, y: 0 };
+
+  const onDragMove = ({ draggable }) => {
+    transform = { ...draggable.transform };
+  };
+
+  const onDragEnd = ({ draggable }) => {
+    const node = draggable.node;
+    const top =
+      node.offsetTop + transform.y < 0 ? 0 : node.offsetTop + transform.y;
+    const left =
+      node.offsetLeft + transform.x < 0 ? 0 : node.offsetLeft + transform.x;
+    node.style.setProperty("top", top + "px");
+    node.style.setProperty("left", left + "px");
+  };
+
   return (
     <>
-      <Show when={userStatus.isAuthenticated} fallback={<Login />}>
-        <div class="flex h-full">
-          <div class="">
-            <Sidebar />
+      <DragDropProvider onDragMove={onDragMove} onDragEnd={onDragEnd}>
+        <DragDropSensors />
+
+        <Show when={userStatus.isAuthenticated} fallback={<Login />}>
+          <For each={floatingPages().filter((item) => !item.minimised)}>
+            {(item, index) => (
+              <EntityWindow
+                id={item.uid}
+                minimised={item.minimised}
+                entityType={item.real_type}
+                startOffset={150 + 50 * index()}
+              />
+            )}
+          </For>
+          <div class="flex h-full">
+            <div class="">
+              <Sidebar />
+            </div>
+            <div class="flex-grow pl-5 pr-10">
+              <Routes>
+                <Suspense>
+                  <Route
+                    path="/entity/:entity_type/new/"
+                    component={NewEntityView}
+                  />
+                  <Route
+                    path="/entity/:entity_type/:uid/"
+                    component={ViewEntity}
+                    data={EntityData}
+                  />
+                  <Route
+                    path="/entity/:entity_type/"
+                    component={ViewEntityListView}
+                    data={EntityViewAllData}
+                  />
+                  <Route
+                    path="/entity/:entity_type/:uid/merge/"
+                    component={MergeView}
+                    data={EntityData}
+                  />
+                  <Route
+                    path="/entity/:entity_type/:uid/edit/"
+                    component={EditEntityView}
+                    data={EntityData}
+                  />
+                  <Route path="/login" component={Login} />
+                  <Route path="/testing" component={Testing} />
+                  <Route path="testingSchema" component={TestingSchema} />
+
+                  <Route path="/" component={Home} />
+                </Suspense>
+              </Routes>
+              <Show
+                when={
+                  floatingPages().filter((item) => item.minimised).length > 0
+                }
+              >
+                <div class="flex flex-row justify-center">
+                  <div class="fixed bottom-0 z-40 flex w-fit flex-row gap-2 rounded-tl-sm rounded-tr-sm bg-neutral px-3 pb-2 pt-3">
+                    <For
+                      each={floatingPages().filter((item) => item.minimised)}
+                    >
+                      {(item) => (
+                        <EntityWindow
+                          id={item.uid}
+                          entityType={item.real_type}
+                          minimised={item.minimised}
+                          top={item.top}
+                          right={item.right}
+                          width={item.width}
+                          height={item.height}
+                        />
+                      )}
+                    </For>
+                  </div>
+                </div>
+              </Show>
+            </div>
           </div>
-          <div class="flex-grow pl-5 pr-10">
-            <Routes>
-              <Suspense>
-                <Route
-                  path="/entity/:entity_type/new/"
-                  component={NewEntityView}
-                />
-                <Route
-                  path="/entity/:entity_type/:uid/"
-                  component={ViewEntity}
-                  data={EntityData}
-                />
-                <Route
-                  path="/entity/:entity_type/"
-                  component={ViewEntityListView}
-                  data={EntityViewAllData}
-                />
-                <Route
-                  path="/entity/:entity_type/:uid/merge/"
-                  component={MergeView}
-                  data={EntityData}
-                />
-                <Route
-                  path="/entity/:entity_type/:uid/edit/"
-                  component={EditEntityView}
-                  data={EntityData}
-                />
-                <Route path="/login" component={Login} />
-                <Route path="/testing" component={Testing} />
-                <Route path="testingSchema" component={TestingSchema} />
-                <Route path="/" component={Home} />
-              </Suspense>
-            </Routes>
-          </div>
-        </div>
-      </Show>
+        </Show>
+      </DragDropProvider>
     </>
   );
 };

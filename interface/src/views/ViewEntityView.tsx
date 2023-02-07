@@ -109,7 +109,7 @@ export const RelationViewField: Component<{
             </span>
           }
         >
-          <div class="card card-compact mr-4 mb-3 inline-block rounded-sm bg-base-300 p-0">
+          <div class="card card-compact z-10 mr-4 mb-3 inline-block rounded-sm bg-base-300 p-0">
             <Switch>
               <Match when={item.is_deleted}>
                 <UnsavedLink
@@ -605,6 +605,77 @@ const ViewMergedEntity: Component<{
   );
 };
 
+const EntityView: Component = (props) => {
+  const data = props.data;
+  const params = props.params;
+  const refetchData = props.refetchData;
+
+  const sorted_fields = createMemo(() => {
+    let sorted_fields = Object.entries(schema[params.entity_type]?.fields);
+    const field_orderings = schema[params.entity_type]?.meta?.order_fields;
+    if (field_orderings) {
+      //console.log("orderfields");
+      sorted_fields = sortBy(([field_name, field]) => {
+        if (field_name === "label") {
+          return -1;
+        }
+        const o = field_orderings.indexOf(field_name);
+        if (o === -1) {
+          return 1000;
+        }
+        return o;
+      }, sorted_fields);
+    }
+    return sorted_fields;
+  });
+
+  return (
+    <Switch>
+      <Match when={data().is_merged_item}>
+        <div class="col-span-8">
+          <ViewMergedEntity
+            data={data()}
+            fields={sorted_fields()}
+            params={params}
+          />
+        </div>
+      </Match>
+      <Match when={true}>
+        <RowView data={data()} fields={sorted_fields()} params={params} />
+
+        {Object.keys(schema[params.entity_type].reverse_relations).length >
+          0 && <div class="col-span-8 mt-32" />}
+        <For
+          each={Object.entries(schema[params.entity_type].reverse_relations)}
+        >
+          {([schema_field_name, field], index) => (
+            <Show when={data()[schema_field_name]?.length > 0}>
+              <TypeGroupedRelationViewRow
+                override_label={
+                  schema[params.entity_type].meta.override_labels?.[
+                    schema_field_name.toLowerCase()
+                  ]?.[1]
+                }
+                fieldName={schema_field_name}
+                value={data()[schema_field_name]}
+                field={field}
+                reverseRelation={true}
+              />
+
+              <Show
+                when={
+                  Object.entries(schema[params.entity_type].fields).length >
+                  index() + 1
+                }
+              ></Show>
+            </Show>
+          )}
+        </For>
+      </Match>
+    </Switch>
+  );
+};
+
 const ViewEntity: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
   const [data, refetchData] = useRouteData();
@@ -638,25 +709,6 @@ const ViewEntity: Component = () => {
     //console.log("any deleted fails");
     return false;
   };
-
-  const sorted_fields = createMemo(() => {
-    let sorted_fields = Object.entries(schema[params.entity_type]?.fields);
-    const field_orderings = schema[params.entity_type]?.meta?.order_fields;
-    if (field_orderings) {
-      //console.log("orderfields");
-      sorted_fields = sortBy(([field_name, field]) => {
-        if (field_name === "label") {
-          return -1;
-        }
-        const o = field_orderings.indexOf(field_name);
-        if (o === -1) {
-          return 1000;
-        }
-        return o;
-      }, sorted_fields);
-    }
-    return sorted_fields;
-  });
 
   return (
     <>
@@ -806,61 +858,17 @@ const ViewEntity: Component = () => {
                   <div class="col-span-1" />
                 </Show>
 
-                <Switch>
-                  <Match when={data().is_merged_item}>
-                    <div class="col-span-8">
-                      <ViewMergedEntity
-                        data={data()}
-                        fields={sorted_fields()}
-                        params={params}
-                      />
-                    </div>
-                  </Match>
-                  <Match when={true}>
-                    <RowView
-                      data={data()}
-                      fields={sorted_fields()}
-                      params={params}
-                    />
-
-                    {Object.keys(schema[params.entity_type].reverse_relations)
-                      .length > 0 && <div class="col-span-8 mt-32" />}
-                    <For
-                      each={Object.entries(
-                        schema[params.entity_type].reverse_relations
-                      )}
-                    >
-                      {([schema_field_name, field], index) => (
-                        <Show when={data()[schema_field_name]?.length > 0}>
-                          <TypeGroupedRelationViewRow
-                            override_label={
-                              schema[params.entity_type].meta.override_labels?.[
-                                schema_field_name.toLowerCase()
-                              ]?.[1]
-                            }
-                            fieldName={schema_field_name}
-                            value={data()[schema_field_name]}
-                            field={field}
-                            reverseRelation={true}
-                          />
-
-                          <Show
-                            when={
-                              Object.entries(schema[params.entity_type].fields)
-                                .length >
-                              index() + 1
-                            }
-                          ></Show>
-                        </Show>
-                      )}
-                    </For>
-                  </Match>
-                </Switch>
+                <EntityView
+                  data={data}
+                  params={params}
+                  refetchData={refetchData}
+                />
               </div>
             </Match>
           </Switch>
         </Suspense>
       </Show>
+
       <Show when={data() && data()["status"] === "error"}>
         <TopBar params={params} barCenter={data()["data"]} />
       </Show>
@@ -869,4 +877,4 @@ const ViewEntity: Component = () => {
 };
 
 export default ViewEntity;
-export { RowView };
+export { RowView, EntityView };

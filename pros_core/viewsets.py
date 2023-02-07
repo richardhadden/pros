@@ -154,6 +154,13 @@ def update_related_nodes(
             .lower()
         ].model
 
+        # TODO: When changing any kind of links to things, also bump the
+        # modifiedWhen date...
+
+        # TODO: reconsider whether we need an "internal" modifiedWhen
+        # to distinguish it from useful changes made by someone to the model
+        # in question... (may be of use for versioning...?)
+
         # If it's a cardinality-One relation, can't simply disconnect all
         # as it's not allowed... instead, get the old node from the rel_manager,
         # look up the new node by uid, and then reconnect the rel_manager
