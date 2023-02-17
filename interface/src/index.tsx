@@ -24,7 +24,7 @@ interface SchemaWrapperProps {
   children: any;
 }
 
-var resolveDbReady, promiseReject;
+let resolveDbReady: (arg: boolean) => void, promiseReject;
 
 export const dbReady = new Promise(function (resolve, reject) {
   resolveDbReady = resolve;
@@ -35,7 +35,7 @@ function SchemaWrapper(props: SchemaWrapperProps) {
   createEffect(async () => {
     const res = await fetch(BASE_URI + "/schema");
     const json: SchemaObject = await res.json();
-    console.log("get_schema_json", json);
+    console.log("Getting schema...", json);
     setSchema(json);
 
     const stores = Object.entries(json).reduce((acc, [entity_name, entity]) => {
@@ -43,12 +43,12 @@ function SchemaWrapper(props: SchemaWrapperProps) {
         acc[entity_name] = "id,uid,[real_type+label]";
       }
       return acc;
-    }, {});
+    }, {} as { [key: string]: "id,uid,[real_type+label]" });
 
     db.version(3).stores(stores);
     db.open();
     console.log("setting up db");
-    resolveDbReady();
+    resolveDbReady(true);
   });
 
   return (

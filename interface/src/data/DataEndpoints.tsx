@@ -20,7 +20,9 @@ export async function fetchEntityViewAllData(uri: string) {
     : undefined;
 
   const response_json = await dataRequest(uri, "GET", undefined, entityType);
-  const grouped_response_data = groupByRealType(response_json);
+  const grouped_response_data = groupByRealType(
+    response_json as { label: string; uid: string; real_type: string }[]
+  );
   return grouped_response_data;
 }
 
@@ -59,6 +61,7 @@ export async function fetchEntityData(uri_end: string) {
 }
 
 export function EntityData({ params }: { params: Params }) {
+  // Gets
   const [entity_data, { mutate, refetch }] = createResource(
     () =>
       `${schema[params.entity_type].app}/${params.entity_type}/${params.uid}`,
@@ -67,15 +70,16 @@ export function EntityData({ params }: { params: Params }) {
   return [entity_data, refetch];
 }
 
-export async function fetchAutoCompleteData(entity_type: string) {
-  //console.log("fetch autocompletedata called", entity_type);
+export async function fetchAutoCompleteData(
+  entity_type: string
+): Promise<object | undefined> {
   const response_json = await dataRequest(
     `${schema[entity_type].app}/${entity_type}/`,
     "GET",
     undefined,
     entity_type
   );
-  return response_json;
+  return response_json as { label: string; uid: string; real_type: string }[];
 }
 
 export async function putEntityData(
@@ -83,12 +87,15 @@ export async function putEntityData(
   uid: string,
   submission_data: object
 ) {
+  /**
+   * Request to update an entity
+   */
   const resp = await dataRequest(
     `${schema[entity].app}/${entity}/${uid}`,
     "PUT",
     submission_data
   );
-  return resp;
+  return resp as { uid: string; saved: boolean };
 }
 
 type SaveResponseType = Promise<
@@ -105,7 +112,7 @@ export async function postNewEntityData(
     submission_data,
     entity_type
   );
-  return response_json;
+  return response_json as { uid: string; label: string; saved: boolean };
 }
 
 export async function deleteEntity(
@@ -116,7 +123,6 @@ export async function deleteEntity(
   const uri = `${schema[entity_type].app}/${entity_type}/${uid}/${
     restore ? "?restore=true" : ""
   }`;
-  console.log(uri);
   const resp = await dataRequest(uri, "DELETE");
   return resp;
 }

@@ -27,7 +27,7 @@ type TopBarProps = {
   saveButton?: boolean;
   deleteButton?: boolean;
   hasUnsavedChange?: boolean;
-  onClickSaveButton?: (e: MouseEvent) => null;
+  onClickSaveButton?: (e: MouseEvent) => Promise<void>;
   refetchData?: any;
   data?: Accessor<object>;
   mergeButton: boolean;

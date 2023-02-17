@@ -27,6 +27,11 @@ import { unpackValidationErrors } from "../utils/unpackValidationErrors";
 const ViewedItemTopBarStyle =
   "pl-6 pr-6 shadow-xl bg-primary text-neutral-content p-3 max-w-4xl mb-3 rounded-sm h-12 prose-md border-gray-600 relative top-1.5 font-semibold";
 
+type TParams = {
+  entity_type: string;
+  uid: string;
+};
+
 const EditEntityView: Component = (props) => {
   createShortcut(
     ["Meta", "s"],
@@ -35,7 +40,7 @@ const EditEntityView: Component = (props) => {
     },
     { preventDefault: true, requireReset: true }
   );
-  const params = useParams();
+  const params = useParams<TParams>();
   const [initialData, refetchInitialData] = useRouteData();
 
   const [data, setData] = createSignal(initialData);
@@ -52,7 +57,7 @@ const EditEntityView: Component = (props) => {
 
   createEffect(() => setData(initialData));
 
-  const onSave = async () => {
+  async function onSave(e: MouseEvent): Promise<void> {
     const validator = new Validator(
       schema[params.entity_type].json_schema,
       "2020-12",
@@ -79,7 +84,7 @@ const EditEntityView: Component = (props) => {
       setShowErrorToast(true);
       setInterval(() => setShowErrorToast(false), 3000);
     }
-  };
+  }
 
   return (
     <>

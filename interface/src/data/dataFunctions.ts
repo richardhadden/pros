@@ -15,7 +15,9 @@ export type ViewEntityTypeData = {
   label: string;
   is_deleted: boolean;
   deleted_and_has_dependent_nodes: boolean;
-}[];
+  merged_items: Array<ViewEntityTypeData>;
+  is_merged_item: boolean;
+};
 
 export type RequestParams = {
   entity_type: string;
@@ -38,6 +40,7 @@ async function storeDataToIndexedDB(
     merged_items: item.merged_items ?? [],
     is_merged_item: item.is_merged_item ?? false,
   }));
+  // @ts-ignore
   db[entityType].bulkPut(dataToStore);
   const timestamp = new Date();
   setDbRequests(entityType, timestamp.toISOString());
@@ -60,26 +63,30 @@ async function updateDataInIndexedDB(
     is_merged_item: item.is_merged_item ?? false,
   }));
   for (let item of dataToStore) {
+    // @ts-ignore
     const itemInDB = await db[entityType].get(item.id);
     if (itemInDB) {
       console.log("Patching in IndexedDB", item);
+      // @ts-ignore
       await db[entityType].update(item.id, item);
     } else {
       console.log("Adding to IndexedDB", item);
+      // @ts-ignore
       await db[entityType].add(item, item.id);
     }
   }
 }
 
-async function deleteDataFromIndexedDB(entityType: string, items) {
+async function deleteDataFromIndexedDB(entityType: string, items: ViewEntityTypeData[]) {
   db.open();
 
   for (let item of items) {
+    // @ts-ignore
     await db[entityType].delete(item.uid);
   }
 }
 
-async function getDataAndPatchIndexedDB(uri: string, entityType: string) {
+async function getDataAndPatchIndexedDB(uri: string, entityType: string): Promise<void> {
   const fetchOptions: {
     mode: RequestMode;
     method: string;
@@ -127,7 +134,7 @@ async function dataRequest(
   method: string = "GET",
   data: object | undefined = undefined,
   entityTypeForDb: string | undefined = undefined
-): Promise<object | undefined> {
+): Promise<unknown | undefined> {
   // Function to handle data-fetching, either from endpoint or IndexedDB
   // If an enpoint request fails due to expired token, it runs itself again
 
@@ -156,6 +163,7 @@ async function dataRequest(
     // Do a request to server for updated data... get, and index...
     await getDataAndPatchIndexedDB(url, entityTypeForDb);
     await dbReady;
+    // @ts-ignore
     const response = await db[entityTypeForDb]
       .orderBy("[real_type+label]")
       .toArray();
