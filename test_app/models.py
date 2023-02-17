@@ -143,6 +143,12 @@ class Death(Event):
         order_fields = ["text", "is_about_person", "cause_of_death", "date", "location"]
 
 
+class ExpressionOfDisapproval(Factoid):
+    pass
+
+    class Meta:
+        display_name_plural = "Expressions of Disapproval"
+
 class Naming(Event):
     """Describes the attribution of a name to a Person."""
 

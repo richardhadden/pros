@@ -31,7 +31,16 @@ type DataResourceArgs = {
   data: object;
 };
 
-export function EntityViewAllData({ params, location }) {
+type Params = { entity_type: string; uid: string };
+type Location = { search: string };
+
+export function EntityViewAllData({
+  params,
+  location,
+}: {
+  params: Params;
+  location: Location;
+}) {
   const [entity_view_data, { mutate, refetch }] = createResource(
     () =>
       `${schema[params.entity_type].app}/${params.entity_type}/` +
@@ -49,7 +58,7 @@ export async function fetchEntityData(uri_end: string) {
   return response_json;
 }
 
-export function EntityData({ params }) {
+export function EntityData({ params }: { params: Params }) {
   const [entity_data, { mutate, refetch }] = createResource(
     () =>
       `${schema[params.entity_type].app}/${params.entity_type}/${params.uid}`,

@@ -26,7 +26,9 @@ import { createStore } from "solid-js/store";
 import { createEffect } from "solid-js";
 
 export const [hasUnsavedChange, setHasUnsavedChange] = createSignal(false);
-export const [floatingPages, setFloatingPages] = createSignal([]);
+export const [floatingPages, setFloatingPages] = createSignal<
+  { uid: string; minimised: boolean; real_type: string }[]
+>([]);
 
 import {
   DragDropProvider,
@@ -167,10 +169,6 @@ const App: Component = () => {
                           id={item.uid}
                           entityType={item.real_type}
                           minimised={item.minimised}
-                          top={item.top}
-                          right={item.right}
-                          width={item.width}
-                          height={item.height}
                         />
                       )}
                     </For>
