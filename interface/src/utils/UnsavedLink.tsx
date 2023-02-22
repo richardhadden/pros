@@ -89,6 +89,9 @@ const UnsavedLink = (props: AnchorProps) => {
           uid: uid,
           real_type: entityType,
           minimised: false,
+          top: 0,
+          left: 0,
+          alreadyVisible: false,
         },
       ]);
       //console.log(floatingPages);
@@ -128,12 +131,12 @@ const UnsavedLink = (props: AnchorProps) => {
             <h3 class="font-semibold uppercase">Confirm Unsaved Changes</h3>
             <p class="py-4">Leave page without saving changes?</p>
             <div class="modal-action">
-              <span onClick={doNavigateAway} class="btn btn-error">
+              <span onClick={doNavigateAway} class="btn-error btn">
                 Confirm
               </span>
               <span
                 onClick={() => setRedirectModalVisible(false)}
-                class="btn btn-success"
+                class="btn-success btn"
               >
                 Cancel
               </span>

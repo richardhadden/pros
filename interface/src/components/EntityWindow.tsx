@@ -9,7 +9,7 @@ import {
 } from "@thisbeyond/solid-dnd";
 import { AiOutlineClose } from "solid-icons/ai";
 import { VsChromeMinimize } from "solid-icons/vs";
-import { createEffect, onMount } from "solid-js";
+import { createEffect, onMount, Suspense } from "solid-js";
 import { createSignal, Show, onCleanup } from "solid-js";
 import dataRequest from "../data/dataFunctions";
 
@@ -23,6 +23,7 @@ const EntityWindow = (props) => {
   const [isFocused, setIsFocused] = createSignal(false);
   const [thisUid, setThisUid] = createSignal();
   const draggable = createDraggable(props.id, { some: "thing" });
+  const hasBeenDragged = createSignal(false);
 
   const [data, setData] = createSignal();
 
@@ -34,6 +35,25 @@ const EntityWindow = (props) => {
     setData(response);
     console.log("STARTOFFSET", props.startOffset);
   });
+
+  const tsregex = /(-?\d*?)px, (-?\d*?)px/g;
+  const modTS = (ts) => {
+    const [x, y] = ts.transform
+      .match(tsregex)[0]
+      .split(",")
+      .map((i) => 1 * i.replace("px", ""));
+    const xMod = x + props.left;
+    const yMod = y + props.top;
+    return { transform: `translate3d(${xMod}px, ${yMod}px, 0)` };
+  };
+
+  createEffect(() =>
+    console.log(
+      "iad",
+      draggable.isActiveDraggable,
+      modTS(transformStyle(draggable.transform))
+    )
+  );
 
   function clickOutside(el, accessor) {
     const onClick = (e) => {
@@ -84,52 +104,58 @@ const EntityWindow = (props) => {
         </Show>
       }
     >
-      <div
-        id={props.id}
-        data-drag={true}
-        onMouseDown={() => setIsFocused(true)}
-        use:clickOutside={() => setIsFocused(false)}
-        ref={draggable.ref}
-        class={`draggable scroll group fixed  right-5 top-[${props.startOffset}px] h-[300px] w-[300px] justify-between overflow-hidden shadow-lg transition-shadow hover:resize hover:shadow-2xl`}
-        style={transformStyle(draggable.transform)}
-        classList={{
-          "z-50": isFocused(),
-          "z-40": !isFocused(),
-        }}
-      >
+      <Suspense>
         <div
-          class="handle m-0 flex w-full  cursor-grab flex-row rounded-tl-sm rounded-tr-sm bg-neutral p-0 text-neutral-content transition-colors active:cursor-grabbing group-hover:bg-neutral-focus"
-          {...draggable.dragActivators}
+          id={props.id}
+          data-drag={true}
+          onMouseDown={() => setIsFocused(true)}
+          use:clickOutside={() => setIsFocused(false)}
+          ref={draggable.ref}
+          class={`draggable scroll group fixed  h-[300px] w-[300px] justify-between overflow-hidden shadow-lg transition-shadow hover:resize hover:shadow-2xl`}
+          style={
+            draggable.isActiveDraggable
+              ? modTS(transformStyle(draggable.transform))
+              : `top: ${props.top}px; left: ${props.left}px;`
+          }
+          classList={{
+            "z-50": isFocused(),
+            "z-40": !isFocused(),
+          }}
         >
-          <Show when={data()}>
-            <div class="mx-auto">
-              <div class=" my-2.5 w-fit overflow-x-clip whitespace-nowrap bg-primary px-3 py-1 text-sm font-semibold text-primary-content">
-                {data().label}
+          <div
+            class="handle m-0 flex w-full  cursor-grab flex-row rounded-tl-sm rounded-tr-sm bg-neutral p-0 text-neutral-content transition-colors active:cursor-grabbing group-hover:bg-neutral-focus"
+            {...draggable.dragActivators}
+          >
+            <Show when={data()}>
+              <div class="mx-auto">
+                <div class=" my-2.5 w-fit overflow-x-clip whitespace-nowrap bg-primary px-3 py-1 text-sm font-semibold text-primary-content">
+                  {data().label}
+                </div>
               </div>
+            </Show>
+            <div
+              class="btn-accent btn-square btn-md btn m-0 mr-px rounded-tr-none rounded-bl-none rounded-br-none rounded-tl-none"
+              onClick={onClickMinimise}
+            >
+              <VsChromeMinimize />
+            </div>
+            <div
+              class="btn-accent btn-square btn-md btn m-0 rounded-tr-sm rounded-bl-none rounded-br-none rounded-tl-none"
+              onClick={onClickClose}
+            >
+              <AiOutlineClose size={16} />
+            </div>
+          </div>
+          <Show when={data()}>
+            <div class="content h-full w-full resize overflow-y-scroll bg-white p-5 hover:resize">
+              <EntityView
+                data={data}
+                params={{ entity_type: data().real_type, uid: data().uid }}
+              />
             </div>
           </Show>
-          <div
-            class="btn-accent btn-square btn-md btn m-0 mr-px rounded-tr-none rounded-bl-none rounded-br-none rounded-tl-none"
-            onClick={onClickMinimise}
-          >
-            <VsChromeMinimize />
-          </div>
-          <div
-            class="btn-accent btn-square btn-md btn m-0 rounded-tr-sm rounded-bl-none rounded-br-none rounded-tl-none"
-            onClick={onClickClose}
-          >
-            <AiOutlineClose size={16} />
-          </div>
         </div>
-        <Show when={data()}>
-          <div class="content h-full w-full resize overflow-y-scroll bg-white p-5 hover:resize">
-            <EntityView
-              data={data}
-              params={{ entity_type: data().real_type, uid: data().uid }}
-            />
-          </div>
-        </Show>
-      </div>
+      </Suspense>
     </Show>
   );
 };

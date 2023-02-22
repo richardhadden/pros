@@ -92,12 +92,23 @@ const App: Component = () => {
 
   const onDragEnd = ({ draggable }) => {
     const node = draggable.node;
+    console.log(draggable.node);
+
     const top =
       node.offsetTop + transform.y < 0 ? 0 : node.offsetTop + transform.y;
     const left =
       node.offsetLeft + transform.x < 0 ? 0 : node.offsetLeft + transform.x;
     node.style.setProperty("top", top + "px");
     node.style.setProperty("left", left + "px");
+
+    setFloatingPages(
+      floatingPages().map((fp) => {
+        if (fp.uid === node.id) {
+          return { ...fp, top: top, left: left };
+        }
+        return fp;
+      })
+    );
   };
 
   return (
@@ -112,7 +123,8 @@ const App: Component = () => {
                 id={item.uid}
                 minimised={item.minimised}
                 entityType={item.real_type}
-                startOffset={150 + 50 * index()}
+                top={item.top}
+                left={item.left}
               />
             )}
           </For>
@@ -169,6 +181,8 @@ const App: Component = () => {
                           id={item.uid}
                           entityType={item.real_type}
                           minimised={item.minimised}
+                          top={item.top}
+                          left={item.left}
                         />
                       )}
                     </For>
