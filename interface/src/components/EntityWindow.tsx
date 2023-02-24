@@ -17,43 +17,135 @@ import { schema } from "../index";
 import { EntityView } from "../views/ViewEntityView";
 import { floatingPages, setFloatingPages } from "../App";
 
+import { makeResizeObserver } from "@solid-primitives/resize-observer";
+
 // bottom-[230px] right-[0px] h-[400px] w-[400px] min-w-[250px]
 
 const EntityWindow = (props) => {
   const [isFocused, setIsFocused] = createSignal(false);
   const [thisUid, setThisUid] = createSignal();
-  const draggable = createDraggable(props.id, { some: "thing" });
-  const hasBeenDragged = createSignal(false);
+  /*const { observe, unobserve } = makeResizeObserver(onResizeElement, {
+    box: "content-box",
+  });*/
+  let draggableContainer: HTMLElement;
+  let draggableHeader: HTMLElement;
+
+  /*function onResizeElement(e) {
+    console.log("resized");
+  }*/
 
   const [data, setData] = createSignal();
 
   onMount(async () => {
+    if (draggableContainer) {
+      dragElement(draggableContainer);
+      //observe(draggableContainer);
+      draggableContainer.style.top = props.top ? props.top + "px" : "0px";
+      draggableContainer.style.left = props.left ? props.left + "px" : "0px";
+      draggableContainer.style.height = props.height ? props.height : "300px";
+      draggableContainer.style.width = props.width ? props.width : "300px";
+    }
     const app = schema[props.entityType]?.app;
     const response = await dataRequest(
       `${app}/${props.entityType}/${props.id}`
     );
     setData(response);
-    console.log("STARTOFFSET", props.startOffset);
   });
 
-  const tsregex = /(-?\d*?)px, (-?\d*?)px/g;
-  const modTS = (ts) => {
-    const [x, y] = ts.transform
-      .match(tsregex)[0]
-      .split(",")
-      .map((i) => 1 * i.replace("px", ""));
-    const xMod = x + props.left;
-    const yMod = y + props.top;
-    return { transform: `translate3d(${xMod}px, ${yMod}px, 0)` };
+  // Make the DIV element draggable:
+
+  function dragElement(elmnt) {
+    let pos1 = 0,
+      pos2 = 0,
+      pos3 = 0,
+      pos4 = 0;
+    if (elmnt) {
+      elmnt.addEventListener("resize", onResize);
+    }
+
+    if (draggableHeader) {
+      draggableHeader.onmousedown = dragMouseDown;
+    }
+
+    function onResize(e) {
+      console.log(e);
+    }
+
+    function dragMouseDown(e) {
+      e = e || window.event;
+      e.preventDefault();
+      // get the mouse cursor position at startup:
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeDragElement;
+      // call a function whenever the cursor moves:
+      document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+      e = e || window.event;
+      e.preventDefault();
+      // calculate the new cursor position:
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      // set the element's new position:
+      const top = elmnt.offsetTop - pos2;
+      const left = elmnt.offsetLeft - pos1;
+      const windowWidth = window.innerWidth;
+      if (top < 0) {
+        elmnt.style.top = "0px";
+      } else {
+        elmnt.style.top = elmnt.offsetTop - pos2 + "px";
+      }
+
+      if (left < 0) {
+        elmnt.style.left = "0px";
+      } else if (left > windowWidth) {
+        elmnt.style.left = windowWidth + "px";
+      } else {
+        elmnt.style.left = left + "px";
+      }
+    }
+
+    function closeDragElement() {
+      // stop moving when mouse button is released:
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
+  }
+
+  const onClickMinimise = (e) => {
+    const node = draggableContainer;
+
+    setFloatingPages(
+      floatingPages().map((item) =>
+        item.uid === props.id
+          ? {
+              ...item,
+              minimised: true,
+              top: node?.offsetTop,
+              left: node?.offsetLeft,
+              height: node?.style.height,
+              width: node?.style.width,
+            }
+          : item
+      )
+    );
   };
 
-  createEffect(() =>
-    console.log(
-      "iad",
-      draggable.isActiveDraggable,
-      modTS(transformStyle(draggable.transform))
-    )
-  );
+  const onClickMaximise = (e) => {
+    setFloatingPages(
+      floatingPages().map((item) =>
+        item.uid === props.id ? { ...item, minimised: false } : item
+      )
+    );
+  };
+
+  const onClickClose = (e) => {
+    setFloatingPages(floatingPages().filter((item) => item.uid !== props.id));
+  };
 
   function clickOutside(el, accessor) {
     const onClick = (e) => {
@@ -66,26 +158,6 @@ const EntityWindow = (props) => {
     document.body.addEventListener("mousedown", onClick);
     onCleanup(() => document.body.removeEventListener("click", onClick));
   }
-
-  const onClickClose = (e) => {
-    setFloatingPages(floatingPages().filter((item) => item.uid !== props.id));
-  };
-
-  const onClickMinimise = (e) => {
-    setFloatingPages(
-      floatingPages().map((item) =>
-        item.uid === props.id ? { ...item, minimised: true } : item
-      )
-    );
-  };
-
-  const onClickMaximise = (e) => {
-    setFloatingPages(
-      floatingPages().map((item) =>
-        item.uid === props.id ? { ...item, minimised: false } : item
-      )
-    );
-  };
 
   return (
     <Show
@@ -110,21 +182,17 @@ const EntityWindow = (props) => {
           data-drag={true}
           onMouseDown={() => setIsFocused(true)}
           use:clickOutside={() => setIsFocused(false)}
-          ref={draggable.ref}
-          class={`draggable scroll group fixed  h-[300px] w-[300px] justify-between overflow-hidden shadow-lg transition-shadow hover:resize hover:shadow-2xl`}
-          style={
-            draggable.isActiveDraggable
-              ? modTS(transformStyle(draggable.transform))
-              : `top: ${props.top}px; left: ${props.left}px;`
-          }
+          ref={draggableContainer}
+          class={`draggable scroll group fixed  h-[300px] w-[300px] justify-between overflow-hidden shadow-xl transition-shadow hover:resize hover:shadow-2xl`}
           classList={{
             "z-50": isFocused(),
             "z-40": !isFocused(),
           }}
+          onresize={() => alert("yo")}
         >
           <div
             class="handle m-0 flex w-full  cursor-grab flex-row rounded-tl-sm rounded-tr-sm bg-neutral p-0 text-neutral-content transition-colors active:cursor-grabbing group-hover:bg-neutral-focus"
-            {...draggable.dragActivators}
+            ref={draggableHeader}
           >
             <Show when={data()}>
               <div class="mx-auto">
@@ -147,7 +215,7 @@ const EntityWindow = (props) => {
             </div>
           </div>
           <Show when={data()}>
-            <div class="content h-full w-full resize overflow-y-scroll bg-white p-5 hover:resize">
+            <div class="content h-full w-full resize overflow-y-scroll  p-5 backdrop-blur-3xl hover:resize ">
               <EntityView
                 data={data}
                 params={{ entity_type: data().real_type, uid: data().uid }}

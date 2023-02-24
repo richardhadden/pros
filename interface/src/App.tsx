@@ -82,117 +82,82 @@ const Home: Component = () => {
 const App: Component = () => {
   onMount(alreadyLoggedIn);
 
-  createEffect(() => console.log(floatingPages()));
-
-  let transform = { x: 0, y: 0 };
-
-  const onDragMove = ({ draggable }) => {
-    transform = { ...draggable.transform };
-  };
-
-  const onDragEnd = ({ draggable }) => {
-    const node = draggable.node;
-    console.log(draggable.node);
-
-    const top =
-      node.offsetTop + transform.y < 0 ? 0 : node.offsetTop + transform.y;
-    const left =
-      node.offsetLeft + transform.x < 0 ? 0 : node.offsetLeft + transform.x;
-    node.style.setProperty("top", top + "px");
-    node.style.setProperty("left", left + "px");
-
-    setFloatingPages(
-      floatingPages().map((fp) => {
-        if (fp.uid === node.id) {
-          return { ...fp, top: top, left: left };
-        }
-        return fp;
-      })
-    );
-  };
-
   return (
     <>
-      <DragDropProvider onDragMove={onDragMove} onDragEnd={onDragEnd}>
-        <DragDropSensors />
-
-        <Show when={userStatus.isAuthenticated} fallback={<Login />}>
-          <For each={floatingPages().filter((item) => !item.minimised)}>
-            {(item, index) => (
-              <EntityWindow
-                id={item.uid}
-                minimised={item.minimised}
-                entityType={item.real_type}
-                top={item.top}
-                left={item.left}
-              />
-            )}
-          </For>
-          <div class="flex h-full">
-            <div class="">
-              <Sidebar />
-            </div>
-            <div class="flex-grow pl-5 pr-10">
-              <Routes>
-                <Suspense>
-                  <Route
-                    path="/entity/:entity_type/new/"
-                    component={NewEntityView}
-                  />
-                  <Route
-                    path="/entity/:entity_type/:uid/"
-                    component={ViewEntity}
-                    data={EntityData}
-                  />
-                  <Route
-                    path="/entity/:entity_type/"
-                    component={ViewEntityListView}
-                    data={EntityViewAllData}
-                  />
-                  <Route
-                    path="/entity/:entity_type/:uid/merge/"
-                    component={MergeView}
-                    data={EntityData}
-                  />
-                  <Route
-                    path="/entity/:entity_type/:uid/edit/"
-                    component={EditEntityView}
-                    data={EntityData}
-                  />
-                  <Route path="/login" component={Login} />
-                  <Route path="/testing" component={Testing} />
-                  <Route path="testingSchema" component={TestingSchema} />
-
-                  <Route path="/" component={Home} />
-                </Suspense>
-              </Routes>
-              <Show
-                when={
-                  floatingPages().filter((item) => item.minimised).length > 0
-                }
-              >
-                <div class="flex flex-row justify-center">
-                  <div class="fixed bottom-0 z-40 flex w-fit flex-row gap-2 rounded-tl-sm rounded-tr-sm bg-neutral px-3 pb-2 pt-3">
-                    <For
-                      each={floatingPages().filter((item) => item.minimised)}
-                    >
-                      {(item) => (
-                        <EntityWindow
-                          id={item.uid}
-                          entityType={item.real_type}
-                          minimised={item.minimised}
-                          top={item.top}
-                          left={item.left}
-                        />
-                      )}
-                    </For>
-                  </div>
-                </div>
-              </Show>
-            </div>
+      <Show when={userStatus.isAuthenticated} fallback={<Login />}>
+        <For each={floatingPages().filter((item) => !item.minimised)}>
+          {(item, index) => (
+            <EntityWindow
+              id={item.uid}
+              minimised={item.minimised}
+              entityType={item.real_type}
+              top={item.top}
+              left={item.left}
+              height={item.height}
+              width={item.width}
+            />
+          )}
+        </For>
+        <div class="flex h-full">
+          <div class="">
+            <Sidebar />
           </div>
-        </Show>
-      </DragDropProvider>
+          <div class="flex-grow pl-5 pr-10">
+            <Routes>
+              <Suspense>
+                <Route
+                  path="/entity/:entity_type/new/"
+                  component={NewEntityView}
+                />
+                <Route
+                  path="/entity/:entity_type/:uid/"
+                  component={ViewEntity}
+                  data={EntityData}
+                />
+                <Route
+                  path="/entity/:entity_type/"
+                  component={ViewEntityListView}
+                  data={EntityViewAllData}
+                />
+                <Route
+                  path="/entity/:entity_type/:uid/merge/"
+                  component={MergeView}
+                  data={EntityData}
+                />
+                <Route
+                  path="/entity/:entity_type/:uid/edit/"
+                  component={EditEntityView}
+                  data={EntityData}
+                />
+                <Route path="/login" component={Login} />
+                <Route path="/testing" component={Testing} />
+                <Route path="testingSchema" component={TestingSchema} />
+
+                <Route path="/" component={Home} />
+              </Suspense>
+            </Routes>
+            <Show
+              when={floatingPages().filter((item) => item.minimised).length > 0}
+            >
+              <div class="flex flex-row justify-center">
+                <div class="fixed bottom-0 z-40 flex w-fit flex-row gap-2 rounded-tl-sm rounded-tr-sm bg-neutral px-3 pb-2 pt-3">
+                  <For each={floatingPages().filter((item) => item.minimised)}>
+                    {(item) => (
+                      <EntityWindow
+                        id={item.uid}
+                        entityType={item.real_type}
+                        minimised={item.minimised}
+                        top={null}
+                        left={null}
+                      />
+                    )}
+                  </For>
+                </div>
+              </div>
+            </Show>
+          </div>
+        </div>
+      </Show>
     </>
   );
 };
