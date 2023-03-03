@@ -322,13 +322,61 @@ def update_inline_related_nodes(instance, data, username=None):
             add_related_nodes(related_model, new_related_node, relation_data)
 
 
-def get_list(entity_type, text_filter=None):
+def build_select_value_string(select_values, unpack_values):
+    select_value_string = "{"
+    select_value_string += ", ".join(f".{v}" for v in select_values)
+    if unpack_values:
+        select_value_string += ","
+        select_value_string += ", ".join(f"{k}: {k}" for k in unpack_values if k != "_")
+    select_value_string += "}"
+    return select_value_string
+
+
+def build_nested_call(fields, current_node="a", key=None, n=0):
+
+    # ic(select_values_string)
+    res = ""
+    if isinstance(fields, set):
+        return res
+    for k1, v1 in fields.items():
+
+        select_values = {}
+        if not isinstance(v1, set):
+            select_values = v1.get("_")
+        if isinstance(v1, set):
+            select_values = v1
+        if k1 == "_":
+            pass
+        if k1 != "_":
+            res += f"""
+CALL {{
+WITH {current_node}
+OPTIONAL MATCH ({current_node})-[r_{k1}]-(o_{k1})
+WHERE type(r_{k1}) = '{k1.upper()}' OR r_{k1}.reverse_name = '{k1.upper()}'
+"""
+
+            res += build_nested_call(v1, current_node=f"o_{k1}", key=k1, n=n + 1)
+            if not isinstance(v1, set):
+                res += f"RETURN COLLECT(o_{k1}{build_select_value_string(select_values, v1)}) AS {k1} }}"
+            else:
+                res += f"RETURN o_{k1}{build_select_value_string(select_values, {})} AS {k1} }}"
+    return res
+
+
+def get_list(model_class):
     """Get list of items of a type, grouping together merged entities
     as different permutations, i.e. main person, with merged entities as separate field.
 
     n.b. entity_type should come from the BACKEND, so safe to interpolate it!
     """
+    entity_type = model_class.__name__
+    unpack_fields = getattr(model_class.Meta, "unpack_fields", None)
     ic(entity_type)
+    ic(unpack_fields)
+    if unpack_fields:
+        unpack_calls = build_nested_call(unpack_fields)
+    else:
+        unpack_calls = ""
 
     q = f"""
     
@@ -353,18 +401,23 @@ def get_list(entity_type, text_filter=None):
                 MATCH (a)<-[in_r]-(x)
                 WHERE NOT in_r:MERGED 
                 RETURN COUNT(a) > 0  as has_inbound_a
-            }}
-        WITH DISTINCT(a) AS da, a.is_deleted AND has_inbound_a AS ddn, cb <> [] as is_merged_item,  cb
+    }}
+    {unpack_calls}
+
+    WITH DISTINCT(a) AS da, a.is_deleted AND has_inbound_a AS ddn, cb <> [] as is_merged_item,  cb {", "+", ".join(unpack_fields) if unpack_fields else ""}
   
 
-    RETURN da{{.label, .uid, .real_type, .is_deleted, is_merged_item:is_merged_item, is_merged_item:is_merged_item, merged_items:cb}} AS results
+    RETURN da{{.label, .uid, .real_type, .is_deleted, is_merged_item:is_merged_item, is_merged_item:is_merged_item, merged_items:cb {", "+", ".join(f'''{f}: {f}''' for f in unpack_fields) if unpack_fields else ""}}} AS results
     ORDER BY da.label
 
 
     """
-
     results, meta = db.cypher_query(q)
-    return itertools.chain.from_iterable(results)
+
+    if build_label := getattr(model_class.Meta, "build_label", None):
+        return map(build_label, itertools.chain.from_iterable(results))
+    else:
+        return itertools.chain.from_iterable(results)
 
 
 def get_filter_list(entity_type: str, text_filter: str):
@@ -725,10 +778,11 @@ class ProsAbstractViewSet(ProsBlankViewSet):
 
             # Return list
             else:
-                node_data = get_list(self.__model_class__.__name__)
+
+                node_data = get_list(self.__model_class__)
         return ResponseValue(node_data)
 
-    def list(self, request: Request) -> Response:
+    async def list(self, request: Request) -> Response:
         return Response(**self.do_list(request))
 
 

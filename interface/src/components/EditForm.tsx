@@ -65,7 +65,7 @@ const Form: Component<{
       ...props.data(),
       [field_name]: value,
     });
-    if (schema[props.entity_type].meta.label_template) {
+    if (schema[props.entity_type].meta.construct_label_template) {
       props.setData({
         ...props.data(),
         label: build_label(),
@@ -98,10 +98,10 @@ const Form: Component<{
   };
 
   const build_label = createMemo(() => {
-    if (schema[props.entity_type]?.meta?.label_template) {
+    if (schema[props.entity_type]?.meta?.construct_label_template) {
       const label = build_label_template(
         (schema[props.entity_type as string] as SchemaEntity).meta
-          .label_template
+          .construct_label_template
       );
       if (label) {
         return label;
@@ -178,7 +178,7 @@ const Form: Component<{
                     when={
                       (field as SchemaFieldProperty).type === "property" &&
                       schema_field_name === "label" &&
-                      !schema[props.entity_type].meta.label_template
+                      !schema[props.entity_type].meta.construct_label_template
                     }
                   >
                     <TypedInputRow
@@ -196,11 +196,11 @@ const Form: Component<{
                     />
                   </Match>
 
-                  {/* Renders template-generated label if there is label_template set */}
+                  {/* Renders template-generated label if there is construct_label_template set */}
                   <Match
                     when={
                       schema_field_name === "label" &&
-                      schema[props.entity_type].meta.label_template
+                      schema[props.entity_type].meta.construct_label_template
                     }
                   >
                     <TextFieldView

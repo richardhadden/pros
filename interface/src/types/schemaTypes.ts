@@ -28,7 +28,8 @@ export type SchemaEntityMeta =
     display_name?: string;
     display_name_plural?: string;
     abstract?: boolean;
-    label_template?: string;
+    view_label_template?: string;
+    construct_label_template?: string;
     inline_only?: boolean;
     override_labels?: {[key: string]: string[]}
     use_list_cache?: boolean;

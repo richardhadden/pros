@@ -32,13 +32,7 @@ async function storeDataToIndexedDB(
   db.open();
   const dataToStore = data.map((item) => ({
     id: item.uid,
-    uid: item.uid,
-    label: item.label,
-    real_type: item.real_type,
-    is_deleted: item.is_deleted,
-    deleted_and_has_dependent_nodes: item.deleted_and_has_dependent_nodes,
-    merged_items: item.merged_items ?? [],
-    is_merged_item: item.is_merged_item ?? false,
+    ...item
   }));
   // @ts-ignore
   db[entityType].bulkPut(dataToStore);
@@ -52,16 +46,7 @@ async function updateDataInIndexedDB(
   data: ViewEntityTypeData[]
 ) {
   db.open();
-  const dataToStore = data.map((item) => ({
-    id: item.uid,
-    uid: item.uid,
-    label: item.label,
-    real_type: item.real_type,
-    is_deleted: item.is_deleted,
-    deleted_and_has_dependent_nodes: item.deleted_and_has_dependent_nodes,
-    merged_items: item.merged_items ?? [],
-    is_merged_item: item.is_merged_item ?? false,
-  }));
+  const dataToStore = data.map((item) => item);
   for (let item of dataToStore) {
     // @ts-ignore
     const itemInDB = await db[entityType].get(item.id);

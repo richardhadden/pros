@@ -26,6 +26,7 @@ import {
 import { filter } from "ramda";
 import { ViewEntityTypeData } from "../data/DataEndpoints";
 import { BsLink } from "solid-icons/bs";
+import { schema } from "../index";
 /*
 const x = <div class="navbar bg-neutral text-neutral-content rounded-b-lg pr-0 pt-0 pb-0 ml-12 max-w-7xl">
     <div class="navbar-start ml-3 prose-xl font-semibold">{getEntityNamePlural(params.entity_type).toUpperCase()}</div>
@@ -65,6 +66,61 @@ function debounce(cb: CallableFunction, delay = 500) {
     }, delay);
   };
 }
+
+const nested_get = (
+  nested: object | object[] | string[],
+  keys: string[] | number[]
+) => {
+  const k = keys.shift();
+  if (keys.length > 0) {
+    if (nested.constructor === Array) {
+      if (k === "__all__") {
+        //console.log(k);
+
+        return nested
+          .map((n) => {
+            const keycopy = [...keys];
+            return nested_get(n, keycopy);
+          })
+          .join(", ");
+      }
+      return nested_get(nested[0][k], keys);
+    }
+    return nested_get(nested[k], keys);
+  } else {
+    if (nested.constructor === Array) {
+      return nested[0][k];
+    }
+
+    return nested[k];
+  }
+};
+
+const build_label_template = (
+  item: ViewEntityTypeData,
+  template: string | undefined
+) => {
+  console.log("TEMPLATE", template);
+  try {
+    const re = new RegExp("({.*?})", "g");
+    const matches = [...template.matchAll(re)];
+    matches.forEach((match) => {
+      let s;
+      if (match[0].includes(".")) {
+        const es = match[0].replaceAll("{", "").replaceAll("}", "").split(".");
+        s = nested_get(item, es);
+      } else {
+        s = item[match[0].replaceAll("{", "").replaceAll("}", "")];
+      }
+      template = template.replace(new RegExp(match[0]), s);
+      template = template.replaceAll("undefined", "");
+      template = template.replace(/\s\s+/g, " ");
+    });
+    return template;
+  } catch (error) {
+    return item.label;
+  }
+};
 
 const ViewEntityListView: Component = () => {
   const params: { entity_type: string; uid: string } = useParams();
@@ -182,7 +238,11 @@ const ViewEntityListView: Component = () => {
                                       </div>{" "}
                                       <div class="relative">
                                         <div class="inline-block font-semibold">
-                                          {item.label}
+                                          {build_label_template(
+                                            item,
+                                            schema[item.real_type].meta
+                                              .view_label_template
+                                          )}
                                         </div>
                                       </div>
                                       <div class="right-0 ml-auto flex flex-row items-center justify-self-end">
@@ -285,7 +345,11 @@ const ViewEntityListView: Component = () => {
                                       </div>{" "}
                                       <div class="relative">
                                         <div class="inline-block font-semibold">
-                                          {item.label}
+                                          {build_label_template(
+                                            item,
+                                            schema[item.real_type].meta
+                                              .view_label_template
+                                          )}
                                         </div>
                                       </div>
                                       <div class="right-0 ml-auto flex flex-row items-center justify-self-end">

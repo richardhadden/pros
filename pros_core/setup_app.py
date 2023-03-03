@@ -77,7 +77,7 @@ def build_meta(model):
         {
             k: v
             for k, v in model.__dict__["Meta"].__dict__.items()
-            if not k.startswith("__")
+            if not k.startswith("__") and not callable(v)
         }
         if "Meta" in model.__dict__
         else {}
