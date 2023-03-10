@@ -12,6 +12,8 @@ from pros_core.models import ProsNode, REVERSE_RELATIONS, InlineRelation
 
 from django.apps import apps
 
+ic(REVERSE_RELATIONS)
+
 PROS_APPS = [
     app for app, conf in apps.app_configs.items() if getattr(conf, "pros_app", False)
 ]

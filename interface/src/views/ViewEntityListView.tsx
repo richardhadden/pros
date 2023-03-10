@@ -33,6 +33,9 @@ const x = <div class="navbar bg-neutral text-neutral-content rounded-b-lg pr-0 p
     {!schema[params.entity_type].meta.abstract && <div class="navbar-end"><Link href={`/entity/${params.entity_type}/new/`} class="btn btn-lg  btn-square btn-accent rounded-tl-none rounded-tr-none rounded-bl-none"><BsPlus size={28} /></Link></div>}
 
 </div>*/
+const custom_list_view_pages = CUSTOM_LIST_VIEW_PAGES as {
+  [key: string]: Component<{}>;
+};
 
 const LoadingSpinner: Component = (props) => (
   <div role="status" class="flex justify-center">
@@ -70,7 +73,7 @@ function debounce(cb: CallableFunction, delay = 500) {
 const nested_get = (
   nested: object | object[] | string[],
   keys: string[] | number[]
-) => {
+): string => {
   const k = keys.shift();
   if (keys.length > 0) {
     if (nested.constructor === Array) {
@@ -96,11 +99,7 @@ const nested_get = (
   }
 };
 
-const build_label_template = (
-  item: ViewEntityTypeData,
-  template: string | undefined
-) => {
-  console.log("TEMPLATE", template);
+const build_label_template = (item: ViewEntityTypeData, template: string) => {
   try {
     const re = new RegExp("({.*?})", "g");
     const matches = [...template.matchAll(re)];
@@ -158,9 +157,9 @@ const ViewEntityListView: Component = () => {
 
   return (
     <Switch>
-      <Match when={CUSTOM_LIST_VIEW_PAGES[params.entity_type]}>
+      <Match when={custom_list_view_pages[params.entity_type]}>
         <Dynamic
-          component={CUSTOM_LIST_VIEW_PAGES[params.entity_type]}
+          component={custom_list_view_pages[params.entity_type]}
           data={data()}
           params={params}
         />
@@ -238,11 +237,7 @@ const ViewEntityListView: Component = () => {
                                       </div>{" "}
                                       <div class="relative">
                                         <div class="inline-block font-semibold">
-                                          {build_label_template(
-                                            item,
-                                            schema[item.real_type].meta
-                                              .view_label_template
-                                          )}
+                                          {item.label}
                                         </div>
                                       </div>
                                       <div class="right-0 ml-auto flex flex-row items-center justify-self-end">

@@ -26,11 +26,11 @@ type TopBarProps = {
   viewButton?: boolean;
   saveButton?: boolean;
   deleteButton?: boolean;
+  mergeButton?: boolean;
   hasUnsavedChange?: boolean;
   onClickSaveButton?: (e: MouseEvent) => Promise<void>;
   refetchData?: any;
   data?: Accessor<object>;
-  mergeButton: boolean;
 };
 
 const TopBar: Component<TopBarProps> = (props: TopBarProps) => {

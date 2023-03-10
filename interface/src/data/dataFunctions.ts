@@ -46,7 +46,10 @@ async function updateDataInIndexedDB(
   data: ViewEntityTypeData[]
 ) {
   db.open();
-  const dataToStore = data.map((item) => item);
+  const dataToStore = data.map((item) => ({
+    id: item.uid,
+    ...item
+  }));
   for (let item of dataToStore) {
     // @ts-ignore
     const itemInDB = await db[entityType].get(item.id);

@@ -363,6 +363,17 @@ WHERE type(r_{k1}) = '{k1.upper()}' OR r_{k1}.reverse_name = '{k1.upper()}'
     return res
 
 
+"""
+TODO: try conditionally adding so we don't end up with empty lists
+
+WITH n, COLLECT(
+  CASE
+    WHEN ilist.container IS NULL THEN NULL
+    ELSE { container : ilist.container, target : target.id } END
+) AS iset
+"""
+
+
 def get_list(model_class):
     """Get list of items of a type, grouping together merged entities
     as different permutations, i.e. main person, with merged entities as separate field.
@@ -407,7 +418,7 @@ def get_list(model_class):
     WITH DISTINCT(a) AS da, a.is_deleted AND has_inbound_a AS ddn, cb <> [] as is_merged_item,  cb {", "+", ".join(unpack_fields) if unpack_fields else ""}
   
 
-    RETURN da{{.label, .uid, .real_type, .is_deleted, is_merged_item:is_merged_item, is_merged_item:is_merged_item, merged_items:cb {", "+", ".join(f'''{f}: {f}''' for f in unpack_fields) if unpack_fields else ""}}} AS results
+    RETURN apoc.map.clean(da{{.label, .uid, .real_type, .is_deleted, is_merged_item:is_merged_item, is_merged_item:is_merged_item, merged_items:cb {", "+", ".join(f'''{f}: {f}''' for f in unpack_fields) if unpack_fields else ""}}}, [], [[], {{}}, [{{}}], null]) AS results
     ORDER BY da.label
 
 
@@ -782,7 +793,7 @@ class ProsAbstractViewSet(ProsBlankViewSet):
                 node_data = get_list(self.__model_class__)
         return ResponseValue(node_data)
 
-    async def list(self, request: Request) -> Response:
+    def list(self, request: Request) -> Response:
         return Response(**self.do_list(request))
 
 

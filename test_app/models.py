@@ -75,6 +75,7 @@ class Letter(Source):
 
 
 class Factoid(ProsNode):
+    use_list_cache = False
     label = StringProperty(
         index=True, help_text="Short text description", required=True
     )
@@ -239,7 +240,7 @@ class Acquaintanceship(Relation):
 
     class Meta:
         construct_label_template = "{subject.label} knows {subject_related_to.label}"
-        order_fields = ["text", "is_about_person", "subject_related_to", "date"]
+        order_fields = ["text", "subject", "subject_related_to", "date"]
 
 
 class Membership(Factoid):
@@ -253,11 +254,9 @@ class Membership(Factoid):
     date = DateRange.as_inline_field()
 
     class Meta:
-        construct_label_template = (
-            "{is_about_person.label} is member of {member_of.label}"
-        )
+        construct_label_template = "{person.label} is member of {member_of.label}"
         view_label_template = "{label}"
-        order_fields = ["text", "is_about_person", "member_of", "date"]
+        order_fields = ["text", "person", "member_of", "date"]
 
 
 class Entity(ProsNode):
@@ -268,8 +267,10 @@ class Entity(ProsNode):
 
 
 class Person(Entity):
+    initial_attestation = Citation.as_inline_field()
+
     class Meta:
-        mergeable = True
+        # mergeable = True
         internal_fields = ["merged"]
         unpack_fields = {
             "birth_event": {
@@ -283,35 +284,9 @@ class Person(Entity):
                 "location": {"label"},
             },
         }
+        list_display_extras = {"b.": ["{birth_event[0].date.earliest_possible}"]}
 
-        def build_label(instance_dict: dict):
-            new_label = instance_dict["label"]
-            if instance_dict.get("birth_event") or instance_dict.get("death_event"):
-                new_label += " ("
-                try:
-                    birth_date = str(
-                        instance_dict.get("birth_event", [{}])[0].get("date", "?")[
-                            "earliest_possible"
-                        ]
-                    )
-                    new_label += birth_date[0:4]
-                except:
-                    new_label += "?"
-                new_label += "–"
-                try:
-                    death_date = str(
-                        instance_dict.get("death_event", [{}])[0].get("date")[
-                            "latest_possible"
-                        ]
-                    )
-                    new_label += death_date[0:4]
-                except:
-                    new_label += "?"
-                new_label += ")"
-            instance_dict["label"] = new_label
-            return instance_dict
-
-    merged = ProsRelationTo("Person", reverse_name="merged")
+    # merged = ProsRelationTo("Person", reverse_name="merged")
 
 
 class Organisation(Entity):
