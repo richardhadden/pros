@@ -40,6 +40,7 @@ import {
 } from "@thisbeyond/solid-dnd";
 import { DragTest } from "./views/DragTest";
 import EntityWindow from "./components/EntityWindow";
+import TestList from "./views/TestList";
 
 const Home: Component = () => {
   return (
@@ -132,6 +133,7 @@ const App: Component = () => {
                 <Route path="/login" component={Login} />
                 <Route path="/testing" component={Testing} />
                 <Route path="testingSchema" component={TestingSchema} />
+                <Route path="/testList" component={TestList} />
 
                 <Route path="/" component={Home} />
               </Suspense>

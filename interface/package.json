@@ -27,6 +27,8 @@
     "dependencies": {
         "@cfworker/json-schema": "^1.12.5",
         "@hyperjump/json-schema": "^1.1.0",
+        "@solid-primitives/intersection-observer": "^2.0.8",
+        "@solid-primitives/pagination": "^0.2.2",
         "@solid-primitives/resize-observer": "^2.0.9",
         "@solid-primitives/storage": "^1.3.3",
         "@solid-primitives/workers": "^0.2.2",

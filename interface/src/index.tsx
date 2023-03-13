@@ -19,6 +19,7 @@ import {
 } from "@thisbeyond/solid-dnd";
 
 const [schema, setSchema] = createStore<SchemaObject>({});
+const [isDbReady, setIsDbReady] = createSignal(false);
 
 interface SchemaWrapperProps {
   children: any;
@@ -29,6 +30,10 @@ let resolveDbReady: (arg: boolean) => void, promiseReject;
 export const dbReady = new Promise(function (resolve, reject) {
   resolveDbReady = resolve;
   promiseReject = reject;
+});
+
+db.on("ready", function () {
+  setIsDbReady(true);
 });
 
 function SchemaWrapper(props: SchemaWrapperProps) {
@@ -53,7 +58,7 @@ function SchemaWrapper(props: SchemaWrapperProps) {
 
   return (
     <Show
-      when={Object.keys(schema).length > 0}
+      when={Object.keys(schema).length > 0 && isDbReady()}
       fallback={
         <div class="flex items-center justify-center">
           <div
