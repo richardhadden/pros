@@ -12,6 +12,10 @@ const groupByRealType = groupBy(
 // * Hereafter are the actual data routes
 
 export async function fetchEntityViewAllData(uri: string) {
+  // CHANGE: don't need this to return data any more: getting
+  // date already automatically adds it to IndexedDB, so we can just
+  // await its completion, and return true...
+
   // Get the entityType from the uri to pass to fetch/db lookup;
   // unless there is some search param at the end, in which case
   // we need to hit the server
@@ -19,11 +23,13 @@ export async function fetchEntityViewAllData(uri: string) {
     ? uri.split("/").slice(-2, -1)[0]
     : undefined;
 
+  console.log("getting data");
+
   const response_json = await dataRequest(uri, "GET", undefined, entityType);
-  const grouped_response_data = groupByRealType(
-    response_json as { label: string; uid: string; real_type: string }[]
-  );
-  return grouped_response_data;
+  //const grouped_response_data = groupByRealType(
+  //  response_json as { label: string; uid: string; real_type: string }[]
+  //);
+  return uri; //grouped_response_data;
 }
 
 type DataResourceArgs = {

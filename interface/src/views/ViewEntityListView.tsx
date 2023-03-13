@@ -1,5 +1,8 @@
-import { CUSTOM_LIST_VIEW_PAGES } from "../../interface-config.js";
+import { createInfiniteScroll } from "@solid-primitives/pagination";
+import { db } from "../data/db";
 
+import { CUSTOM_LIST_VIEW_PAGES } from "../../interface-config.js";
+import { fetchEntityViewAllData } from "../data/DataEndpoints";
 import {
   Accessor,
   Component,
@@ -10,6 +13,7 @@ import {
   Show,
   Switch,
   Match,
+  on,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { useParams, useRouteData, useSearchParams } from "@solidjs/router";
@@ -27,15 +31,6 @@ import { filter } from "ramda";
 import { ViewEntityTypeData } from "../data/DataEndpoints";
 import { BsLink } from "solid-icons/bs";
 import { schema } from "../index";
-/*
-const x = <div class="navbar bg-neutral text-neutral-content rounded-b-lg pr-0 pt-0 pb-0 ml-12 max-w-7xl">
-    <div class="navbar-start ml-3 prose-xl font-semibold">{getEntityNamePlural(params.entity_type).toUpperCase()}</div>
-    {!schema[params.entity_type].meta.abstract && <div class="navbar-end"><Link href={`/entity/${params.entity_type}/new/`} class="btn btn-lg  btn-square btn-accent rounded-tl-none rounded-tr-none rounded-bl-none"><BsPlus size={28} /></Link></div>}
-
-</div>*/
-const custom_list_view_pages = CUSTOM_LIST_VIEW_PAGES as {
-  [key: string]: Component<{}>;
-};
 
 const LoadingSpinner: Component = (props) => (
   <div role="status" class="flex justify-center">
@@ -70,324 +65,335 @@ function debounce(cb: CallableFunction, delay = 500) {
   };
 }
 
-const nested_get = (
-  nested: object | object[] | string[],
-  keys: string[] | number[]
-): string => {
-  const k = keys.shift();
-  if (keys.length > 0) {
-    if (nested.constructor === Array) {
-      if (k === "__all__") {
-        //console.log(k);
-
-        return nested
-          .map((n) => {
-            const keycopy = [...keys];
-            return nested_get(n, keycopy);
-          })
-          .join(", ");
-      }
-      return nested_get(nested[0][k], keys);
-    }
-    return nested_get(nested[k], keys);
-  } else {
-    if (nested.constructor === Array) {
-      return nested[0][k];
-    }
-
-    return nested[k];
-  }
-};
-
-const build_label_template = (item: ViewEntityTypeData, template: string) => {
-  try {
-    const re = new RegExp("({.*?})", "g");
-    const matches = [...template.matchAll(re)];
-    matches.forEach((match) => {
-      let s;
-      if (match[0].includes(".")) {
-        const es = match[0].replaceAll("{", "").replaceAll("}", "").split(".");
-        s = nested_get(item, es);
-      } else {
-        s = item[match[0].replaceAll("{", "").replaceAll("}", "")];
-      }
-      template = template.replace(new RegExp(match[0]), s);
-      template = template.replaceAll("undefined", "");
-      template = template.replace(/\s\s+/g, " ");
-    });
-    return template;
-  } catch (error) {
-    return item.label;
-  }
-};
-
-const ViewEntityListView: Component = () => {
+const ViewEntityListView: Component = (props) => {
   const params: { entity_type: string; uid: string } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, refetchData] =
     useRouteData<[Accessor<ViewEntityTypeData[]>, CallableFunction]>();
-  const [searchParams, setSearchParams] = useSearchParams<array>();
-  const [filterValue, setFilterValue] = createSignal<string>("");
-  const [showFilteringSpinner, setShowFilteringSpinner] =
-    createSignal<boolean>(false);
 
-  onMount(() => {
+  const [firstUidOfType, setFirstUidOfType] = createSignal({});
+  const [filterValue, setFilterValue] = createSignal("");
+  const [entityCounts, setEntityCounts] = createSignal({});
+
+  const doUpdateFilter = debounce(async () => {
+    //.log(firstUidOfType());
+    setSearchParams({ filter: filterValue() });
+    const resp = await fetcher(0);
+    setFirstUidOfType({});
+    setPage(1);
+    setPages(resp);
+
+    setEnd(false);
+    window.scrollTo(0, 0);
+  });
+
+  const getCounts = async () => {
+    const ens = [
+      params.entity_type,
+      ...schema[params.entity_type].subclasses_list?.map((sc) =>
+        sc.toLowerCase()
+      ),
+    ];
+    const counts = {};
+    for (let en of ens) {
+      const thiscount = await db[en.toLowerCase()].count();
+
+      counts[en] = thiscount;
+    }
+    return counts;
+  };
+
+  onMount(async () => {
+    setSearchParams({ filter: searchParams.filter });
     setFilterValue(searchParams.filter || "");
   });
 
-  const doFilter = debounce(setSearchParams);
+  createEffect(() => console.log(entityCounts()));
 
-  const onFilterInput = (value: string) => {
-    console.log(value);
-    setFilterValue(value);
-    doFilter({ filter: filterValue() });
-    setShowFilteringSpinner(true);
-  };
+  createEffect(
+    on([() => searchParams.filter, () => params.entity_type], async () => {
+      setFilterValue(searchParams.filter || "");
+    })
+  );
 
-  createEffect(() => {
-    params.entity_type;
-    setShowFilteringSpinner(true);
-  });
+  createEffect(
+    on(
+      () => params.entity_type,
+      async () => {
+        setFilterValue(searchParams.filter || "");
+        const resp = await fetcher(0);
+        setFirstUidOfType({});
+        setPage(1);
+        setPages(resp);
 
-  createEffect(() => {
-    data();
-    setShowFilteringSpinner(false);
-  });
+        setEnd(false);
+        window.scrollTo(0, 0);
+      }
+    )
+  );
 
-  createEffect(() => console.log("DATA", data()));
+  createEffect(
+    // Reset on data gathered
+    on(data, async () => {
+      setFilterValue(searchParams.filter || "");
+      const resp = await fetcher(0);
+      setFirstUidOfType({});
+      setPage(1);
+      setPages(resp);
+
+      setEnd(false);
+      window.scrollTo(0, 0);
+    })
+  );
+
+  createEffect(
+    on(filterValue, () => {
+      doUpdateFilter();
+    })
+  );
+
+  async function fetcher(page) {
+    try {
+      let resp = db[params.entity_type].orderBy("[real_type+label]");
+
+      if (filterValue()) {
+        const filterFunc = (item) => {
+          const words_regexes = filterValue()
+            .split(" ")
+            .map((word) => new RegExp(word, "i"));
+          const result = words_regexes
+            .map((wre) => wre.test(item.label))
+            .every((test) => test); //.test(item.label);
+
+          return result;
+        };
+
+        resp = resp.filter(filterFunc);
+      }
+
+      const count = await resp.count();
+      if (count < 50) {
+        setEnd(true);
+      }
+      return await resp
+        .offset(page * 50)
+        .limit(50)
+        .toArray();
+    } catch {}
+  }
+  const [pages, setEl, { end, setEnd, setPage, setPages, page }] =
+    createInfiniteScroll(fetcher);
 
   return (
-    <Switch>
-      <Match when={custom_list_view_pages[params.entity_type]}>
-        <Dynamic
-          component={custom_list_view_pages[params.entity_type]}
-          data={data()}
-          params={params}
-        />
-      </Match>
-      <Match when={true}>
-        <TopBar
-          params={params}
-          barTitle={
-            <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
-              {getEntityNamePlural(params.entity_type)}
-            </div>
-          }
-          barCenter={
-            <div class="relative flex">
-              <input
-                type="text"
-                placeholder="Filter..."
-                class="input w-full max-w-xs text-black"
-                value={filterValue()}
-                onInput={(e: InputEvent) =>
-                  onFilterInput((e.currentTarget as HTMLInputElement).value)
-                }
-              />
-            </div>
-          }
-          newButton={true}
-        />
-
-        <Show
-          when={data() && showFilteringSpinner() == false}
-          fallback={
-            <div class="mx-auto mt-32  ml-6 ">
-              <LoadingSpinner />
-            </div>
-          }
-        >
-          <div class="mx-auto mt-32  ml-6 ">
-            <Show when={showFilteringSpinner()}>
-              <LoadingSpinner />
-            </Show>
-            <For each={Object.entries(data())}>
-              {([entity_name, items], index) => (
+    <>
+      <TopBar
+        params={params}
+        barTitle={
+          <div class="prose-sm ml-3 inline-block select-none rounded-sm bg-neutral-focus pl-3 pr-3 pt-1 pb-1">
+            {getEntityNamePlural(params.entity_type)}
+          </div>
+        }
+        barCenter={
+          <div class="relative flex">
+            <input
+              type="text"
+              placeholder="Filter..."
+              class="input w-full max-w-xs text-black"
+              value={filterValue()}
+              onInput={(e: InputEvent) =>
+                setFilterValue((e.currentTarget as HTMLInputElement).value)
+              }
+            />
+          </div>
+        }
+        newButton={true}
+      />
+      <Show when={data() && entityCounts()} fallback={<LoadingSpinner />}>
+        <div class="mx-auto ml-6 mt-32 mb-16 grid grid-cols-8">
+          <For each={pages()}>
+            {(item, index) => {
+              if (!firstUidOfType()[item.real_type]) {
+                setFirstUidOfType({
+                  ...firstUidOfType(),
+                  [item.real_type]: item.uid,
+                });
+              }
+              //console.log(firstUidOfType()[item.real_type], item.uid);
+              return (
                 <>
-                  <div class="grid grid-cols-8 gap-y-6">
-                    <div class="col-span-1 rounded-l-md pt-4 pb-6 pl-3">
-                      <h2 class="prose-md select-none font-semibold uppercase text-base-content">
-                        {getEntityNamePlural(entity_name)}
-                      </h2>
-                    </div>
-                    <div class="col-span-5 pt-4 pb-6 pr-4">
-                      <For each={items}>
-                        {(item) => {
-                          return (
-                            <div>
-                              <Switch>
-                                <Match when={item.is_merged_item}>
-                                  <div class="flex flex-row items-center">
-                                    <UnsavedLink
-                                      href={`/entity/${entity_name}/${item.uid}`}
-                                      class={`mb-3 flex h-fit flex-1 cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
-                                        item.is_deleted
-                                          ? "bg-gray-400 hover:bg-gray-500"
-                                          : "bg-primary hover:bg-primary-focus"
-                                      }`}
-                                    >
-                                      <div class="flex w-fit flex-col justify-center">
-                                        <div>
-                                          <span class="prose-sm mr-7 select-none font-light uppercase">
-                                            {getEntityDisplayName(
-                                              item.real_type
-                                            )}
-                                          </span>
-                                        </div>
-                                      </div>{" "}
-                                      <div class="relative">
-                                        <div class="inline-block font-semibold">
-                                          {item.label}
-                                        </div>
-                                      </div>
-                                      <div class="right-0 ml-auto flex flex-row items-center justify-self-end">
-                                        {item.is_deleted && (
-                                          <div class="relative mr-2 flex flex-row">
-                                            <AiFillDelete
-                                              size={16}
-                                              class="mt-0.5 text-gray-600"
-                                            />
-                                            {item.deleted_and_has_dependent_nodes ? (
-                                              <AiFillClockCircle
-                                                size={16}
-                                                class="mt-0.5 ml-2 rounded-full text-warning"
-                                              />
-                                            ) : (
-                                              <AiFillCheckCircle
-                                                size={16}
-                                                class="mt-0.5 ml-2 text-success"
-                                              />
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </UnsavedLink>
-                                    <div class="ml-1 mr-1 flex flex-col justify-center text-primary">
-                                      <BsLink class="relative bottom-[5px]" />
-                                    </div>
-
-                                    <For each={item.merged_items}>
-                                      {(mergedItem, index) => (
-                                        <>
-                                          <UnsavedLink
-                                            href={`/entity/${entity_name}/${mergedItem.uid}`}
-                                            class={`mb-3  flex h-fit cursor-pointer flex-row rounded-sm pb-2 pt-2 pl-4 pr-2 text-neutral-content  ${
-                                              mergedItem.is_deleted
-                                                ? "bg-gray-400 hover:bg-gray-500"
-                                                : "bg-primary hover:bg-primary-focus"
-                                            }`}
-                                          >
-                                            <div class="relative">
-                                              <div class="mr-2 inline-block text-xs font-semibold">
-                                                {mergedItem.label}
-                                              </div>
-                                            </div>
-                                            <div class="right-0 ml-auto justify-self-end">
-                                              {mergedItem.is_deleted && (
-                                                <div class="relative mr-2 flex flex-row">
-                                                  <AiFillDelete
-                                                    size={14}
-                                                    class="mt-[6px]  text-gray-600"
-                                                  />
-                                                  {mergedItem.deleted_and_has_dependent_nodes ? (
-                                                    <AiFillClockCircle
-                                                      size={14}
-                                                      class="mt-[6px] ml-1 rounded-full text-warning"
-                                                    />
-                                                  ) : (
-                                                    <AiFillCheckCircle
-                                                      size={14}
-                                                      class="mt-[6px] ml-1 text-success"
-                                                    />
-                                                  )}
-                                                </div>
-                                              )}
-                                            </div>
-                                          </UnsavedLink>
-                                          <Show
-                                            when={
-                                              index() <
-                                              item.merged_items.length - 1
-                                            }
-                                          >
-                                            <div class="ml-1 mr-1 flex flex-col justify-center text-primary-focus">
-                                              <BsLink class="relative bottom-[5px]" />
-                                            </div>
-                                          </Show>
-                                        </>
-                                      )}
-                                    </For>
-                                  </div>
-                                </Match>
-                                <Match when={true}>
-                                  <div>
-                                    <UnsavedLink
-                                      href={`/entity/${entity_name}/${item.uid}`}
-                                      class={`mb-3 flex cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
-                                        item.is_deleted
-                                          ? "bg-gray-400 hover:bg-gray-500"
-                                          : "bg-primary hover:bg-primary-focus"
-                                      }`}
-                                    >
-                                      <div class="flex flex-col content-center">
-                                        <div>
-                                          <span class="prose-sm mr-7 select-none font-light uppercase">
-                                            {getEntityDisplayName(
-                                              item.real_type
-                                            )}
-                                          </span>
-                                        </div>
-                                      </div>{" "}
-                                      <div class="relative">
-                                        <div class="inline-block font-semibold">
-                                          {build_label_template(
-                                            item,
-                                            schema[item.real_type].meta
-                                              .view_label_template
-                                          )}
-                                        </div>
-                                      </div>
-                                      <div class="right-0 ml-auto flex flex-row items-center justify-self-end">
-                                        {item.is_deleted && (
-                                          <div class="relative mr-2 flex flex-row">
-                                            <AiFillDelete
-                                              size={16}
-                                              class=" text-gray-600"
-                                            />
-                                            {item.deleted_and_has_dependent_nodes ? (
-                                              <AiFillClockCircle
-                                                size={16}
-                                                class="ml-2 rounded-full text-warning"
-                                              />
-                                            ) : (
-                                              <AiFillCheckCircle
-                                                size={16}
-                                                class=" ml-2 text-success"
-                                              />
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </UnsavedLink>
-                                  </div>
-                                </Match>
-                              </Switch>
-                            </div>
-                          );
-                        }}
-                      </For>
-                    </div>
-                    <div class="col-span-2 pt-4 pb-6 pr-4" />
-                  </div>
-                  <Show when={Object.keys(data()).length > index() + 1}>
-                    <div class="divider" />
+                  <Show
+                    when={firstUidOfType()[item.real_type] === item.uid}
+                    fallback={<div class="col-span-2" />}
+                  >
+                    <>
+                      <Show when={index() !== 0}>
+                        <div class="divider col-span-8" />
+                      </Show>
+                      <div class="col-span-2">
+                        <h2 class="prose-md col-span-2 select-none font-semibold uppercase text-base-content">
+                          {getEntityNamePlural(item.real_type)}
+                        </h2>
+                      </div>
+                    </>
                   </Show>
+                  <Switch>
+                    <Match when={item.is_merged_item}>
+                      <div class="col-span-5 flex flex-row items-center">
+                        <UnsavedLink
+                          href={`/entity/${item.real_type}/${item.uid}`}
+                          class={`mb-3 flex h-fit flex-1 cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
+                            item.is_deleted
+                              ? "bg-gray-400 hover:bg-gray-500"
+                              : "bg-primary hover:bg-primary-focus"
+                          }`}
+                        >
+                          <div class="flex w-fit flex-col justify-center">
+                            <div>
+                              <span class="prose-sm mr-7 select-none font-light uppercase">
+                                {getEntityDisplayName(item.real_type)}
+                              </span>
+                            </div>
+                          </div>{" "}
+                          <div class="relative">
+                            <div class="inline-block font-semibold">
+                              {item.label}
+                            </div>
+                          </div>
+                          <div class="right-0 ml-auto flex flex-row items-center justify-self-end">
+                            {item.is_deleted && (
+                              <div class="relative mr-2 flex flex-row">
+                                <AiFillDelete
+                                  size={16}
+                                  class="mt-0.5 text-gray-600"
+                                />
+                                {item.deleted_and_has_dependent_nodes ? (
+                                  <AiFillClockCircle
+                                    size={16}
+                                    class="mt-0.5 ml-2 rounded-full text-warning"
+                                  />
+                                ) : (
+                                  <AiFillCheckCircle
+                                    size={16}
+                                    class="mt-0.5 ml-2 text-success"
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </UnsavedLink>
+                        <div class="ml-1 mr-1 flex flex-col justify-center text-primary">
+                          <BsLink class="relative bottom-[5px]" />
+                        </div>
+
+                        <For each={item.merged_items}>
+                          {(mergedItem, index) => (
+                            <>
+                              <UnsavedLink
+                                href={`/entity/${mergedItem.real_type}/${mergedItem.uid}`}
+                                class={`mb-3  flex h-fit cursor-pointer flex-row rounded-sm pb-2 pt-2 pl-4 pr-2 text-neutral-content  ${
+                                  mergedItem.is_deleted
+                                    ? "bg-gray-400 hover:bg-gray-500"
+                                    : "bg-primary hover:bg-primary-focus"
+                                }`}
+                              >
+                                <div class="relative">
+                                  <div class="mr-2 inline-block text-xs font-semibold">
+                                    {mergedItem.label}
+                                  </div>
+                                </div>
+                                <div class="right-0 ml-auto justify-self-end">
+                                  {mergedItem.is_deleted && (
+                                    <div class="relative mr-2 flex flex-row">
+                                      <AiFillDelete
+                                        size={14}
+                                        class="mt-[6px]  text-gray-600"
+                                      />
+                                      {mergedItem.deleted_and_has_dependent_nodes ? (
+                                        <AiFillClockCircle
+                                          size={14}
+                                          class="mt-[6px] ml-1 rounded-full text-warning"
+                                        />
+                                      ) : (
+                                        <AiFillCheckCircle
+                                          size={14}
+                                          class="mt-[6px] ml-1 text-success"
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </UnsavedLink>
+                              <Show
+                                when={index() < item.merged_items.length - 1}
+                              >
+                                <div class="ml-1 mr-1 flex flex-col justify-center text-primary-focus">
+                                  <BsLink class="relative bottom-[5px]" />
+                                </div>
+                              </Show>
+                            </>
+                          )}
+                        </For>
+                      </div>
+                    </Match>
+                    <Match when={true}>
+                      <div class="col-span-5">
+                        <UnsavedLink
+                          href={`/entity/${item.real_type}/${item.uid}`}
+                          class={`mb-3 flex cursor-pointer flex-row rounded-sm p-3 text-neutral-content  ${
+                            item.is_deleted
+                              ? "bg-gray-400 hover:bg-gray-500"
+                              : "bg-primary hover:bg-primary-focus"
+                          }`}
+                        >
+                          <div class="flex flex-col content-center">
+                            <div>
+                              <span class="prose-sm mr-7 select-none font-light uppercase">
+                                {getEntityDisplayName(item.real_type)}
+                              </span>
+                            </div>
+                          </div>{" "}
+                          <div class="relative">
+                            <div class="inline-block font-semibold">
+                              {item.label}
+                            </div>
+                          </div>
+                          <div class="right-0 ml-auto flex flex-row items-center justify-self-end">
+                            {item.is_deleted && (
+                              <div class="relative mr-2 flex flex-row">
+                                <AiFillDelete
+                                  size={16}
+                                  class=" text-gray-600"
+                                />
+                                {item.deleted_and_has_dependent_nodes ? (
+                                  <AiFillClockCircle
+                                    size={16}
+                                    class="ml-2 rounded-full text-warning"
+                                  />
+                                ) : (
+                                  <AiFillCheckCircle
+                                    size={16}
+                                    class=" ml-2 text-success"
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </UnsavedLink>
+                      </div>
+                    </Match>
+                  </Switch>
                 </>
-              )}
-            </For>
+              );
+            }}
+          </For>
+        </div>
+        <Show when={!end()}>
+          <div class="mb-16" ref={setEl}>
+            <LoadingSpinner />
           </div>
         </Show>
-      </Match>
-    </Switch>
+      </Show>
+    </>
   );
 };
 

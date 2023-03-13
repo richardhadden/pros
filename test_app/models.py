@@ -214,12 +214,13 @@ class Relation(Factoid):
 class Marriage(Relation):
     class Meta:
         construct_label_template = (
-            "{is_about_person.label} married to {subject_related_to.label}"
+            "{subject.label} married to {subject_related_to.label}"
         )
         override_labels = {
             "subject": OverrideLabel("person", "married"),
             "subject_related_to": OverrideLabel("married to", "married"),
         }
+        order_fields = ["text", "subject", "subject_related_to"]
 
 
 class ParentChildRelation(Relation):
@@ -232,7 +233,7 @@ class ParentChildRelation(Relation):
             "subject": OverrideLabel("parent", "is_identified_as_parent"),
             "subject_related_to": OverrideLabel("child", "identified_as_child"),
         }
-        order_fields = ["text", "is_about_person", "subject_related_to"]
+        order_fields = ["text", "subject", "subject_related_to"]
 
 
 class Acquaintanceship(Relation):

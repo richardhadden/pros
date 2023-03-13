@@ -103,7 +103,7 @@ const App: Component = () => {
           <div class="">
             <Sidebar />
           </div>
-          <div class="flex-grow pl-5 pr-10">
+          <div class="flex-grow pl-5 pr-10 pb-32">
             <Routes>
               <Suspense>
                 <Route
