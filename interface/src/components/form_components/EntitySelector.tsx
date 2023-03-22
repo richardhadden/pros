@@ -5,13 +5,50 @@ import {
   For,
   Show,
   Setter,
+  on,
 } from "solid-js";
+import { createShortcut } from "@solid-primitives/keyboard";
+import { createInfiniteScroll } from "@solid-primitives/pagination";
+import { db } from "../../data/db";
 
 import EntityChip from "../ui_components/entityChip";
 
 import { getEntityDisplayName } from "../../utils/entity_names";
 import { fetchAutoCompleteData } from "../../data/DataEndpoints";
 import { sortBy } from "ramda";
+
+function debounce(cb: CallableFunction, delay = 500) {
+  let timeout: number;
+
+  return (...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      cb(...args);
+    }, delay);
+  };
+}
+
+const LoadingSpinner: Component = (props) => (
+  <div role="status" class="flex justify-center">
+    <svg
+      aria-hidden="true"
+      class={`mr-2 h-8 w-8 animate-spin fill-primary text-gray-200 dark:text-gray-600`}
+      viewBox="0 0 100 101"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+        fill="currentColor"
+      />
+      <path
+        d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+        fill="currentFill"
+      />
+    </svg>
+    <span class="sr-only">Loading...</span>
+  </div>
+);
 
 type RelationFieldType = {
   uid: string;
@@ -32,69 +69,171 @@ const EntitySelector: Component<{
 }> = (props) => {
   const [autoCompleteTextInput, setAutoCompleteTextInput] = createSignal("");
   const [resultsPanelVisible, setResultsPanelVisible] = createSignal(false);
-  const [autoCompleteData, setAutoCompleteData] = createSignal([]);
 
   const [filteredAutoCompleteData, setFilteredAutoCompleteData] = createSignal(
     []
   );
-  const handleKeyEnter = (e: KeyboardEvent) => {
-    if (
-      e.key === "Enter" &&
-      filteredAutoCompleteData().length > 0 &&
-      autoCompleteTextInput() !== ""
-    ) {
-      handleAddSelection(filteredAutoCompleteData()[0]);
-    }
-  };
+  const [focusedListItem, setFocusedListItem] = createSignal(null);
+  const [focusedListIndex, setFocusedListIndex] = createSignal(0);
 
-  const notExcluded = (uid: string) => {
-    if (props.exclude) {
-      return !props.exclude.includes(uid);
+  let focusedItemElement;
+  let menuElement;
+
+  function scrollIfNeeded(element, container) {
+    if (element.offsetTop < container.scrollTop) {
+      container.scrollTop = element.offsetTop;
+    } else {
+      const offsetBottom = element.offsetTop + element.offsetHeight;
+      const scrollBottom = container.scrollTop + container.offsetHeight;
+      if (offsetBottom > scrollBottom) {
+        container.scrollTop = offsetBottom - container.offsetHeight;
+      }
     }
-    return true;
+  }
+
+  const handleKeyEnter = async (e: KeyboardEvent) => {
+    console.log(e.key);
+    if (e.key === "ArrowDown") {
+      setFocusedListIndex(focusedListIndex() + 1);
+
+      focusedItemElement.scrollIntoView({
+        block: "nearest",
+        inline: "start",
+      });
+    } else if (e.key === "ArrowUp" && focusedListIndex() > 0) {
+      setFocusedListIndex(focusedListIndex() - 1);
+      focusedItemElement.scrollIntoView({
+        block: "nearest",
+        inline: "start",
+      });
+    } else if (e.key === "Enter") {
+      let dbItemQuery =
+        db[props.relation_to.toLowerCase()].orderBy("[real_type+label]");
+
+      if (autoCompleteTextInput()) {
+        const filterFunc = (item) => {
+          const words_regexes = autoCompleteTextInput()
+            .split(" ")
+            .map((word) => new RegExp(word, "i"));
+          const result = words_regexes
+            .map((wre) => wre.test(item.label))
+            .every((test) => test); //.test(item.label);
+
+          return result;
+        };
+
+        dbItemQuery = dbItemQuery.filter(filterFunc);
+      }
+
+      if (props.value.length > 0) {
+        const currentSelectedUids = new Set(
+          props.value.map((selectedItem) => selectedItem.uid)
+        );
+
+        dbItemQuery = dbItemQuery.filter((i) => !currentSelectedUids.has(i.id));
+      }
+
+      const itemFromDb = await dbItemQuery
+        .offset(focusedListIndex())
+        .limit(1)
+        .first();
+
+      handleAddSelection(itemFromDb);
+      const resp = await fetcher(0);
+      setPage(0);
+      setPages(resp);
+      setFocusedListIndex(0);
+      focusedItemElement.scrollIntoView({
+        block: "nearest",
+        inline: "start",
+      });
+    } else if (
+      e.key === "Backspace" &&
+      autoCompleteTextInput().length === 0 &&
+      props.value.length > 0
+    ) {
+      props.onChange(props.value.slice(0, -1));
+    }
   };
 
   const handleInputFocusIn = async () => {
+    // Update data from server
+    await fetchAutoCompleteData(props.relation_to.toLowerCase());
+    // Set results panel visible
     setResultsPanelVisible(true);
-    //console.log(autoCompleteData.length);
-    if (autoCompleteData().length === 0) {
-      const data = await fetchAutoCompleteData(props.relation_to.toLowerCase());
-      setAutoCompleteData(data);
-      setFilteredAutoCompleteData(
-        autoCompleteData().filter((item: RelationFieldType) => {
-          const r = new RegExp(autoCompleteTextInput(), "i");
-          return (
-            r.test(item.label) &&
-            !props.value
-              .map((item: RelationFieldType) => item.uid)
-              .includes(item.uid) &&
-            notExcluded(item.uid)
-          );
-        })
-      );
-    }
   };
 
-  //createEffect(() => console.log("Edit field VALUE>>", props.value));
-
-  createEffect(() => {
-    setFilteredAutoCompleteData(
-      autoCompleteData().filter((item: RelationFieldType) => {
-        const r = new RegExp(autoCompleteTextInput(), "i");
-        return (
-          r.test(item.label) &&
-          !props.value
-            .map((item: RelationFieldType) => item.uid)
-            .includes(item.uid)
-        );
-      })
-    );
-  });
+  const handleInputFocusOut = () => {
+    setResultsPanelVisible(false);
+    setFocusedListIndex(0);
+  };
 
   const handleAddSelection = (item: RelationFieldType) => {
     setAutoCompleteTextInput("");
     props.onChange([...props.value, item]);
   };
+
+  async function fetcher(page): Promise<RelationFieldType[]> {
+    try {
+      let resp =
+        db[props.relation_to.toLowerCase()].orderBy("[real_type+label]");
+
+      if (autoCompleteTextInput()) {
+        const filterFunc = (item) => {
+          const words_regexes = autoCompleteTextInput()
+            .split(" ")
+            .map((word) => new RegExp(word, "i"));
+          const result = words_regexes
+            .map((wre) => wre.test(item.label))
+            .every((test) => test); //.test(item.label);
+
+          return result;
+        };
+
+        resp = resp.filter(filterFunc);
+      }
+
+      if (props.value.length > 0) {
+        const currentSelectedUids = new Set(
+          props.value.map((selectedItem) => selectedItem.uid)
+        );
+
+        resp = resp.filter((i) => !currentSelectedUids.has(i.id));
+      }
+
+      const count = await resp.count();
+      if (count < 50) {
+        setEnd(true);
+      }
+      const response = await resp
+        .offset(page * 50)
+        .limit(50)
+        .toArray();
+
+      return response;
+    } catch {}
+  }
+
+  const [pages, setEl, { end, setEnd, setPage, setPages, page }] =
+    createInfiniteScroll(fetcher);
+
+  const doUpdateFilteredList = debounce(async () => {
+    //.log(firstUidOfType());
+
+    const resp = await fetcher(0);
+
+    setPage(1);
+    setPages(resp);
+
+    setEnd(false);
+  }, 100);
+
+  createEffect(
+    on(autoCompleteTextInput, () => {
+      doUpdateFilteredList();
+    })
+  );
+
   return (
     <Show when={!props.cardinalityReached}>
       <div class="relative">
@@ -115,26 +254,47 @@ const EntitySelector: Component<{
             value={autoCompleteTextInput()}
             onInput={(e) => setAutoCompleteTextInput(e.currentTarget.value)}
             onFocusIn={handleInputFocusIn}
-            onFocusOut={() => setResultsPanelVisible(false)}
-            onKeyPress={handleKeyEnter}
+            onFocusOut={handleInputFocusOut}
+            onKeyDown={handleKeyEnter}
             placeholder={props.placeholder}
           />{" "}
           {props.after}
         </div>
         <Show when={resultsPanelVisible()}>
-          <div class="dropdown rounded-box relative z-50 max-h-52 w-full overflow-y-scroll bg-base-100 p-2 shadow-xl">
-            <ul class=" menu ">
-              <For each={filteredAutoCompleteData()}>
-                {(item: RelationFieldType, index) => (
-                  <EntityChip
-                    label={item.label}
-                    leftSlot={getEntityDisplayName(item.real_type)}
-                    color="primary"
-                    onClick={(e: MouseEvent) => handleAddSelection(item)}
-                  />
-                )}
+          <div class="relative z-50 col-span-6 max-h-52 overflow-y-scroll bg-base-100 p-2 pt-2 pb-2">
+            <div class="menu" ref={menuElement}>
+              <For each={pages()}>
+                {(item: RelationFieldType, index) => {
+                  return (
+                    <Show
+                      when={focusedListIndex() === index()}
+                      fallback={
+                        <EntityChip
+                          label={item.label}
+                          leftSlot={getEntityDisplayName(item.real_type)}
+                          color="primary"
+                          onClick={(e: MouseEvent) => handleAddSelection(item)}
+                        />
+                      }
+                    >
+                      <EntityChip
+                        label={item.label}
+                        leftSlot={getEntityDisplayName(item.real_type)}
+                        color="primary"
+                        onClick={(e: MouseEvent) => handleAddSelection(item)}
+                        ref={focusedItemElement}
+                        selected={true}
+                      />
+                    </Show>
+                  );
+                }}
               </For>
-            </ul>
+              <Show when={!end()}>
+                <div class="mb-16" ref={setEl}>
+                  <LoadingSpinner />
+                </div>
+              </Show>
+            </div>
           </div>
         </Show>
       </div>

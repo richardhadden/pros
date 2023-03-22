@@ -13,15 +13,13 @@ const EntityChip: Component<{
   onClick?: (e: MouseEvent) => void;
   isDeleted?: boolean;
   deletedAndHasDependentNodes?: boolean;
-  glow?: boolean;
+  selected?: boolean;
+  ref: any;
 }> = (props) => {
-  createEffect(() => console.log(props.glow));
-
   const style =
     "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-sm h-12 prose-md relative top-1.5 font-semibold inline-block h-fit z-10";
   return (
     <>
-      {props.glow ? "GLOW" : ""}
       <Switch>
         <Match when={props.href && props.isDeleted}>
           <UnsavedLink
@@ -31,7 +29,7 @@ const EntityChip: Component<{
             }
             href={props.href}
           >
-            <div class="flex flex-row">
+            <div class="flex flex-row" ref={props.ref}>
               <span class="prose-sm mr-5 font-light uppercase">
                 {props.leftSlot}{" "}
               </span>
@@ -63,7 +61,7 @@ const EntityChip: Component<{
             }
             href={props.href}
           >
-            <div class="flex flex-row">
+            <div class="flex flex-row" ref={props.ref}>
               <span class="prose-sm mr-5 font-light uppercase">
                 {props.leftSlot}{" "}
               </span>
@@ -90,12 +88,11 @@ const EntityChip: Component<{
         <Match when={props.href}>
           <UnsavedLink
             class={
-              style +
-              ` cursor-pointer bg-primary transition-all hover:bg-primary-focus`
+              style + ` cursor-pointer transition-all hover:bg-primary-focus`
             }
             href={props.href}
           >
-            <span class="prose-sm mr-5 font-light uppercase">
+            <span class="prose-sm mr-5 font-light uppercase" ref={props.ref}>
               {props.leftSlot}{" "}
             </span>
             {props.label}
@@ -103,9 +100,12 @@ const EntityChip: Component<{
         </Match>
         <Match when={true}>
           <span
+            ref={props.ref}
             class={
               style +
-              ` cursor-pointer bg-primary hover:bg-primary-focus ` +
+              ` cursor-pointer ${
+                props.selected === true ? "bg-primary-focus" : "bg-primary"
+              } hover:bg-primary-focus ` +
               props.class
             }
             onMouseDown={props.onClick}
