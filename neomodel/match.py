@@ -582,7 +582,6 @@ class QueryBuilder(object):
             self._ast["return"] = "id({})".format(self._ast["return"])
         query = self.build_query()
         # ("Q >", query, self._query_params)
-
         results, _ = db.cypher_query(query, self._query_params, resolve_objects=True)
         # The following is not as elegant as it could be but had to be copied from the
         # version prior to cypher_query with the resolve_objects capability.
