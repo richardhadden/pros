@@ -183,7 +183,7 @@ const EntityWindow = (props) => {
           onMouseDown={() => setIsFocused(true)}
           use:clickOutside={() => setIsFocused(false)}
           ref={draggableContainer}
-          class={`draggable scroll group fixed  h-[300px] w-[300px] justify-between overflow-hidden shadow-xl transition-shadow hover:resize hover:shadow-2xl`}
+          class={`draggable scroll group fixed  h-[300px] w-[300px] justify-between overflow-hidden shadow-2xl outline-1 outline-offset-1 outline-slate-300 transition-shadow hover:resize hover:shadow-2xl`}
           classList={{
             "z-50": isFocused(),
             "z-40": !isFocused(),
@@ -215,7 +215,7 @@ const EntityWindow = (props) => {
             </div>
           </div>
           <Show when={data()}>
-            <div class="content h-full w-full resize overflow-y-scroll  p-5 backdrop-blur-3xl hover:resize ">
+            <div class="content z-50 h-full w-full resize  overflow-y-scroll bg-white p-5 hover:resize ">
               <EntityView
                 data={data}
                 params={{ entity_type: data().real_type, uid: data().uid }}
