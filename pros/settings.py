@@ -176,3 +176,5 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
+
+INTERAL_URI_BASE = "http://pros.net"

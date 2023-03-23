@@ -12,12 +12,12 @@ from pros_core.models import ProsNode, REVERSE_RELATIONS, InlineRelation
 
 from django.apps import apps
 
-ic(REVERSE_RELATIONS)
+# ic(REVERSE_RELATIONS)
 
 PROS_APPS = [
     app for app, conf in apps.app_configs.items() if getattr(conf, "pros_app", False)
 ]
-ic(PROS_APPS)
+# ic(PROS_APPS)
 
 
 @dataclass
@@ -310,7 +310,7 @@ PROPERTY_VALIDATORS = {
     for p in inheritors(Property)
     if getattr(p, "json_schema_validation", False)
 }
-ic(PROPERTY_VALIDATORS)
+# ic(PROPERTY_VALIDATORS)
 
 
 def build_property_field(field):

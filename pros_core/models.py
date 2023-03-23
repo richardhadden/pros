@@ -94,7 +94,12 @@ class ProsNode(StructuredNode):
         and subclasses should never be abstract unless specified
         """
 
-        base_attrs = {**getattr(cls.__base__, "Meta").__dict__}
+        for c in cls.__bases__:
+            if "Mixin" not in c.__name__:
+                base_for_meta = c
+                break
+
+        base_attrs = {**getattr(base_for_meta, "Meta").__dict__}
 
         for remove_field in ["display_name", "display_name_plural", "abstract"]:
             base_attrs.pop(remove_field, None)
@@ -106,10 +111,10 @@ class ProsNode(StructuredNode):
             meta_attrs,
         )
 
-    def save(self):
+    def save(self, *args, **kwargs):
         self.real_type = type(self).__name__.lower()
         # self.modifiedWhen = datetime.datetime.now()
-        super().save()
+        super().save(*args, **kwargs)
 
     def __hash__(self):
         return hash(self.uid)

@@ -24,6 +24,7 @@ from pros_dating.models import (
     ComplexDate,
     DateRange,
 )
+from pros_uris.models import DefaultUriMixin
 
 from icecream import ic
 
@@ -267,7 +268,7 @@ class Entity(ProsNode):
         display_name_plural = "Entities"
 
 
-class Person(Entity):
+class Person(DefaultUriMixin, Entity):
     initial_attestation = Citation.as_inline_field()
 
     class Meta:
