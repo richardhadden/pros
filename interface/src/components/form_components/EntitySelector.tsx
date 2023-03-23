@@ -75,27 +75,17 @@ const EntitySelector: Component<{
   );
   const [focusedListItem, setFocusedListItem] = createSignal(null);
   const [focusedListIndex, setFocusedListIndex] = createSignal(0);
+  const [currentViewedCount, setcurrentViewedCount] = createSignal(0);
 
   let focusedItemElement;
   let menuElement;
 
-  function scrollIfNeeded(element, container) {
-    if (element.offsetTop < container.scrollTop) {
-      container.scrollTop = element.offsetTop;
-    } else {
-      const offsetBottom = element.offsetTop + element.offsetHeight;
-      const scrollBottom = container.scrollTop + container.offsetHeight;
-      if (offsetBottom > scrollBottom) {
-        container.scrollTop = offsetBottom - container.offsetHeight;
-      }
-    }
-  }
-
   const handleKeyEnter = async (e: KeyboardEvent) => {
-    console.log(e.key);
-    if (e.key === "ArrowDown") {
+    if (
+      e.key === "ArrowDown" &&
+      focusedListIndex() < currentViewedCount() - 1
+    ) {
       setFocusedListIndex(focusedListIndex() + 1);
-
       focusedItemElement.scrollIntoView({
         block: "nearest",
         inline: "start",
@@ -205,6 +195,9 @@ const EntitySelector: Component<{
       if (count < 50) {
         setEnd(true);
       }
+
+      setcurrentViewedCount(count);
+
       const response = await resp
         .offset(page * 50)
         .limit(50)
@@ -218,8 +211,6 @@ const EntitySelector: Component<{
     createInfiniteScroll(fetcher);
 
   const doUpdateFilteredList = debounce(async () => {
-    //.log(firstUidOfType());
-
     const resp = await fetcher(0);
 
     setPage(1);
@@ -261,7 +252,7 @@ const EntitySelector: Component<{
           {props.after}
         </div>
         <Show when={resultsPanelVisible()}>
-          <div class="relative z-50 col-span-6 max-h-52 overflow-y-scroll bg-base-100 p-2 pt-2 pb-2">
+          <div class="relative z-10 col-span-6 max-h-52 overflow-y-scroll bg-base-100 p-2 pt-2 pb-2">
             <div class="menu" ref={menuElement}>
               <For each={pages()}>
                 {(item: RelationFieldType, index) => {
@@ -274,6 +265,7 @@ const EntitySelector: Component<{
                           leftSlot={getEntityDisplayName(item.real_type)}
                           color="primary"
                           onClick={(e: MouseEvent) => handleAddSelection(item)}
+                          onMouseEnter={() => setFocusedListIndex(index())}
                         />
                       }
                     >

@@ -15,9 +15,10 @@ const EntityChip: Component<{
   deletedAndHasDependentNodes?: boolean;
   selected?: boolean;
   ref: any;
+  onMouseOver?: any;
 }> = (props) => {
   const style =
-    "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-sm h-12 prose-md relative top-1.5 font-semibold inline-block h-fit z-10";
+    "text-neutral-content p-3 max-w-4xl mb-3 mr-3 pr-4 rounded-sm h-12 prose-md relative top-1.5 font-semibold inline-block h-fit";
   return (
     <>
       <Switch>
@@ -88,7 +89,8 @@ const EntityChip: Component<{
         <Match when={props.href}>
           <UnsavedLink
             class={
-              style + ` cursor-pointer transition-all hover:bg-primary-focus`
+              style +
+              ` cursor-pointer bg-primary transition-all hover:bg-primary-focus`
             }
             href={props.href}
           >
@@ -109,6 +111,7 @@ const EntityChip: Component<{
               props.class
             }
             onMouseDown={props.onClick}
+            onMouseEnter={props.onMouseEnter}
           >
             <span class="prose-sm mr-5 font-light uppercase">
               {props.leftSlot}{" "}
