@@ -31,7 +31,7 @@ class DefaultUriMixin:
     uris = Relationship("URI", "uri", cardinality=ZeroOrMore)
 
     def save(self, *args, **kwargs):
-        ic(self.__dict__)
+
         super().save(*args, **kwargs)
 
         internal_uri = self.uris.get_or_none(internal=True)
