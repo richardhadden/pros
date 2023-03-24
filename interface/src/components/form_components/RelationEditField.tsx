@@ -22,11 +22,14 @@ import {
   AiFillClockCircle,
   AiFillCheckCircle,
 } from "solid-icons/ai";
+import { BiRegularImport } from "solid-icons/bi";
 
 import EmbeddedNewEntity from "./EmbeddedNewEntity";
 import TypedInputRow from "./TypedInputRow";
 
 import EntitySelector from "./EntitySelector";
+
+import { schema } from "../../index";
 
 type RelationFieldType = {
   uid: string;
@@ -212,12 +215,19 @@ const RelationEditField: Component<{
         onChange={props.onChange}
         value={props.value}
         after={
-          <span
-            onClick={() => setShowAddNewEntityModal(true)}
-            class="btn-base btn-sm btn-square btn relative top-6 ml-12"
-          >
-            <BsPlus />
-          </span>
+          <>
+            <span
+              onClick={() => setShowAddNewEntityModal(true)}
+              class="btn-base btn-square btn-sm btn relative top-6 ml-12"
+            >
+              <BsPlus />
+            </span>
+            <Show when={schema[props.relatedToType].meta?.importable === true}>
+              <span class="btn-base btn-square btn-sm btn relative top-6 ml-2">
+                <BiRegularImport />
+              </span>
+            </Show>
+          </>
         }
       />
       <Show when={showAddNewEntityModal()}>

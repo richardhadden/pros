@@ -87,6 +87,8 @@ def build_meta(model):
     meta["display_name"] = meta.get("display_name", None) or camel_case_split(
         model.__name__
     )
+    if getattr(model, "Importer", None):
+        meta["importable"] = True
     return meta
 
 
@@ -120,7 +122,7 @@ def get_all_reverse_relations(model, model_name):
     return {**REVERSE_RELATIONS[model_name], **parent_reverse_relations}
 
 
-def build_app_model(app_name, model, model_name):
+def build_app_model(app_name, model, model_name) -> AppModel:
     return AppModel(
         app=app_name,
         model=model,
@@ -301,7 +303,10 @@ export const CUSTOM_VIEW_PAGES = {{}};
             )
 
 
-PROS_MODELS = build_models(PROS_APPS)
+from typing import TypedDict
+
+
+PROS_MODELS: dict[str, AppModel] = build_models(PROS_APPS)
 PROPERTY_VALIDATORS = {
     p.__name__: getattr(
         p,

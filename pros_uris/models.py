@@ -31,11 +31,14 @@ class DefaultUriMixin:
     uris = Relationship("URI", "uri", cardinality=ZeroOrMore)
 
     def save(self, *args, **kwargs):
+        ic(self.__dict__)
+        super().save(*args, **kwargs)
+
         internal_uri = self.uris.get_or_none(internal=True)
+
         if not internal_uri:
             uri_value = build_uri(self)
             uri = URI(uri=uri_value)
             uri.save()
             self.uris.connect(uri)
-        ic(self.uris.get_or_none(internal=True))
-        super().save(*args, **kwargs)
+            ic(self.uris.get_or_none(internal=True))

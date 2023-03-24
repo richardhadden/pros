@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     "frontend.apps.FrontendConfig",
     "pros_dating.apps.ProsDatingConfig",
     "pros_vocabs.apps.ProsVocabsConfig",
+    "pros_uris.apps.ProsUrisConfig",
+    "pros_import.apps.ProsImportConfig",
     "django_extensions",
 ]
 

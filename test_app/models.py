@@ -271,6 +271,8 @@ class Entity(ProsNode):
 class Person(DefaultUriMixin, Entity):
     initial_attestation = Citation.as_inline_field()
 
+    # merged = ProsRelationTo("Person", reverse_name="merged")
+
     class Meta:
         # mergeable = True
         internal_fields = ["merged"]
@@ -288,7 +290,8 @@ class Person(DefaultUriMixin, Entity):
         }
         list_display_extras = {"b.": ["{birth_event[0].date.earliest_possible}"]}
 
-    # merged = ProsRelationTo("Person", reverse_name="merged")
+    class Importer:
+        pass
 
 
 class Organisation(Entity):
