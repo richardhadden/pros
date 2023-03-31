@@ -30,6 +30,9 @@ import TypedInputRow from "./TypedInputRow";
 import EntitySelector from "./EntitySelector";
 
 import { schema } from "../../index";
+import ImportNewEntity from "./ImportNewEntity";
+
+import { createImports } from "../../../../pros_import/interface/data";
 
 type RelationFieldType = {
   uid: string;
@@ -55,7 +58,7 @@ const RelationEditField: Component<{
   const [cardinalityReached, setCardinalityReached] = createSignal(false);
 
   const [showAddNewEntityModal, setShowAddNewEntityModal] = createSignal(false);
-
+  const [showImportEntityModal, setShowImportEntityModal] = createSignal(false);
   createEffect(() => {
     if (
       (props.field.cardinality === "One" ||
@@ -95,6 +98,10 @@ const RelationEditField: Component<{
   const [embeddedData, setEmbeddedData] = createSignal({});
   const [embeddedType, setEmbeddedType] = createSignal(props.relatedToType);
 
+  const [selectedEntitiesToImport, setSelectedEntitiesToImport] = createSignal<
+    Array<string>
+  >([]);
+
   const handleAddSelection = (item: RelationFieldType) => {
     //setAutoCompleteTextInput("");
     props.onChange([...props.value, item]);
@@ -113,6 +120,18 @@ const RelationEditField: Component<{
       setEmbeddedType(props.relatedToType);
     }
   };
+
+  const importAndAddEntities = async () => {
+    const response = await createImports(
+      props.relatedToType,
+      selectedEntitiesToImport()
+    );
+    props.onChange([...props.value, ...response]);
+
+    setShowImportEntityModal(false);
+    setSelectedEntitiesToImport([]);
+  };
+
   return (
     <>
       {Object.keys(props.relationFields).length > 0 ? (
@@ -223,13 +242,45 @@ const RelationEditField: Component<{
               <BsPlus />
             </span>
             <Show when={schema[props.relatedToType].meta?.importable === true}>
-              <span class="btn-base btn-square btn-sm btn relative top-6 ml-2">
+              <span
+                onClick={() => setShowImportEntityModal(true)}
+                class="btn-base btn-square btn-sm btn relative top-6 ml-2"
+              >
                 <BiRegularImport />
               </span>
             </Show>
           </>
         }
       />
+      <Show when={showImportEntityModal()}>
+        <div class="modal modal-open pr-96 pl-96">
+          <div class="modal-box min-w-full pt-0 pl-0 pr-0 transition-all">
+            <ImportNewEntity
+              initialType={props.relatedToType}
+              entityType={embeddedType}
+              setEntityType={setEmbeddedType}
+              selectedEntitiesToImport={selectedEntitiesToImport()}
+              setSelectedEntitiesToImport={setSelectedEntitiesToImport}
+              onClickImport={importAndAddEntities}
+              cardinality={props.field.cardinality}
+            />
+            <div class="modal-action mr-5">
+              <span
+                onClick={() => saveAddedEntity()}
+                class="btn-warning btn-sm btn"
+              >
+                Add
+              </span>
+              <span
+                onClick={() => setShowImportEntityModal(false)}
+                class="btn-success btn-sm btn"
+              >
+                Cancel
+              </span>
+            </div>
+          </div>
+        </div>
+      </Show>
       <Show when={showAddNewEntityModal()}>
         <div class="modal modal-open pr-96 pl-96">
           <div class="modal-box min-w-full pt-0 pl-0 pr-0 transition-all">

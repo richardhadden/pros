@@ -133,10 +133,12 @@ const EntitySelector: Component<{
       setPage(0);
       setPages(resp);
       setFocusedListIndex(0);
-      focusedItemElement.scrollIntoView({
-        block: "nearest",
-        inline: "start",
-      });
+      if (!props.cardinalityReached) {
+        focusedItemElement.scrollIntoView({
+          block: "nearest",
+          inline: "start",
+        });
+      }
     } else if (
       e.key === "Backspace" &&
       autoCompleteTextInput().length === 0 &&
@@ -161,6 +163,9 @@ const EntitySelector: Component<{
   const handleAddSelection = (item: RelationFieldType) => {
     setAutoCompleteTextInput("");
     props.onChange([...props.value, item]);
+    if (props.cardinalityReached) {
+      setResultsPanelVisible(false);
+    }
   };
 
   async function fetcher(page): Promise<RelationFieldType[]> {
@@ -264,7 +269,9 @@ const EntitySelector: Component<{
                           label={item.label}
                           leftSlot={getEntityDisplayName(item.real_type)}
                           color="primary"
-                          onClick={(e: MouseEvent) => handleAddSelection(item)}
+                          onClick={(e: MouseEvent) => {
+                            handleAddSelection(item);
+                          }}
                           onMouseEnter={() => setFocusedListIndex(index())}
                         />
                       }

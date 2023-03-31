@@ -24,7 +24,7 @@ const EmbeddedNewEntity: Component<{
 
         <span
           onClick={() => props.setEntityType(props.initialType)}
-          class={`btn-sm btn prose-sm ml-3 font-semibold uppercase ${
+          class={`btn-sm btn prose-sm ml-3 mb-3 font-semibold uppercase ${
             props.initialType === props.entityType()
               ? "btn-accent"
               : "btn-neutral"
@@ -43,7 +43,7 @@ const EmbeddedNewEntity: Component<{
                   : "btn-neutral"
               }`}
             >
-              {item}
+              {getEntityDisplayName(item)}
             </span>
           )}
         </For>

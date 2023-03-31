@@ -10,6 +10,8 @@ for model_name, model in PROS_MODELS.items():
         urlpatterns.append(
             path(
                 f"{model.app}/{model.model_name.lower()}/",
-                base_view_set_factory(model.model).list.as_view({"get": "list"}),
+                base_view_set_factory(model.model).as_view(
+                    {"get": "list", "post": "create"}
+                ),
             )
         )
