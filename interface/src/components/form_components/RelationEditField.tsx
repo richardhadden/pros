@@ -121,9 +121,10 @@ const RelationEditField: Component<{
     }
   };
 
-  const importAndAddEntities = async () => {
+  const importAndAddEntities = async (selected_endpoint: string) => {
     const response = await createImports(
       props.relatedToType,
+      selected_endpoint,
       selectedEntitiesToImport()
     );
     props.onChange([...props.value, ...response]);

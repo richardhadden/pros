@@ -44,6 +44,9 @@ const ImportNewEntity: Component<{
 }> = (props) => {
   const [filterValue, setFilterValue] = createSignal("");
   const [itemsToShow, setItemsToShow] = createSignal<ImportListData>([]);
+  const [selectedEndpoint, setSelectedEndpoint] = createSignal(
+    Object.keys(schema[props.entityType()].meta.importers)[0]
+  );
 
   let filterInputBox: HTMLInputElement;
 
@@ -53,7 +56,11 @@ const ImportNewEntity: Component<{
 
   const getData = debounce(async () => {
     console.log;
-    const data = await getImportList(props.entityType(), filterValue());
+    const data = await getImportList(
+      props.entityType(),
+      selectedEndpoint(),
+      filterValue()
+    );
     setItemsToShow(data.data);
   });
 
@@ -81,9 +88,7 @@ const ImportNewEntity: Component<{
     props.setSelectedEntitiesToImport(newSelectedItems);
   };
 
-  createEffect(() =>
-    console.log("selectedItems", props.selectedEntitiesToImport)
-  );
+  createEffect(() => console.log("selectedEndpoint", selectedEndpoint()));
 
   return (
     <Show when={schema[props.initialType.toLowerCase()]}>
@@ -94,11 +99,39 @@ const ImportNewEntity: Component<{
           </span>
 
           <span
-            class="btn-neutral btn-sm btn prose-sm ml-3
+            class="btn-neutral btn-sm btn prose-sm ml-3 mr-3
            font-semibold uppercase"
           >
-            {getEntityDisplayName(props.initialType)}
+            {getEntityNamePlural(props.initialType)}
           </span>
+
+          <span class="mr-3 select-none font-semibold uppercase text-neutral-content">
+            from
+          </span>
+
+          <For each={Object.entries(schema[props.entityType()].meta.importers)}>
+            {([endpoint_slug, endpoint_name]) => (
+              <Show
+                when={endpoint_slug == selectedEndpoint()}
+                fallback={
+                  <span
+                    class="btn-neutral btn-sm btn prose-sm  mr-3
+              font-semibold uppercase"
+                    onClick={(e) => setSelectedEndpoint(endpoint_slug)}
+                  >
+                    {endpoint_name}
+                  </span>
+                }
+              >
+                <span
+                  class="btn-accent btn-sm btn prose-sm  mr-3
+              font-semibold uppercase"
+                >
+                  {endpoint_name}
+                </span>
+              </Show>
+            )}
+          </For>
         </div>
 
         <div class="">
@@ -116,11 +149,11 @@ const ImportNewEntity: Component<{
 
         <div class="w-max">
           <button
-            onClick={props.onClickImport}
+            onClick={() => props.onClickImport(selectedEndpoint())}
             class="btn-warning btn-sm btn"
             disabled={props.selectedEntitiesToImport.length === 0}
           >
-            Import and add selected{" "}
+            Import{" "}
             {props.cardinality === "ZeroOrOne" || props.cardinality === "One"
               ? getEntityDisplayName(props.initialType)
               : getEntityNamePlural(props.initialType)}
@@ -147,8 +180,9 @@ const ImportNewEntity: Component<{
           when={itemsToShow().length > 0}
           fallback={
             <div class="prose">
-              Type to search the GND for{" "}
-              {getEntityNamePlural(props.initialType)}...
+              Type to search{" "}
+              {schema[props.entityType()].meta.importers[selectedEndpoint()]}{" "}
+              for {getEntityNamePlural(props.initialType)}...
             </div>
           }
         >

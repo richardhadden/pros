@@ -33,6 +33,7 @@ export type SchemaEntityMeta =
     inline_only?: boolean;
     override_labels?: {[key: string]: string[]}
     use_list_cache?: boolean;
+    importers?: {[key: string]: string};
   };
 
 

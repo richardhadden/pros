@@ -87,8 +87,17 @@ def build_meta(model):
     meta["display_name"] = meta.get("display_name", None) or camel_case_split(
         model.__name__
     )
-    if getattr(model, "Importer", None):
-        meta["importable"] = True
+
+    # TODO: move this logic to pros_import as some kind of hook!
+    if any("pros_import" in ia for ia in settings.INSTALLED_APPS):
+        from pros_import.models import ProsImporter
+
+        if any(
+            i
+            for i in model.__dict__.values()
+            if inspect.isclass(i) and issubclass(i, ProsImporter)
+        ):
+            meta["importable"] = True
     return meta
 
 

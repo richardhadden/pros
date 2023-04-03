@@ -1,3 +1,5 @@
+import datetime
+
 from neomodel import One, ZeroOrOne, OneOrMore
 from neomodel.properties import (
     StringProperty,
@@ -8,6 +10,8 @@ from neomodel.properties import (
     FloatProperty,
     IntegerProperty,
 )
+
+from rest_framework.request import Request
 
 from pros_core.models import (
     ProsNode,
@@ -24,7 +28,9 @@ from pros_dating.models import (
     ComplexDate,
     DateRange,
 )
-from pros_uris.models import DefaultUriMixin
+from pros_uris.models import DefaultUriMixin, URI
+
+from pros_import.models import ProsImporter, ImportedDataDict
 
 from icecream import ic
 
@@ -290,8 +296,92 @@ class Person(DefaultUriMixin, Entity):
         }
         list_display_extras = {"b.": ["{birth_event[0].date.earliest_possible}"]}
 
-    class Importer:
-        pass
+    class GNDImporter(ProsImporter):
+        importer_name = "GND"
+        search_url = "https://lobid.org/gnd/search?format=json&size=20&q={search_term}&filter=type:Person"
+        import_url = "https://lobid.org/gnd/{entity_id}.json"
+
+        @staticmethod
+        def build_label_extra(item):
+            label = ""
+            if poo := item.get("professionOrOccupation"):
+                label += f"{poo[0]['label']}"
+            if item.get("dateOfBirth", []) or item.get("dateOfDeath", []):
+                if label:
+                    label += ", "
+                dob = item.get("dateOfBirth")
+                dod = item.get("dateOfDeath")
+                pob = item.get("placeOfBirth", [{"label": ""}])
+                pod = item.get("placeofDeath", [{"label": ""}])
+                label += " "
+                if dob:
+                    label += f"b. {dob[0][0:4]} {pob[0]['label']}"
+                if dob and dod:
+                    label += ", "
+                if dod:
+                    label += f"d. {dod[0][0:4]} {pod[0]['label']}"
+                label += ""
+            return label
+
+        def build_list_data(self, api_data: dict):
+            return {
+                "data": [
+                    {
+                        "uri": item["id"],
+                        "id": item["gndIdentifier"],
+                        "label": item["preferredName"],
+                        "label_extra": self.build_label_extra(item),
+                        "already_in_db": self.uri_already_exists(item["id"]),
+                    }
+                    for item in api_data["member"]
+                ],
+                "totalItems": api_data["totalItems"],
+            }
+
+        def import_entity(self, request: Request, api_data: dict) -> ImportedDataDict:
+            # Try to get person by GND id if already exists
+            person: Person | None = self.get_entity_or_none_by_uri(api_data["id"])
+            if person:
+                # If person exists already, just return
+                return {
+                    "uid": person.uid,
+                    "label": person.label,
+                    "real_type": person.real_type,
+                }
+
+            # Otherwise, import the person
+            person = Person(
+                **{
+                    "label": api_data["preferredName"],
+                    "createdBy": request.user.username,
+                    "createdWhen": datetime.datetime.now(datetime.timezone.utc),
+                    "modifiedBy": request.user.username,
+                    "modifiedWhen": datetime.datetime.now(datetime.timezone.utc),
+                }
+            )
+            person.save()
+
+            # Create and connect the gnd_uri
+            gnd_uri = URI(uri=api_data["id"], internal=False)
+            gnd_uri.save()
+            person.uris.connect(gnd_uri)
+
+            # Check all the sameAs uris, add and connect them
+            for same_as in api_data["sameAs"]:
+                same_as_uri_from_db = URI.nodes.get_or_none(uri=same_as["id"])
+                if same_as_uri_from_db:
+                    person.uris.connect(same_as_uri_from_db)
+                else:
+                    uri = URI(uri=same_as["id"], internal=False)
+                    uri.save()
+                    person.uris.connect(uri)
+
+            # Return the required representation of the person
+            return {
+                "uid": person.uid,
+                "label": person.label,
+                "real_type": person.real_type,
+            }
 
 
 class Organisation(Entity):
