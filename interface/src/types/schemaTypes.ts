@@ -33,6 +33,7 @@ export type SchemaEntityMeta =
     inline_only?: boolean;
     override_labels?: {[key: string]: string[]}
     use_list_cache?: boolean;
+    importable?: boolean;
     importers?: {[key: string]: string};
   };
 
@@ -50,6 +51,7 @@ export  type SchemaEntity = {
     subclasses?: SubClasses;
     subclasses_list?: string[];
     json_schema: object;
+    
   };
   
 export  type SchemaObject = {

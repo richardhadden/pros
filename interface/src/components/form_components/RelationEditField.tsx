@@ -6,6 +6,7 @@ import {
   Show,
   Setter,
 } from "solid-js";
+import { Dynamic } from "solid-js/web";
 
 import EntityChip from "../ui_components/entityChip";
 import { BsPlus } from "solid-icons/bs";
@@ -33,6 +34,8 @@ import { schema } from "../../index";
 import ImportNewEntity from "./ImportNewEntity";
 
 import { createImports } from "../../../../pros_import/interface/data";
+
+import { CUSTOM_AUTOCOMPLETE_MODALS } from "../../../interface-config";
 
 type RelationFieldType = {
   uid: string;
@@ -242,14 +245,24 @@ const RelationEditField: Component<{
             >
               <BsPlus />
             </span>
-            <Show when={schema[props.relatedToType].meta?.importable === true}>
+            {/*<Show when={schema[props.relatedToType].meta?.importable === true}>
               <span
                 onClick={() => setShowImportEntityModal(true)}
                 class="btn-base btn-square btn-sm btn relative top-6 ml-2"
               >
                 <BiRegularImport />
               </span>
-            </Show>
+        </Show>*/}
+            <For each={CUSTOM_AUTOCOMPLETE_MODALS}>
+              {(component) => (
+                <Dynamic
+                  component={component}
+                  entityType={props.relatedToType}
+                  selectedList={props.value}
+                  changeSelectedList={props.onChange}
+                />
+              )}
+            </For>
           </>
         }
       />

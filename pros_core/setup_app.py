@@ -281,12 +281,21 @@ def gather_interface_components(apps):
     edit_fields = {}
     field_rows = {}
     list_view_pages = {}
+    autocomplete_modals = {}
 
     for app_name in apps:
         app = __import__(app_name)
 
         path = Path(app.__path__[0])
         interface = path / "interface"
+
+        autocomplete_modals_path = interface / "autocomplete_modals"
+        autocomplete_modals = {
+            **autocomplete_modals,
+            **get_components(autocomplete_modals_path),
+        }
+
+        ic(autocomplete_modals)
 
         edit_fields_path = interface / "edit_fields"
         edit_fields = {**edit_fields, **get_components(edit_fields_path)}
@@ -302,9 +311,14 @@ def gather_interface_components(apps):
             f.writelines(
                 f"import {comp} from '{fil}';\n" for comp, fil in edit_fields.items()
             )
+            f.writelines(
+                f"import {comp} from '{fil}';\n"
+                for comp, fil in autocomplete_modals.items()
+            )
             f.write("\n\n")
             f.write(
                 f"""
+export const CUSTOM_AUTOCOMPLETE_MODALS = [ {", ".join(field for field in autocomplete_modals)}  ];
 export const CUSTOM_LIST_VIEW_PAGES = {{ {", ".join(f"'{page.lower()}': {page}" for page in list_view_pages)}  }};
 export const CUSTOM_EDIT_FIELDS = {{ {", ".join(f"'{field}': {field}" for field in edit_fields)}  }};
 export const CUSTOM_VIEW_PAGES = {{}};
