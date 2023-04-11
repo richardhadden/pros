@@ -70,10 +70,6 @@ const EntitySelector: Component<{
   const [autoCompleteTextInput, setAutoCompleteTextInput] = createSignal("");
   const [resultsPanelVisible, setResultsPanelVisible] = createSignal(false);
 
-  const [filteredAutoCompleteData, setFilteredAutoCompleteData] = createSignal(
-    []
-  );
-  const [focusedListItem, setFocusedListItem] = createSignal(null);
   const [focusedListIndex, setFocusedListIndex] = createSignal(0);
   const [currentViewedCount, setcurrentViewedCount] = createSignal(0);
 
@@ -81,29 +77,24 @@ const EntitySelector: Component<{
   let menuElement;
 
   const handleKeyEnter = async (e: KeyboardEvent) => {
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-    }
-
     if (
       e.key === "ArrowDown" &&
       focusedListIndex() < currentViewedCount() - 1
     ) {
       setFocusedListIndex(focusedListIndex() + 1);
-      focusedItemElement.scrollIntoView({
-        block: "nearest",
-        inline: "start",
-      });
+      //focusedItemElement.scrollIntoView({
+      //  block: "nearest",
+      //  inline: "start",
+      //});
     } else if (e.key === "ArrowUp" && focusedListIndex() > 0) {
       setFocusedListIndex(focusedListIndex() - 1);
-      focusedItemElement.scrollIntoView({
-        block: "nearest",
-        inline: "start",
-      });
+      //focusedItemElement.scrollIntoView({
+      //  block: "nearest",
+      //  inline: "start",
+      //});
     } else if (e.key === "Enter") {
-      let dbItemQuery = db[props.relation_to.toLowerCase()]
-        .orderBy("[real_type+label]")
-        .filter((item) => !item.is_deleted);
+      let dbItemQuery =
+        db[props.relation_to.toLowerCase()].orderBy("[real_type+label]");
 
       if (autoCompleteTextInput()) {
         const filterFunc = (item) => {
@@ -139,34 +130,18 @@ const EntitySelector: Component<{
       setPages(resp);
       setFocusedListIndex(0);
       if (!props.cardinalityReached) {
-        focusedItemElement.scrollIntoView({
-          block: "nearest",
-          inline: "start",
-        });
+        //focusedItemElement.scrollIntoView({
+        //  block: "nearest",
+        //  inline: "start",
+        //});
       }
-    } else if (
+    } /*else if (
       e.key === "Backspace" &&
       autoCompleteTextInput().length === 0 &&
       props.value.length > 0
     ) {
       props.onChange(props.value.slice(0, -1));
-    }
-  };
-
-  const handleInputFocusIn = async () => {
-    // Update data from server
-    await fetchAutoCompleteData(props.relation_to.toLowerCase());
-    // Set results panel visible
-    setResultsPanelVisible(true);
-    const resp = await fetcher(0);
-
-    setPage(1);
-    setPages(resp);
-  };
-
-  const handleInputFocusOut = () => {
-    setResultsPanelVisible(false);
-    setFocusedListIndex(0);
+    }*/
   };
 
   const handleAddSelection = (item: RelationFieldType) => {
@@ -177,14 +152,13 @@ const EntitySelector: Component<{
     }
   };
 
-  async function fetcher(page: number): Promise<RelationFieldType[]> {
+  async function fetcher(page): Promise<RelationFieldType[]> {
     if (!resultsPanelVisible()) {
       return [];
     }
     try {
-      let resp = db[props.relation_to.toLowerCase()]
-        .orderBy("[real_type+label]")
-        .filter((item) => !item.is_deleted);
+      let resp =
+        db[props.relation_to.toLowerCase()].orderBy("[real_type+label]");
 
       if (autoCompleteTextInput()) {
         const filterFunc = (item) => {
@@ -212,41 +186,38 @@ const EntitySelector: Component<{
       const count = await resp.count();
       if (count < 50) {
         setEnd(true);
-      } else {
-        setEnd(false);
       }
 
       setcurrentViewedCount(count);
-
       const response = await resp
         .offset(page * 50)
         .limit(50)
         .toArray();
 
       return response;
-    } catch {
-      return [];
-    }
+    } catch {}
   }
 
   const [pages, setEl, { end, setEnd, setPage, setPages, page }] =
     createInfiniteScroll(fetcher);
 
-  const doUpdateFilteredList = debounce(async () => {
+  const handleInputFocusIn = () => {
+    setResultsPanelVisible(true);
+  };
+
+  const handleInputFocusOut = () => {
+    setResultsPanelVisible(false);
+  };
+
+  const doUpdateFilteredList = async (inputText) => {
+    setAutoCompleteTextInput(inputText);
     const resp = await fetcher(0);
-
-    setPage(1);
+    //setPage(1);
     setPages(resp);
-    setEnd(false);
-  }, 100);
+    //setEnd(false);
+  };
 
-  createEffect(
-    on(autoCompleteTextInput, () => {
-      if (resultsPanelVisible()) {
-        doUpdateFilteredList();
-      }
-    })
-  );
+  createEffect(() => console.log(autoCompleteTextInput()));
 
   return (
     <Show when={!props.cardinalityReached}>
@@ -266,7 +237,7 @@ const EntitySelector: Component<{
               focus:rounded-b-md focus:border-2 focus:border-b-2 
               focus:bg-base-200 focus:shadow-inner  focus:outline-none`}
             value={autoCompleteTextInput()}
-            onInput={(e) => setAutoCompleteTextInput(e.currentTarget.value)}
+            onInput={(e) => doUpdateFilteredList(e.currentTarget.value)}
             onFocusIn={handleInputFocusIn}
             onFocusOut={handleInputFocusOut}
             onKeyDown={handleKeyEnter}
@@ -281,7 +252,7 @@ const EntitySelector: Component<{
                 {(item: RelationFieldType, index) => {
                   return (
                     <Show
-                      when={focusedListIndex() === index()}
+                      when={true} // focusedListIndex() === index()}
                       fallback={
                         <EntityChip
                           label={item.label}
@@ -297,7 +268,7 @@ const EntitySelector: Component<{
                         label={item.label}
                         leftSlot={getEntityDisplayName(item.real_type)}
                         onClick={(e: MouseEvent) => handleAddSelection(item)}
-                        ref={focusedItemElement}
+                        //ref={focusedItemElement}
                         selected={true}
                       />
                     </Show>
@@ -305,7 +276,9 @@ const EntitySelector: Component<{
                 }}
               </For>
               <Show when={!end()}>
-                <div class="" ref={setEl}></div>
+                <div class="mb-16" ref={setEl}>
+                  <LoadingSpinner />
+                </div>
               </Show>
             </div>
           </div>

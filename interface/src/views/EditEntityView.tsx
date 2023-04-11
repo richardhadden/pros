@@ -89,64 +89,62 @@ const EditEntityView: Component = (props) => {
   return (
     <>
       <Show when={data()}>
-        <Suspense>
-          <TopBar
-            params={params}
-            newButton={false}
-            editButton={false}
-            viewButton={true}
-            hasUnsavedChange={hasUnsavedChange()}
-            saveButton={true}
-            onClickSaveButton={onSave}
-            barTitle={
-              <div
-                class={`prose-sm ml-3 inline-block rounded-sm  pl-3 pr-3 pt-1 pb-1 ${
-                  hasUnsavedChange()
-                    ? "bg-warning text-warning-content"
-                    : "bg-neutral-focus"
-                }`}
-              >
-                <BiSolidEditAlt class="relative bottom-0.5 mr-2 inline-block " />
-                {getEntityDisplayName(params.entity_type)}
-              </div>
-            }
-            barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
+        <TopBar
+          params={params}
+          newButton={false}
+          editButton={false}
+          viewButton={true}
+          hasUnsavedChange={hasUnsavedChange()}
+          saveButton={true}
+          onClickSaveButton={onSave}
+          barTitle={
+            <div
+              class={`prose-sm ml-3 inline-block rounded-sm  pl-3 pr-3 pt-1 pb-1 ${
+                hasUnsavedChange()
+                  ? "bg-warning text-warning-content"
+                  : "bg-neutral-focus"
+              }`}
+            >
+              <BiSolidEditAlt class="relative bottom-0.5 mr-2 inline-block " />
+              {getEntityDisplayName(params.entity_type)}
+            </div>
+          }
+          barCenter={<div class={ViewedItemTopBarStyle}>{data().label}</div>}
+        />
+
+        <div class="mt-32 mb-48">
+          <Show when={data()["is_deleted"]}>
+            <div class="grid grid-cols-8">
+              <div class="col-span-1" />
+              {data().deleted_and_has_dependent_nodes ? (
+                <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
+                  <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                  <span class="ml-6 normal-case">
+                    Remove as a {getEntityDisplayName(params.entity_type)}{" "}
+                    referenced by other items
+                  </span>
+                </div>
+              ) : (
+                <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-success p-3 font-semibold uppercase text-success-content shadow-lg">
+                  <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
+                  <span class="ml-6 normal-case">
+                    No more references to this{" "}
+                    {getEntityDisplayName(params.entity_type)}, so it can be
+                    safely deleted
+                  </span>
+                </div>
+              )}
+
+              <div class="col-span-1" />
+            </div>
+          </Show>
+          <Form
+            errors={errors}
+            data={data}
+            setData={handleSetData}
+            entity_type={params.entity_type}
           />
-
-          <div class="mt-32 mb-48">
-            <Show when={data()["is_deleted"]}>
-              <div class="grid grid-cols-8">
-                <div class="col-span-1" />
-                {data().deleted_and_has_dependent_nodes ? (
-                  <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-warning p-3 font-semibold uppercase text-warning-content shadow-lg">
-                    <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
-                    <span class="ml-6 normal-case">
-                      Remove as a {getEntityDisplayName(params.entity_type)}{" "}
-                      referenced by other items
-                    </span>
-                  </div>
-                ) : (
-                  <div class=" col-span-6 mb-16 flex flex-row rounded-md bg-success p-3 font-semibold uppercase text-success-content shadow-lg">
-                    <AiFillWarning class="mt-1 mr-3" /> Deletion Pending{" "}
-                    <span class="ml-6 normal-case">
-                      No more references to this{" "}
-                      {getEntityDisplayName(params.entity_type)}, so it can be
-                      safely deleted
-                    </span>
-                  </div>
-                )}
-
-                <div class="col-span-1" />
-              </div>
-            </Show>
-            <Form
-              errors={errors}
-              data={data}
-              setData={handleSetData}
-              entity_type={params.entity_type}
-            />
-          </div>
-        </Suspense>
+        </div>
       </Show>
 
       <Show when={showSaveToast()}>
