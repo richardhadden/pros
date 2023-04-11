@@ -10,7 +10,7 @@ from neomodel import (
     One,
     ZeroOrOne,
 )
-from neomodel.properties import BooleanProperty, DateTimeProperty
+from neomodel.properties import BooleanProperty, DateTimeProperty, ArrayProperty
 from neomodel.relationship_manager import (
     RelationshipDefinition,
     RelationshipManager,
@@ -41,7 +41,7 @@ class InlineRelation(StructuredRel):
 
 class DeletedNode(StructuredNode):
     uid = UniqueIdProperty()
-    type = StringProperty(index=True)
+    type = ArrayProperty(StringProperty(), index=True)
     deletedWhen = DateTimeProperty()
 
 

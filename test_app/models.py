@@ -9,6 +9,7 @@ from neomodel.properties import (
     EmailProperty,
     FloatProperty,
     IntegerProperty,
+    ArrayProperty,
 )
 
 from rest_framework.request import Request
@@ -408,3 +409,4 @@ class Test(ProsNode):
     dateTime = DateTimeProperty()
     email = EmailProperty()
     complex_date = IncompleteDateProperty()
+    array_test = ArrayProperty(StringProperty())

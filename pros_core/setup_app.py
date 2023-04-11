@@ -34,6 +34,7 @@ class AppModel:
     subclasses: dict
     subclasses_as_list: list
     model_docstring: str
+    parent_classes: list
     json_schema: dict = dict
 
 
@@ -131,6 +132,10 @@ def get_all_reverse_relations(model, model_name):
     return {**REVERSE_RELATIONS[model_name], **parent_reverse_relations}
 
 
+def get_parent_classes(klass):
+    return [m for m in inspect.getmro(klass) if issubclass(m, ProsNode)]
+
+
 def build_app_model(app_name, model, model_name) -> AppModel:
     return AppModel(
         app=app_name,
@@ -182,6 +187,7 @@ def build_app_model(app_name, model, model_name) -> AppModel:
             for m in build_subclasses_as_list(model)
         ],
         model_docstring=model.__doc__,
+        parent_classes=get_parent_classes(model),
     )
 
 

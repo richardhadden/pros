@@ -551,6 +551,17 @@ def get_created_modified_list(entity_type: str, timestamp: datetime.datetime):
     return itertools.chain.from_iterable(results)
 
 
+def get_deleted_items_from_type_and_timestamp(entity_name, timestamp):
+    q = """MATCH (n:DeletedNode) 
+    WHERE n.deletedWhen > datetime($timestamp) AND $entity_name IN n.type
+    RETURN n"""
+
+    results, meta = db.cypher_query(
+        q, {"timestamp": timestamp, "entity_name": entity_name}
+    )
+    return itertools.chain.from_iterable(results)
+
+
 def get_item(model_class: str, uid: str):
     q = """MATCH (main { uid:$uid })
 
@@ -778,9 +789,9 @@ class ProsAbstractViewSet(ProsBlankViewSet):
                         self.__model_class__.__name__, d
                     ),
                     "deleted": [
-                        {"uid": b.uid}
-                        for b in DeletedNode.nodes.filter(
-                            deletedWhen__gt=d, type=self.__model_class__.__name__
+                        {"uid": b["uid"]}
+                        for b in get_deleted_items_from_type_and_timestamp(
+                            self.__model_class__.__name__, d
                         )
                     ],
                 }
@@ -921,7 +932,12 @@ class ProsDefaultViewSet(ProsAbstractViewSet):
                 delete_all_inline_nodes(instance)
                 d = DeletedNode(
                     uid=instance.uid,
-                    type=self.__model_class__.__name__,
+                    type=[
+                        p.__name__
+                        for p in PROS_MODELS[
+                            self.__model_class__.__name__.lower()
+                        ].parent_classes
+                    ],
                     deletedWhen=datetime.datetime.now(datetime.timezone.utc),
                 )
                 d.save()
