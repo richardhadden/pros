@@ -388,9 +388,7 @@ const ViewEntityListView: Component = (props) => {
           </For>
         </div>
         <Show when={!end()}>
-          <div class="mb-16" ref={setEl}>
-            <LoadingSpinner />
-          </div>
+          <div class="mb-16" ref={setEl}></div>
         </Show>
       </Show>
     </>

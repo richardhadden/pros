@@ -105,10 +105,13 @@ const Sidebar: Component = () => {
         <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner shadow-2xl">
           <UnsavedLink
             href="/"
-            class="prose prose-xl ml-2 mb-4 block text-center font-black hover:text-accent"
+            class="prose prose-xl ml-2 mb-2 block text-center font-black hover:text-accent"
           >
-            PROS
+            AAAPIS
           </UnsavedLink>
+          <div class="mb-6 text-center text-xs uppercase">
+            Altogether Another APIS
+          </div>
           <div class="flex justify-evenly">
             <span class="prose-sm mt-1 mr-1 font-semibold uppercase">
               User{" "}

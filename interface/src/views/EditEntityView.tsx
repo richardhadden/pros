@@ -52,12 +52,14 @@ const EditEntityView: Component = (props) => {
     setHasUnsavedChange(true);
   };
 
+  const [savingInProgress, setSavingInProgress] = createSignal(false);
   const [showSaveToast, setShowSaveToast] = createSignal(false);
   const [showErrorToast, setShowErrorToast] = createSignal(false);
 
   createEffect(() => setData(initialData));
 
   async function onSave(e: MouseEvent): Promise<void> {
+    setSavingInProgress(true);
     const validator = new Validator(
       schema[params.entity_type].json_schema,
       "2020-12",
@@ -84,6 +86,7 @@ const EditEntityView: Component = (props) => {
       setShowErrorToast(true);
       setInterval(() => setShowErrorToast(false), 3000);
     }
+    setSavingInProgress(false);
   }
 
   return (
@@ -97,6 +100,7 @@ const EditEntityView: Component = (props) => {
           hasUnsavedChange={hasUnsavedChange()}
           saveButton={true}
           onClickSaveButton={onSave}
+          savingInProgress={savingInProgress()}
           barTitle={
             <div
               class={`prose-sm ml-3 inline-block rounded-sm  pl-3 pr-3 pt-1 pb-1 ${
