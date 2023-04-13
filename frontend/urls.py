@@ -1,6 +1,6 @@
 from django.urls import path
 
-from pros_core.setup_app import PROS_MODELS, PROS_VIEWSET_MAP
+from pros_core.setup_app import PROS_MODELS, PROS_VIEWSET_MAP, AppModel
 
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
@@ -55,7 +55,7 @@ def construct_subclass_hierarchy(model):
 import markdown
 
 
-def build_schema_from_pros_model(models, schema):
+def build_schema_from_pros_model(models: list[AppModel], schema):
 
     for _, model in models.items():
         # ic(model.json_schema)
@@ -69,6 +69,7 @@ def build_schema_from_pros_model(models, schema):
             },
             **construct_subclass_hierarchy(model),
             "subclasses_list": [m.model_name for m in model.subclasses_as_list],
+            "parent_classes_list": [m.__name__.lower() for m in model.parent_classes],
             "json_schema": model.json_schema,
             "model_docstring": markdown.markdown(model.model_docstring)
             if model.model_docstring

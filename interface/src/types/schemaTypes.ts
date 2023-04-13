@@ -35,6 +35,7 @@ export type SchemaEntityMeta =
     use_list_cache?: boolean;
     importable?: boolean;
     importers?: {[key: string]: string};
+
   };
 
 
@@ -50,6 +51,7 @@ export  type SchemaEntity = {
     meta: SchemaEntityMeta;
     subclasses?: SubClasses;
     subclasses_list?: string[];
+    parent_classes_list: string[];
     json_schema: object;
     
   };

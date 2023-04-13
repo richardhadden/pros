@@ -6,6 +6,7 @@ import {
   Setter,
   onMount,
   createEffect,
+  createMemo,
 } from "solid-js";
 import { BiRegularImport } from "solid-icons/bi";
 import { FiDatabase } from "solid-icons/fi";
@@ -40,6 +41,8 @@ const ImportNewEntityModal: Component<{
   fieldName?: string;
   cardinality: "ZeroOrOne" | "One" | "OneOrMore" | "ZeroOrMore";
   setShowImportEntityModal: Setter<boolean>;
+  importableTypes: string[];
+  setSelectedTypeToImport: Setter<string>;
 }> = (props) => {
   const [filterValue, setFilterValue] = createSignal("");
   const [itemsToShow, setItemsToShow] = createSignal<ImportListData>([]);
@@ -104,20 +107,56 @@ const ImportNewEntityModal: Component<{
     setSelectedEntitiesToImport([]);
   };
 
+  const onClickChangeImportType = (importableType: string) => {
+    setSelectedEndpoint(
+      Object.keys(schema[props.entityType]?.meta?.importers)[0]
+    );
+    props.setSelectedTypeToImport(importableType);
+    setSelectedEntitiesToImport([]);
+    setItemsToShow([]);
+    setFilterValue("");
+    filterInputBox.focus();
+  };
+
+  const onClickChangeEndpoint = (endpointSlug: string) => {
+    setSelectedEndpoint(endpointSlug);
+    setSelectedEntitiesToImport([]);
+    setItemsToShow([]);
+    setFilterValue("");
+    filterInputBox.focus();
+  };
+
   return (
     <Show when={schema[props.entityType.toLowerCase()]}>
       <div class="fixed flex w-full flex-row items-center justify-between bg-neutral bg-opacity-80 p-6">
         <div>
-          <span class="select-none font-semibold uppercase text-neutral-content">
+          <span class="select-none font-semibold uppercase text-neutral-content mr-3">
             Import
           </span>
 
-          <span
-            class="btn-neutral btn-sm btn prose-sm ml-3 mr-3
+          <For each={props.importableTypes}>
+            {(importableType) => (
+              <Show
+                when={importableType === props.entityType}
+                fallback={
+                  <span
+                    class="btn-neutral btn-sm btn prose-sm mr-3
+                font-semibold uppercase"
+                    onClick={() => onClickChangeImportType(importableType)}
+                  >
+                    {getEntityNamePlural(importableType)}
+                  </span>
+                }
+              >
+                <span
+                  class="btn-accent btn-sm btn prose-sm  mr-3
              font-semibold uppercase"
-          >
-            {getEntityNamePlural(props.entityType)}
-          </span>
+                >
+                  {getEntityNamePlural(props.entityType)}
+                </span>
+              </Show>
+            )}
+          </For>
 
           <span class="mr-3 select-none font-semibold uppercase text-neutral-content">
             from
@@ -131,7 +170,7 @@ const ImportNewEntityModal: Component<{
                   <span
                     class="btn-neutral btn-sm btn prose-sm  mr-3
                 font-semibold uppercase"
-                    onClick={(e) => setSelectedEndpoint(endpoint_slug)}
+                    onClick={() => onClickChangeEndpoint(endpoint_slug)}
                   >
                     {endpoint_name}
                   </span>
@@ -171,6 +210,12 @@ const ImportNewEntityModal: Component<{
             {props.cardinality === "ZeroOrOne" || props.cardinality === "One"
               ? getEntityDisplayName(props.entityType)
               : getEntityNamePlural(props.entityType)}
+          </button>
+          <button
+            class="btn-success btn-sm btn ml-3"
+            onClick={() => props.setShowImportEntityModal(false)}
+          >
+            Cancel
           </button>
         </div>
 
@@ -276,9 +321,31 @@ const ImportNewEntityModal: Component<{
 
 const ImporterModal: Component<AutocompleteModalsType> = (props) => {
   const [showImportEntityModal, setShowImportEntityModal] = createSignal(false);
+  const [selectedEntityType, setSelectedEntityType] = createSignal();
+
+  const importableTypes = createMemo(() => {
+    const types = [
+      props.entityType,
+      ...schema[props.entityType.toLowerCase()].subclasses_list,
+    ]
+      .filter((entityType) => schema[entityType.toLowerCase()].meta.importable)
+      .map((i) => i.toLowerCase());
+    return types;
+  });
+
+  onMount(() => {
+    setSelectedEntityType(importableTypes()[0]);
+  });
   return (
     <>
-      <Show when={schema[props.entityType].meta?.importable === true}>
+      <Show
+        when={
+          schema[props.entityType].meta?.importable === true ||
+          schema[props.entityType].subclasses_list.some((entityType) => {
+            return schema[entityType.toLowerCase()].meta?.importable;
+          })
+        }
+      >
         <span
           onClick={() => setShowImportEntityModal(true)}
           class="btn-base btn-square btn-sm btn relative top-6 ml-2"
@@ -290,11 +357,13 @@ const ImporterModal: Component<AutocompleteModalsType> = (props) => {
           <div class="modal modal-open pr-96 pl-96">
             <div class="modal-box min-w-full pt-0 pl-0 pr-0 transition-all">
               <ImportNewEntityModal
-                entityType={props.entityType}
+                entityType={selectedEntityType()}
                 cardinality={props.cardinality}
                 selectedList={props.selectedList}
                 changeSelectedList={props.changeSelectedList}
                 setShowImportEntityModal={setShowImportEntityModal}
+                importableTypes={importableTypes()}
+                setSelectedTypeToImport={setSelectedEntityType}
               />
             </div>
           </div>

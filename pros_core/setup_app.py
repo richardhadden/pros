@@ -133,7 +133,11 @@ def get_all_reverse_relations(model, model_name):
 
 
 def get_parent_classes(klass):
-    return [m for m in inspect.getmro(klass) if issubclass(m, ProsNode)]
+    return [
+        m
+        for m in inspect.getmro(klass)
+        if issubclass(m, ProsNode) and m is not ProsNode
+    ]
 
 
 def build_app_model(app_name, model, model_name) -> AppModel:
