@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class TestAppConfig(AppConfig):
+class ManmaxTestConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "test_app"
-    # pros_app = True
+    name = "manmax_test"
+    pros_app = True

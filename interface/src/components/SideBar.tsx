@@ -36,7 +36,7 @@ const SideBarListItems: Component<{
               {schema[entity_name].meta.abstract ? (
                 <div class="btn-group mb-2 grow rounded-l-none border-0">
                   <UnsavedLink
-                    class={`btn btn-sm w-full ${
+                    class={`btn-xs btn w-full font-normal  ${
                       location.pathname.includes("/entity/" + entity_name)
                         ? " btn-primary"
                         : ""
@@ -48,7 +48,7 @@ const SideBarListItems: Component<{
 
                   <UnsavedLink
                     href={`/entity/${entity_name}/new/`}
-                    class="btn btn-disabled btn-square btn-sm"
+                    class="btn-disabled btn-square btn-xs btn font-normal "
                   >
                     <CgAbstract />
                   </UnsavedLink>
@@ -56,7 +56,7 @@ const SideBarListItems: Component<{
               ) : (
                 <div class="btn-group mb-2 grow border-0">
                   <UnsavedLink
-                    class={`btn btn-sm w-full ${
+                    class={`btn-xs btn w-full font-normal  ${
                       location.pathname.includes("/entity/" + entity_name)
                         ? " btn-primary"
                         : ""
@@ -68,7 +68,7 @@ const SideBarListItems: Component<{
 
                   <UnsavedLink
                     href={`/entity/${entity_name}/new/`}
-                    class="btn btn-accent btn-square btn-sm"
+                    class="btn-accent btn-square btn-xs btn font-normal "
                   >
                     <BsPlus size={18} />
                   </UnsavedLink>
@@ -102,24 +102,24 @@ const Sidebar: Component = () => {
   return (
     <div class="drawer-mobile drawer z-40 h-full">
       <div class="relative h-full min-h-screen min-w-fit bg-base-300 shadow-inner">
-        <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner shadow-2xl">
+        <div class="mb-4 bg-base-200 p-3 pt-3 pb-5 shadow-inner ">
           <UnsavedLink
             href="/"
             class="prose prose-xl ml-2 mb-2 block text-center font-black hover:text-accent"
           >
-            AAAPIS
+            Apis4J
           </UnsavedLink>
           <div class="mb-6 text-center text-xs uppercase">
-            Altogether Another APIS
+            Neo4J-powered APIS
           </div>
           <div class="flex justify-evenly">
             <span class="prose-sm mt-1 mr-1 font-semibold uppercase">
               User{" "}
             </span>
-            <span class="btn btn-disabled btn-sm prose-sm mr-3 ml-1 bg-base-300 text-base-content">
+            <span class="btn-disabled btn-xs btn prose-sm mr-3 ml-1 bg-base-300 text-base-content">
               {userStatus.username}
             </span>{" "}
-            <UnsavedLink href="/" class="btn btn-sm" onClick={logout}>
+            <UnsavedLink href="/" class="btn-xs btn" onClick={logout}>
               Log Out
             </UnsavedLink>
           </div>
@@ -133,7 +133,7 @@ const Sidebar: Component = () => {
                     <div class="btn-group mb-2 grow ">
                       <UnsavedLink
                         href={`/entity/${entity_name}/`}
-                        class={`btn btn-sm w-full ${
+                        class={`btn-xs btn w-full font-normal  ${
                           location.pathname.includes("/entity/" + entity_name)
                             ? " btn-primary"
                             : ""
@@ -144,7 +144,7 @@ const Sidebar: Component = () => {
 
                       <UnsavedLink
                         href={`/entity/${entity_name}/new/`}
-                        class="btn btn-disabled btn-square btn-sm"
+                        class="btn-disabled btn-square btn-xs btn font-normal "
                       >
                         <CgAbstract />
                       </UnsavedLink>
@@ -155,7 +155,7 @@ const Sidebar: Component = () => {
                     <div class="btn-group mb-2 grow ">
                       <UnsavedLink
                         href={`/entity/${entity_name}/`}
-                        class={`btn btn-sm w-full ${
+                        class={`btn-xs btn w-full font-normal  ${
                           location.pathname.includes("/entity/" + entity_name)
                             ? " btn-primary"
                             : ""
@@ -165,7 +165,7 @@ const Sidebar: Component = () => {
                       </UnsavedLink>
                       <UnsavedLink
                         href={`/entity/${entity_name}/new/`}
-                        class="btn btn-accent  btn-square btn-sm"
+                        class="btn-accent btn-square  btn-xs btn font-normal "
                       >
                         <BsPlus size={18} />
                       </UnsavedLink>

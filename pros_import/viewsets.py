@@ -9,7 +9,6 @@ from rest_framework.viewsets import ViewSet
 from pros_core.models import ProsNode
 from icecream import ic
 
-from test_app.models import Person
 from pros_uris.models import URI
 from pros_import.models import ProsImporter, ImportedDataDict
 

@@ -41,12 +41,13 @@ INSTALLED_APPS = [
     # "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
-    "test_app.apps.TestAppConfig",
+    # "test_app.apps.TestAppConfig",
     "frontend.apps.FrontendConfig",
     "pros_dating.apps.ProsDatingConfig",
     "pros_vocabs.apps.ProsVocabsConfig",
     "pros_uris.apps.ProsUrisConfig",
     "pros_import.apps.ProsImportConfig",
+    "manmax_test.apps.ManmaxTestConfig",
     "django_extensions",
 ]
 

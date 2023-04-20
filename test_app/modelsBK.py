@@ -28,6 +28,7 @@ from pros_dating.models import (
     SingleDate,
     ComplexDate,
     DateRange,
+    SingleDate,
 )
 from pros_uris.models import DefaultUriMixin, URI
 
